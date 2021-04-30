@@ -1,0 +1,11 @@
+model:
+  init:
+    mcmc_samples: 0       # if > 0, using full Baysian inference
+    holidays_prior_scale: 0.25
+    changepoint_prior_scale: 0.01
+    seasonality_mode: "multiplicative"  # additive|multiplicative
+    yearly_seasonality: 10
+    weekly_seasonality: True
+    daily_seasonality: False
+  fit:
+    seed: 777

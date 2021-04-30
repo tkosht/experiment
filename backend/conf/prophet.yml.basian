@@ -1,0 +1,15 @@
+model:
+  init:
+    holidays_prior_scale: 0.25
+    growth: "linear"        # linear|logistic
+    mcmc_samples: 300       # if > 0, using full Baysian inference
+    changepoint_prior_scale: 0.01
+    seasonality_mode: "additive"  # additive|multiplicative
+    yearly_seasonality: 10
+    weekly_seasonality: True
+    daily_seasonality: False
+  fit:
+    thin: 2     # default 1
+    # warmup: 1000  # <mcmc_sampels, default mcmc_sampels//2
+    chains: 5   # default 4
+    seed: 777

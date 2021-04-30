@@ -1,0 +1,31 @@
+{
+	"folders": [
+		{
+            "name": "root",
+			"path": "."
+		},
+		{
+            "name": "backend",
+			"path": "backend"
+		},
+		{
+            "name": "frontend",
+			"path": "frontend"
+		}
+	],
+	"settings": {},
+    "extensions": {
+        "recommendations": [
+            "ms-python.python",
+            "ms-python.vscode-pylance",
+            "donjayamanne.python-extension-pack",
+            "littlefoxteam.vscode-python-test-adapter",
+            "tushortz.python-extended-snippets",
+            "octref.vetur",
+            "msjsdiag.debugger-for-chrome",
+            "donjayamanne.githistory",
+            "hediet.vscode-drawio",
+            "tabnine.tabnine-vscode",
+        ]
+    }
+}
