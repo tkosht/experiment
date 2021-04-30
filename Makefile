@@ -10,6 +10,9 @@ bash: up
 python: up
 	docker-compose exec app python
 
+neo4j:
+	docker-compose up -d neo4j
+
 # ==========
 # frontend tasks
 frontend-install frontend-init frontend-ci frontend-prod frontend-dev frontend-unit frontend-e2e : up
@@ -54,6 +57,10 @@ clean: clean-logs clean-container
 
 clean-logs:
 	rm -rf log/*.log
+
+clean-app:
+	docker-compose down app
+	docker rmi app.experiment
 
 clean-container:
 	docker-compose down --rmi all

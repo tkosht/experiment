@@ -1,5 +1,5 @@
 {
-	"name": "WebApi Project",
+	"name": "Experiment Project",
 	"dockerComposeFile": [
 		"../docker-compose.yml"
 	],
