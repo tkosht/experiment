@@ -39,15 +39,18 @@ notebook
 python-dotenv
 
 # for project
-fastapi
-aiofiles
-python-multipart
-uvicorn
-torch
-torchvision
-torchtext
-pytorch-forecasting
-fastparquet
-python-snappy
-pyro-ppl
-fbprophet
+## fastapi
+## aiofiles
+## python-multipart
+## uvicorn
+## torch
+## torchvision
+## torchtext
+## pytorch-forecasting
+## fastparquet
+## python-snappy
+## pyro-ppl
+## fbprophet
+neo4j
+neomodel
+
