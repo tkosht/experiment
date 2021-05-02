@@ -53,4 +53,5 @@ python-dotenv
 ## fbprophet
 neo4j
 neomodel
+py2neo
 

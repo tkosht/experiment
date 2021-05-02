@@ -11,5 +11,26 @@
             "module": "webapi",
             "justMyCode": false
         },
+        {
+            "name": "neo4j",
+            "type": "python",
+            "request": "launch",
+            "module": "modules.tools.neo4j",
+            "justMyCode": false
+        },
+        {
+            "name": "py2neo",
+            "type": "python",
+            "request": "launch",
+            "module": "modules.tools.py2neo",
+            "justMyCode": false
+        },
+        {
+            "name": "neomodel",
+            "type": "python",
+            "request": "launch",
+            "module": "modules.tools.neomodel",
+            "justMyCode": false
+        },
     ]
 }

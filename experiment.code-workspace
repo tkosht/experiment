@@ -1,19 +1,19 @@
 {
-	"folders": [
-		{
+    "folders": [
+        {
             "name": "root",
-			"path": "."
-		},
-		{
+            "path": "."
+        },
+        {
             "name": "backend",
-			"path": "backend"
-		},
-		{
+            "path": "backend"
+        },
+        {
             "name": "frontend",
-			"path": "frontend"
-		}
-	],
-	"settings": {},
+            "path": "frontend"
+        }
+    ],
+    "settings": {},
     "extensions": {
         "recommendations": [
             "ms-python.python",
@@ -26,6 +26,7 @@
             "donjayamanne.githistory",
             "hediet.vscode-drawio",
             "tabnine.tabnine-vscode",
+            "ms-azuretools.vscode-docker",
         ]
     }
 }

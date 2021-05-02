@@ -1,6 +1,6 @@
 default: all
 
-all: build up
+all: up up-neo4j
 
 # ==========
 # interaction tasks
@@ -10,8 +10,17 @@ bash: up
 python: up
 	docker-compose exec app python
 
-neo4j:
+# ==========
+# experiment tasks
+up-neo4j:
 	docker-compose up -d neo4j
+
+down-neo4j:
+	docker-compose stop neo4j
+	docker-compose rm -f neo4j
+
+bash-neo4j:
+	docker-compose exec neo4j bash
 
 # ==========
 # frontend tasks
