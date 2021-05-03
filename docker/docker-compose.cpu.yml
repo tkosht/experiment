@@ -32,8 +32,8 @@ services:
       - ./data/neo4j/data:/data
       - ./data/neo4j/logs:/logs
       - ./data/neo4j/import:/var/lib/neo4j/import
+      - ./conf:/var/lib/neo4j/conf
       - ./data/neo4j/plugins:/plugins
     ports:
       - "7474:7474"   # for HTTP
       - "7687:7687"   # for Bolt
-

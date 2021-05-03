@@ -6,7 +6,7 @@ from neomodel import (
     config,
 )
 
-config.DATABASE_URL = "bolt://neo4j:test@neo4j:7687"
+config.DATABASE_URL = "bolt://neo4j:test@neo4j:7687/testdb"
 
 
 class Book(StructuredNode):
