@@ -43,9 +43,9 @@ python-dotenv
 ## aiofiles
 ## python-multipart
 ## uvicorn
-## torch
-## torchvision
-## torchtext
+torch
+torchvision
+torchtext
 ## pytorch-forecasting
 ## fastparquet
 ## python-snappy
@@ -54,4 +54,5 @@ python-dotenv
 neo4j
 neomodel
 py2neo
-
+pytorch-pretrained-bert
+pyknp

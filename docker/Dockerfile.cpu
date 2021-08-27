@@ -37,6 +37,27 @@ RUN apt-get install -y --no-install-recommends \
 RUN ln -s /usr/bin/python3.8 /usr/bin/python \
     && ln -s /usr/bin/pdb3 /usr/bin/pdb
 
+
+
+
+# juman++
+RUN apt install -y cmake libeigen3-dev libprotobuf-dev protobuf-c-compiler \
+        libjuman libcdb-dev libboost-all-dev zlib1g-dev \
+    && pip install pyknp \
+    && rm -rf /tmp/jumanpp-2.0.0-rc3* \
+    && cd /tmp \
+    && url=https://github.com/ku-nlp/jumanpp/releases/download/v2.0.0-rc3/jumanpp-2.0.0-rc3.tar.xz \
+    && jumanpp_file=$(basename $url) \
+    && curl -sSL -o $jumanpp_file $url \
+    && tar -xvJof $jumanpp_file \
+    && cd jumanpp-2.0.0-rc3 \
+    && mkdir -p build \
+    && cd build \
+    && cmake .. -DCMAKE_BUILD_TYPE=Release \
+    && make \
+    && make install
+
+
 ENV LANG="ja_JP.UTF-8" \
     LANGUAGE="ja_JP:ja" \
     LC_ALL="ja_JP.UTF-8" \
