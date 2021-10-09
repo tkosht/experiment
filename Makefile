@@ -46,6 +46,9 @@ ps images down:
 im:images
 
 build:
+	docker-compose build
+
+build-no-cache:
 	docker-compose build --no-cache
 
 reup: down up
