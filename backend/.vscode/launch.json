@@ -5,6 +5,20 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}${pathSeparator}${env:PYTHONPATH}"
+            },
+            "args": [
+                "--dataset=ldcc",
+            ],
+            "justMyCode": false,
+        },
+        {
             "name": "webapi: fastapi",
             "type": "python",
             "request": "launch",
