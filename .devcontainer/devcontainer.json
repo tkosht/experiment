@@ -23,7 +23,16 @@
 		"python.linting.flake8Args": [],
 		"python.formatting.provider": "black",
 		"editor.formatOnSave": true,
-		"editor.formatOnPaste": false
+		"editor.formatOnPaste": false,
+		"python.sortImports.args": [
+			"--profile",
+			"black"
+		],
+		"[python]": {
+			"editor.codeActionsOnSave": {
+				"source.organizeImports": true
+			}
+		}
 	},
 	// "remoteUser": "vscode",
 	// "runServices": [],

@@ -33,10 +33,17 @@ pytest-html
 docutils==0.15
 Sphinx
 
+line_profiler
+memory_profiler
+
 # other tools
 omegaconf
 notebook
 python-dotenv
+
+jupyter
+jupyterthemes
+jupyter_contrib_nbextensions
 
 # for project
 ## fastapi
@@ -51,6 +58,18 @@ python-dotenv
 ## python-snappy
 ## pyro-ppl
 ## fbprophet
-neo4j
-neomodel
+
+
+mojimoji
+mecab-python3
+janome
+spacy
+SudachiPy
+nagisa
+lightgbm
+psutil
+umap-learn
+numba
+gensim
+sentencepiece
 
