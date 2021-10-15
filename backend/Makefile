@@ -1,3 +1,14 @@
+default: all
+
+all: build up
+
+run: run-aozora
+
+run-aozora:
+	sh bin/morph/run.sh --dataset=aozora
+
+run-ldcc:
+	sh bin/morph/run.sh --dataset=ldcc
 
 # ==========
 # backend tasks
