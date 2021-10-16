@@ -113,13 +113,14 @@ class JpTokenizerJanome(JpTokenizer):
 
     def __setstate__(self, state):
         self.__dict__.update(state)
+        self.__init__()
 
 
 class JpTokenizerSudachi(JpTokenizer):
     def __init__(self):
         self.toker = sudachipy.dictionary.Dictionary().create()
-        # self.mode = sudachipy.tokenizer.Tokenizer.SplitMode.B
         self.mode = sudachipy.tokenizer.Tokenizer.SplitMode.C
+        # self.mode = sudachipy.tokenizer.Tokenizer.SplitMode.B
 
     def tokenize(self, line):
         sentence = []
@@ -127,6 +128,14 @@ class JpTokenizerSudachi(JpTokenizer):
             if token.part_of_speech()[0] not in g_stop_poses:
                 sentence.append(token.dictionary_form())
         return sentence
+
+    def __getstate__(self):
+        state = {}
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self.__init__()
 
 
 class JpTokenizerNagisa(JpTokenizer):
@@ -375,7 +384,9 @@ def _do_train(dataset, tokenizers):
             pipe_file = f"data/model/pipe-{tkr.__class__.__name__.lower()}.gz"
             joblib.dump(pipe, pipe_file, compress=("gzip", 3))
 
-            data_file = f"data/model/{args.dataset}set.gz"
+            data_file = (
+                f"data/model/{tkr.__class__.__name__.lower()}-{args.dataset}set.gz"
+            )
             print_log(f"Saving dataset ... [{data_file}]")
             joblib.dump(dataset, data_file, compress=("gzip", 3))
 
