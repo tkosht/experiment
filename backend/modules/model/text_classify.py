@@ -340,7 +340,7 @@ def print_log(*params):
 
 def _do_train(dataset, tokenizers):
     # loop to train and validation
-    print_log("datetime, tokenizer, train_acc, valid_acc, elapsed_time, cpu_time")
+    print("datetime, tokenizer, train_acc, valid_acc, elapsed_time, cpu_time")
     for _ in range(args.iter):
         dataset.shuffle().split()
         X_train, X_valid = dataset.get_data(do_split=True)
