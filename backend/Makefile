@@ -2,37 +2,32 @@ default: all
 
 all: build up
 
+prepare: install download
+
+install:
+	sh bin/morph/install_mecabdic.sh
+	sh bin/morph/install_sudachidic.sh
+
+download:
+	sh bin/morph/dl.sh
+
 run: run-aozora
 
 run-aozora:
 	sh bin/morph/run.sh --dataset=aozora
+	mv log/run.log log/run.log.aozora
 
 run-ldcc:
 	sh bin/morph/run.sh --dataset=ldcc
+	mv log/run.log log/run.log.ldcc
 
 # ==========
 # backend tasks
-webapi:
-	uvicorn \
-        --host=0.0.0.0 \
-        --log-config=conf/logging.ini \
-        --app-dir=. \
-        webapi:app
-
 test-unit: 
 	python -m pytest test
 
 log-access:
 	tail -0f log/access.log
-
-hello:
-	@sh bin/request_hello.sh
-
-post:
-	@sh bin/request_post.sh
-
-test-request:
-	@sh bin/test_request.sh
 
 # ==========
 # mlflow tasks

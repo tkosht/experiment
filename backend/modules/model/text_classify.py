@@ -334,24 +334,27 @@ def get_now():
     return datetime.now().strftime("%Y/%m/%d %H:%M:%S")
 
 
-def print_log(*params):
-    print(get_now(), *params)
+def print_log(*params, **kwparams):
+    print(get_now(), *params, **kwparams)
 
 
 def _do_train(dataset, tokenizers):
     # loop to train and validation
     print("datetime, tokenizer, train_acc, valid_acc, elapsed_time, cpu_time")
-    for _ in range(args.iter):
+    for n_iter in range(args.iter):
         dataset.shuffle().split()
         X_train, X_valid = dataset.get_data(do_split=True)
         y_train, y_valid = dataset.get_labels(do_split=True)
 
-        for tkr in tokenizers:
-            print(tkr.__class__.__name__, "Processing ...", file=sys.stderr)
+        data_file = f"data/dataset/{args.dataset}set_iter{n_iter:02d}.gz"
+        print_log(f"Saving dataset ... [{data_file}]")
+        joblib.dump(dataset, data_file, compress=("gzip", 3))
 
-            pipeline_builder = build_pipleline_simple
-            # pipeline_builder = build_pipleline_with_doc2vec
-            pipe = pipeline_builder(tkr)
+        for tkr in tokenizers:
+            print_log(tkr.__class__.__name__, "Processing ...", file=sys.stderr)
+
+            pipe = build_pipleline_simple(tkr)
+            # pipe = build_pipleline_with_doc2vec(tkr)
 
             tps = time.perf_counter()
             tcs = time.process_time()
@@ -374,23 +377,18 @@ def _do_train(dataset, tokenizers):
             cpu_time = tce - tcs
 
             print_log(
+                ",",
                 f"{tkr.__class__.__name__}, "
                 f"{train_acc}, {valid_acc}, "
-                f"{elapsed_time}, {cpu_time}"
+                f"{elapsed_time}, {cpu_time}",
             )
 
             # save model
-            print_log(f"Saving model for {tkr.__class__.__name__.lower()} ...")
+            print_log(f"Saving model for {tkr.__class__.__name__} ...")
             pipe_file = f"data/model/pipe-{tkr.__class__.__name__.lower()}.gz"
             joblib.dump(pipe, pipe_file, compress=("gzip", 3))
 
-            data_file = (
-                f"data/model/{tkr.__class__.__name__.lower()}-{args.dataset}set.gz"
-            )
-            print_log(f"Saving dataset ... [{data_file}]")
-            joblib.dump(dataset, data_file, compress=("gzip", 3))
-
-            print(tkr.__class__.__name__, "Done.", file=sys.stderr)
+            print_log(tkr.__class__.__name__, "Done.", file=sys.stderr)
 
 
 if __name__ == "__main__":
@@ -410,7 +408,7 @@ if __name__ == "__main__":
     args = get_args()
 
     # load dataset
-    data_file = f"data/model/{args.dataset}set.gz"
+    data_file = f"data/dataset/{args.dataset}set.gz"
     if pathlib.Path(data_file).exists():
         dataset = joblib.load(data_file)
     else:

@@ -1,108 +1,76 @@
-# webapi repository
-template repository for frontend(vue) and backend(fastapi)
+# experiment repository
+experiment for text classification
 
-# build container
+# Usage
+## Build Container
 
-```
+```zsh
 make
 ```
 
-# setup frontend
+## Bash Container Execution
 
-## build vue environment
-
-### restore vue ci environment
-
-you should use this task after `git clone` this repository
-
-```
-make frontend-ci
-```
-### create project if you want
-
-```
-make frontend-init
+```zsh
+make bash
 ```
 
-### install libraries for project after init
+## Prepare in a Container
 
-```
-make frontend-install
-```
+install MeCab, and Sudachi, and download the Aozora Data
 
-# use
-
-## dev environment
-
-```
-make frontend-dev
+```zsh
+dsuser@c6f99ce288f0:~/workspace/backend$ make prepare
 ```
 
-## prod environment
+## Run With Aozora Dataset
 
-```
-make frontend-build
-```
-
-# setup backend
-
-## startup webapi
-
-```
-make backend-webapi
+```zsh
+make run-aozora
 ```
 
-## test for api
+## Run With ldcc Dataset
 
-```
-make backend-hello backend-post backend-test-request
+```zsh
+make run-ldcc
 ```
 
-```
-{                                                                                                                       
-  "type": "aaa",                                                                                                        
-  "name": null,                                                                                                         
-  "body": {                                                                                                             
-    "mode": "pretrain",                                                                                                 
-    "color": "red"                                                                                                      
-  }                                                                                                                     
-}                                                                                                                       
-===== [http://localhost:8000/] =====                                                                                    
-<!DOCTYPE html><html><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1,shrink-to
--fit=no"><title>frontend</title><link href=/static/css/app.32cf90d21871ce14420020bdae23d491.css rel=stylesheet></head><b
-ody><div id=app></div><script type=text/javascript src=/static/js/manifest.2ae2e69a05c33dfc65f8.js></script><script type
-=text/javascript src=/static/js/vendor.673449851c94779368e7.js></script><script type=text/javascript src=/static/js/app.
-062c2f2e6e54dcb19147.js></script></body></html>                                                                         
-===== [http://localhost:8000/hello] =====                                                                               
-{"Hello":"World!!!"}
-===== [http://localhost:8000/front/static/a.html] =====
-<html>
-  <head>
-    <title>たいとる✨</title>
-  </head>
-  <body>
-    <form class="simple-form">
-      <h2>ファイルアップロード</h2>
-      <label for="title">タイトル</label>
-      <input type="text" name="title">
-      <button>投稿する</button>
-    </form>
-  </body>
-</html>
 
-===== [http://localhost:8000/static/a.html] =====
-<html>
-  <head>
-    <title>たいとる✨</title>
-  </head>
-  <body>
-    <form class="simple-form">
-      <h2>ファイルアップロード</h2>
-      <label for="title">タイトル</label>
-      <input type="text" name="title">
-      <button>投稿する</button>
-    </form>
-  </body>
-</html>
+## Check Result (Accuracy)
 
+### ldcc: Livedoor News Corpus
+
+```zsh
+~/p/e/backend ❯❯❯ cat log/run.log.ldcc | egrep '(datetime|Jp.*,)'
+datetime, tokenizer, train_acc, valid_acc, elapsed_time, cpu_time
+2021/10/18 22:53:16 , JpTokenizerMeCab, 1.0, 0.9561284486657621, 295.2752750000218, 451.85172472799997
+2021/10/18 23:12:33 , JpTokenizerJanome, 1.0, 0.9547715965626413, 1155.6335971000372, 1299.311036286
+2021/10/18 23:27:25 , JpTokenizerSudachi, 1.0, 0.9579375848032564, 892.0077779999701, 1033.869282912
+2021/10/18 23:30:46 , JpTokenizerSentencePiece, 1.0, 0.9588421528720036, 200.03009699995164, 475.91284866800015
+2021/10/18 23:34:40 , JpTokenizerMeCab, 1.0, 0.947535052012664, 231.71136680000927, 362.2309905950001
+2021/10/18 23:54:15 , JpTokenizerJanome, 1.0, 0.9507010402532791, 1174.1650601000292, 1329.868560463
+2021/10/19 00:12:01 , JpTokenizerSudachi, 1.0, 0.9538670284938942, 1065.5431799000362, 1220.2210928059994
+2021/10/19 00:16:09 , JpTokenizerSentencePiece, 1.0, 0.9556761646313885, 245.5751178000355, 576.70874533
+2021/10/19 00:19:28 , JpTokenizerMeCab, 1.0, 0.9611035730438715, 197.11452950001694, 347.50039318700055
+2021/10/19 00:39:45 , JpTokenizerJanome, 1.0, 0.9574853007688828, 1216.471751700039, 1357.8573210659997
+2021/10/19 00:54:54 , JpTokenizerSudachi, 1.0, 0.9611035730438715, 908.6285593999783, 1045.788085096001
+2021/10/19 00:58:16 , JpTokenizerSentencePiece, 1.0, 0.9611035730438715, 200.6965769000817, 481.8085457010002
 ```
+
+### aozora: Aozora Bunko
+
+```zsh
+~/p/e/backend ❯❯❯ cat log/run.log.aozora | egrep '(datetime|Jp.*,)'
+datetime, tokenizer, train_acc, valid_acc, elapsed_time, cpu_time
+2021/10/19 01:00:15 , JpTokenizerMeCab, 1.0, 0.7711111111111111, 97.61590710002929, 159.13124333599998
+2021/10/19 01:41:16 , JpTokenizerJanome, 1.0, 0.7711111111111111, 2462.2518565999344, 2526.185539188
+2021/10/19 02:10:28 , JpTokenizerSudachi, 1.0, 0.7733333333333333, 1751.8097110000672, 1821.640178004
+2021/10/19 02:16:16 , JpTokenizerSentencePiece, 1.0, 0.8111111111111111, 347.19221769995056, 731.1464065159998
+2021/10/19 02:17:44 , JpTokenizerMeCab, 1.0, 0.8133333333333334, 83.57366749993525, 148.15268169499996
+2021/10/19 02:57:07 , JpTokenizerJanome, 1.0, 0.8, 2363.523424600018, 2421.4561013049997
+2021/10/19 03:22:52 , JpTokenizerSudachi, 1.0, 0.8177777777777778, 1545.8040740001015, 1605.0855972969994
+2021/10/19 03:28:33 , JpTokenizerSentencePiece, 1.0, 0.8466666666666667, 339.6504670000868, 713.6118982919998
+2021/10/19 03:30:01 , JpTokenizerMeCab, 1.0, 0.8022222222222222, 83.62430060002953, 152.5288188300001
+2021/10/19 04:10:16 , JpTokenizerJanome, 1.0, 0.8066666666666666, 2415.6829437999986, 2475.7771799029997
+2021/10/19 04:36:20 , JpTokenizerSudachi, 1.0, 0.8355555555555556, 1563.952806700021, 1625.099416682
+```
+
