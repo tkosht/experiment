@@ -6,7 +6,6 @@ prepare: install download
 
 install:
 	sh bin/morph/install_mecabdic.sh
-	sh bin/morph/install_sudachidic.sh
 
 download:
 	sh bin/morph/dl.sh
