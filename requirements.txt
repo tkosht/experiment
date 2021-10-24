@@ -72,4 +72,6 @@ umap-learn
 numba
 gensim
 sentencepiece
+lime
+shap
 

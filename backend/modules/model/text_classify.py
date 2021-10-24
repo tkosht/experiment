@@ -1,6 +1,18 @@
+import argparse
 import os
 import pathlib
+import sys
+import time
 from datetime import datetime
+
+import joblib
+import lightgbm
+from modules.dataset.aozoraset import DatasetAozora
+from modules.dataset.ldccset import DatasetLdcc
+from sklearn.decomposition import PCA  # , KernelPCA
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics import accuracy_score
+from sklearn.pipeline import FeatureUnion, Pipeline
 
 try:
     import MeCab
@@ -392,19 +404,6 @@ def _do_train(dataset, tokenizers):
 
 
 if __name__ == "__main__":
-    import argparse
-    import sys
-    import time
-
-    import joblib
-    import lightgbm
-    from modules.dataset.aozoraset import DatasetAozora
-    from modules.dataset.ldccset import DatasetLdcc
-    from sklearn.decomposition import PCA  # , KernelPCA
-    from sklearn.feature_extraction.text import TfidfVectorizer
-    from sklearn.metrics import accuracy_score
-    from sklearn.pipeline import FeatureUnion, Pipeline
-
     args = get_args()
 
     # load dataset
