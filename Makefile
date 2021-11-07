@@ -60,4 +60,12 @@ clean-logs:
 
 clean-container:
 	docker-compose down --rmi all
-	sudo rm -rf app/__pycache__
+
+clean-pycache:
+	find . -name __pycache__ | xargs rm -rf
+
+clean-model:
+	rm -rf backend/data/model/pipe*.gz
+	rm -rf backend/data/dataset/*_iter??.gz
+
+

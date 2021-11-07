@@ -5,6 +5,28 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python: Attach using Process Id",
+            "type": "python",
+            "request": "attach",
+            "processId": "${command:pickProcess}",
+            "justMyCode": false
+        },
+        {
+            "name": "Python Test and Debugging",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "purpose": [
+                "debug-test",
+                "debug-in-terminal"
+            ],
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}${pathSeparator}${env:PYTHONPATH}"
+            },
+            "justMyCode": false
+        },
+        {
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
@@ -14,7 +36,7 @@
                 "PYTHONPATH": "${workspaceFolder}${pathSeparator}${env:PYTHONPATH}"
             },
             "args": [
-                "--dataset=ldcc",
+                "--dataset=aozora",
             ],
             "justMyCode": false,
         },
