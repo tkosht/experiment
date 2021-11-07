@@ -97,11 +97,6 @@ class DatasetAozora(Dataset):
         #         continue
         #     yield s + eos
 
-    def shuffle(self):
-        numpy.random.shuffle(self.dataset)
-        self.train = self.valid = None
-        return self
-
     def split(self, train_rate=0.7):
         n = len(self.dataset)
         self.n_train = int(n * train_rate)

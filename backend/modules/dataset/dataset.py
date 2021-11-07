@@ -28,8 +28,9 @@ class Dataset(object):
         raise NotImplementedError(sys._getframe().f_code.co_name)
 
     def shuffle(self):
-        # return self
-        raise NotImplementedError(sys._getframe().f_code.co_name)
+        self.rs.shuffle(self.dataset)
+        self.train = self.valid = None
+        return self
 
     def split(self, train_rate=0.7):
         # return self

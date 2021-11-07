@@ -36,13 +36,6 @@ class DatasetLdcc(Dataset):
             lines = f.readlines()[2:]  # skip first line as url
         return [ln.rstrip() for ln in lines]
 
-    def shuffle(self):
-        n = len(self.dataset)
-        shuffled = self.rs.permutation(range(n))
-        self.dataset = self.dataset[shuffled]
-        self.train = self.valid = None
-        return self
-
     def split(self, rate=0.7):
         n = len(self.dataset)
         self.n_train = int(n * rate)

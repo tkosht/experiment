@@ -41,6 +41,7 @@ omegaconf
 notebook
 python-dotenv
 
+ipykernel
 jupyter
 jupyterthemes
 jupyter_contrib_nbextensions
@@ -74,4 +75,3 @@ gensim
 sentencepiece
 lime
 shap
-

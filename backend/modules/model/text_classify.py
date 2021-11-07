@@ -1,6 +1,7 @@
 import argparse
 import os
 import pathlib
+import re
 import sys
 import time
 from datetime import datetime
@@ -63,8 +64,14 @@ class JpTokenizer(Transer):
         for lines in X:
             doc = []
             for line in lines:
-                sentence = self.tokenize(line)
+                if re.search(r"^\s*$", line):
+                    continue
+                sentence = self.tokenize(line)  # sentence: list
+                if len(sentence) <= 0:
+                    continue
                 doc.extend(sentence)
+            if len(doc) <= 0:
+                continue
             docs.append(doc)
         return docs
 
@@ -86,7 +93,8 @@ class JpTokenizerMeCab(JpTokenizer):
         for s in splitted:
             if len(s) == 1:  # may be "EOS"
                 break
-            word = s[2]  # original form
+            word = s[0]  # surface form / form in text
+            # word = s[2]  # original form
             pos = s[3].split("-")[0]
             if pos not in g_stop_poses:
                 sentence.append(word)
@@ -138,7 +146,8 @@ class JpTokenizerSudachi(JpTokenizer):
         sentence = []
         for token in self.toker.tokenize(line, self.mode):
             if token.part_of_speech()[0] not in g_stop_poses:
-                sentence.append(token.dictionary_form())
+                # sentence.append(token.dictionary_form())
+                sentence.append(token.surface())
         return sentence
 
     def __getstate__(self):
@@ -202,6 +211,14 @@ class JpTokenizerSentencePiece(JpTokenizer):
     def __setstate__(self, state):
         self.__dict__.update(state)
         self._load_model()
+
+
+class Splitter(Transer):
+    def __init__(self, sep=" "):
+        self.sep = sep
+
+    def transform(self, X: list, **kwargs):
+        return [x.split(self.sep) for x in X]
 
 
 class SparsetoDense(Transer):
@@ -396,8 +413,10 @@ def _do_train(dataset, tokenizers):
             )
 
             # save model
-            print_log(f"Saving model for {tkr.__class__.__name__} ...")
-            pipe_file = f"data/model/pipe-{tkr.__class__.__name__.lower()}.gz"
+            print_log(
+                f"Saving model for {tkr.__class__.__name__} at iter {n_iter:02d} ..."
+            )
+            pipe_file = f"data/model/pipe-{tkr.__class__.__name__.lower()}_{args.dataset}set_iter{n_iter:02d}.gz"
             joblib.dump(pipe, pipe_file, compress=("gzip", 3))
 
             print_log(tkr.__class__.__name__, "Done.", file=sys.stderr)
