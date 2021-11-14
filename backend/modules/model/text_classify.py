@@ -34,10 +34,10 @@ try:
 except Exception:
     sudachipy = None
 
-try:
-    import nagisa
-except Exception:
-    nagisa = None
+# try:
+#     import nagisa
+# except Exception:
+#     nagisa = None
 
 try:
     import sentencepiece as spm
