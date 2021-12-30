@@ -43,14 +43,15 @@ python-dotenv
 ## aiofiles
 ## python-multipart
 ## uvicorn
-## torch
-## torchvision
-## torchtext
-## pytorch-forecasting
-## fastparquet
-## python-snappy
-## pyro-ppl
-## fbprophet
+torch
+torchvision
+torchtext
+pytorch-forecasting
+fastparquet
+python-snappy
+pyro-ppl
+pystan==2.19.1.1
+fbprophet
 neo4j
 neomodel
 

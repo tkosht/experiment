@@ -4,6 +4,10 @@ node_modules/
 dist/
 data/
 img/
+wk/
+work/
+tmp/
+.ssh/
 .*.swp
 
 

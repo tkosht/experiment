@@ -1,4 +1,4 @@
-version: '2.3'
+version: '3.8'
 
 services:
   app:
@@ -9,9 +9,15 @@ services:
         user_name: $user_name
         group_name: $group_name
     image: $image_name
-    runtime: nvidia
     container_name: $container_name
     tty: true
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     volumes:
       - .:/home/$user_name/workspace
     working_dir: /home/$user_name/workspace
@@ -19,8 +25,10 @@ services:
       - net.core.somaxconn=$somaxconn
       - net.ipv4.tcp_syncookies=0
     ports:
-      - "5000:5000"   # MLflow
-      - "6006:6006"   # tensorboard
-      - "8000:8000"   # webapi
-      - "8080:8080"   # vue
-      - "9229:9229"   # node debugger
+      - "2022:22"   # ssh
+      - "5000:5000" # MLflow
+      - "6006:6006" # tensorboard
+      - "8000:8000" # webapi
+      - "8080:8080" # vue
+      - "9229:9229" # node debugger
+
