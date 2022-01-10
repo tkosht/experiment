@@ -18,6 +18,7 @@
         "recommendations": [
             "ms-python.python",
             "ms-python.vscode-pylance",
+            "oderwat.indent-rainbow",
             "donjayamanne.python-extension-pack",
             "littlefoxteam.vscode-python-test-adapter",
             "tushortz.python-extended-snippets",
