@@ -17,7 +17,9 @@ def api_hello_world():
 
 @app.route("/env", methods=["GET", "POST"])
 def api_env():
-    djson = request.get_json()
+    djson = {}
+    if request.method == "POST":
+        djson = request.get_json()
     djson["env"] = os.environ["AAA"]
     return jsonify(djson)
 
