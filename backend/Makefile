@@ -32,7 +32,7 @@ mlflow-ui:
 	mlflow ui --host=0.0.0.0
 
 mlflow-server:
-    mlflow server --host=0.0.0.0 \
+	mlflow server --host=0.0.0.0 \
 		--backend-store-uri sqlite:///result/mlflow.db \
 		--default-artifact-root=mlruns
 
@@ -42,3 +42,12 @@ tensorboard:
 	$(eval logdir:=$(shell ls -trd result/* | tail -n 1))
 	echo $(logdir)
 	tensorboard --host=0.0.0.0 --logdir=$(logdir)
+
+
+nvidia nvidia-smi:
+	nvidia-smi \
+	  --query-gpu=timestamp,name,temperature.gpu,utilization.gpu,utilization.memory,memory.used,memory.free,memory.used \
+	  --format=csv \
+	  -l 1
+
+
