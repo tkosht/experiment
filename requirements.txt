@@ -37,6 +37,7 @@ Sphinx
 omegaconf
 notebook
 python-dotenv
+ulid-py
 
 # for project
 fastapi
@@ -44,6 +45,7 @@ aiofiles
 python-multipart
 uvicorn
 uwsgi
+slackeventsapi
 
 torch
 torchvision
@@ -71,4 +73,3 @@ networkx
 gensim
 janome
 wordcloud
-
