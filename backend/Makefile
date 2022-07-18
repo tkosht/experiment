@@ -1,6 +1,9 @@
 
 # ==========
 # backend tasks
+flask:
+	FLASK_APP=flask_app.py flask run
+
 webapi:
 	uvicorn \
         --host=0.0.0.0 \

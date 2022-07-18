@@ -43,6 +43,7 @@ fastapi
 aiofiles
 python-multipart
 uvicorn
+uwsgi
 
 torch
 torchvision
