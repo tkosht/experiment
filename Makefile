@@ -1,6 +1,6 @@
 default: all
 
-all: build up
+all: up
 
 # ==========
 # interaction tasks

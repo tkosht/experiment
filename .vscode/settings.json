@@ -12,5 +12,6 @@
     "**/.git/subtree-cache/**": true,
     "**/result/*/**": true,
     "**/mlruns/*/**": true,
-  }
+  },
+  "python.formatting.provider": "black",
 }
