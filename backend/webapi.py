@@ -3,7 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 import pandas
 from io import BytesIO
-from modules.controller.apicontroller import ApiController
+from app.controller.apicontroller import ApiController
 
 
 app = FastAPI()
