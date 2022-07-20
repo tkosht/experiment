@@ -2,7 +2,7 @@ import pandas
 import datetime
 from fbprophet import Prophet
 from .base import Transer, Estimator
-from ..util.params import add_args
+from ...component.params import add_args
 
 
 class PreprocessProphet(Transer):

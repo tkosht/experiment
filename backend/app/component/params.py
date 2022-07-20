@@ -1,19 +1,6 @@
 import functools
+
 from omegaconf import OmegaConf
-
-
-def add_params(params_file: str) -> callable:
-    @functools.wraps(add_params)
-    def _decorator(f: callable) -> callable:
-        @functools.wraps(f)
-        def _wrapper(*args, **kwargs) -> None:
-            cfg_params = OmegaConf.load(params_file)
-            kwargs.update(dict(params=cfg_params))
-            return f(*args, **kwargs)
-
-        return _wrapper
-
-    return _decorator
 
 
 def _search_root(cfg, root_key: str):

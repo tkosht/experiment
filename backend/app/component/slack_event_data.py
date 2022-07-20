@@ -33,7 +33,7 @@ class SlackEventData(object):
     @property
     def is_bot(self):
         # return self.authorizations[0]["is_bot"] # is NG
-        return False
+        return bool(self.event.get("bot_profile", False))
 
     def to_json(self) -> str:
         return json.dumps(self.event_data)

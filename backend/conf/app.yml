@@ -1,0 +1,4 @@
+slack:
+    client:
+        replying_server: "https://210c-124-25-245-158.jp.ngrok.io"
+
