@@ -18,18 +18,34 @@ class SlackClient(object):
         print(response)
     
     def send(self, message: str, slack_event: SlackEventData, blocks: list[dict] = None):
-        # TODO: 
-        #   - support `image_id`` in `blocks``
-        channel = slack_event.channel
-        thread_ts = slack_event.thread_ts
-
         response = self.client.chat_postMessage(
-            channel=channel,
-            thread_ts=thread_ts,
+            channel=slack_event.channel,
+            thread_ts=slack_event.thread_ts,
             text=message,
             blocks=blocks
         )
         print(response)
+        return response
+
+    def add_reaction(self, slack_event: SlackEventData, reaction: str = "thumbsup"):
+        response = self.client.reactions_add(
+            channel=slack_event.channel,
+            name=reaction,
+            timestamp=slack_event.ts
+        )
+        print(response)
+        return response
+
+    def remove_reaction(self, slack_event: SlackEventData, reaction: str = "thumbsup"):
+        response = self.client.reactions_remove(
+            channel=slack_event.channel,
+            name=reaction,
+            timestamp=slack_event.ts
+        )
+        print(response)
+        return response
+
+
 
 
 if __name__ == "__main__":
