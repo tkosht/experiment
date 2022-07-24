@@ -1,19 +1,15 @@
 from __future__ import annotations
 
-import collections
 import pathlib
 import re
 import traceback as tb
 
 import requests
+import spacy
 from bs4 import BeautifulSoup
-from janome.analyzer import Analyzer
-from janome.charfilter import (RegexReplaceCharFilter,
-                               UnicodeNormalizeCharFilter)
-from janome.tokenfilter import (ExtractAttributeFilter, LowerCaseFilter,
-                                POSKeepFilter)
-from janome.tokenizer import Tokenizer
 from wordcloud import WordCloud
+
+g_nlp = spacy.load('ja_ginza_electra')
 
 
 class Downloader(object):
@@ -30,22 +26,39 @@ class Downloader(object):
         return text
 
 
+def clean_text(text: str):
+    doc = g_nlp(text)
+
+    sentences = []
+    for sents in doc.sents:
+        poses = [tkn.pos_ for tkn in sents]
+        if "VERB" not in poses:
+            continue
+        sentences.append(sents.text.strip())
+    
+    return "".join(sentences)
+
+
+def count_words(text: str, poses=["NOUN"]) -> dict:
+    doc = g_nlp(text)
+    
+    words = {}
+    for sents in doc.sents:
+        for tkn in sents:
+            if tkn.pos_ not in poses:
+                continue
+            if tkn.lemma_.strip() == "":
+                continue
+            cnt = words.get(tkn.lemma_, 0)
+            words[tkn.lemma_] = cnt + 1
+    return words
+
+
 class WordCloudMaker(object):
     font_path = "/usr/share/fonts/opentype/ipaexfont-gothic/ipaexg.ttf"
 
     def __init__(self, url: str) -> None:
         self.url = url
-
-        self.tokenizer = Tokenizer()
-        self.char_filters = [UnicodeNormalizeCharFilter(),
-                        RegexReplaceCharFilter('<.*?>', '')]
-
-        self.token_filters = [POSKeepFilter(['名詞']),
-                        LowerCaseFilter(),
-                        ExtractAttributeFilter('base_form')]
-
-        self.alz = Analyzer(char_filters=self.char_filters, tokenizer=self.tokenizer, token_filters=self.token_filters)
-
         self.params = dict(
             background_color="white",
             font_path=self.font_path,
@@ -56,29 +69,14 @@ class WordCloudMaker(object):
         self.wc = WordCloud(**self.params)
         self.dir_name = "data/wc"
 
-    def clean_text(self, text: str):
-        sentences = []
-        sents = text.split("。")
-        for s in sents:
-            poses = [tkn.part_of_speech.split(",")[0] for tkn in self.tokenizer.tokenize(s)]
-            if "動詞" not in poses:
-                continue
-            sentences.append(s)
-        
-        return "。".join(sentences)
-
-    def count_words(self, text: str) -> dict:
-        words = collections.Counter(self.alz.analyze(text))
-        return words
-
     def make(self, file_id="wordcloud") -> WordCloudMaker:
         dwl = Downloader()
         text = dwl.download(self.url)
 
         soup = BeautifulSoup(text, 'html.parser')
         text = re.sub(r"\n+", "\n", soup.text)
-        cleaned = self.clean_text(text)
-        words = self.count_words(cleaned)
+        cleaned = clean_text(text)
+        words = count_words(cleaned, poses=["NOUN"])
 
         self.wc.generate_from_frequencies(words)
 

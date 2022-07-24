@@ -1,7 +1,7 @@
 slack:
     server:
         localdb:
-            do_store: false
+            do_store: true
         action:
             hello:
                 patterns:
@@ -9,4 +9,4 @@ slack:
                     - ["^OK[!?]+$", "it's OK!!"] 
     client:
         replying_server:
-            base_url: "https://94ef-124-25-245-158.jp.ngrok.io"
+            base_url: "https://1374-124-25-245-158.jp.ngrok.io"
