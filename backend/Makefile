@@ -2,14 +2,18 @@
 # ==========
 # backend tasks
 flask:
-	FLASK_APP=flask_app.py flask run --host=0.0.0.0
+	FLASK_APP=flask_app.py flask run --host=0.0.0.0 --port=8000
 
 webapi:
-	uvicorn \
-        --host=0.0.0.0 \
-        --log-config=conf/logging.ini \
-        --app-dir=. \
-        webapi:app
+	uwsgi conf/uwsgi.ini 
+
+
+# webapi:
+# 	uvicorn \
+#         --host=0.0.0.0 \
+#         --log-config=conf/logging.ini \
+#         --app-dir=. \
+#         webapi:app
 
 test-unit: 
 	python -m pytest test

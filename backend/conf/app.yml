@@ -9,4 +9,4 @@ slack:
                     - ["^OK[!?]+$", "it's OK!!"] 
     client:
         replying_server:
-            base_url: "https://1374-124-25-245-158.jp.ngrok.io"
+            base_url: "http://tkosht.f5.si:7777"

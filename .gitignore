@@ -2,6 +2,8 @@
 .DS_Store
 node_modules/
 dist/
+deploy/
+heroku/
 data/
 img/
 wk/
