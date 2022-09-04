@@ -20,6 +20,33 @@ mode:
 
 
 # ==========
+# general tasks
+pip: _pip save
+
+_pip:
+	docker compose exec app pip install -r requirements.txt
+
+sleep:
+	@echo "$$(date +'%Y/%m/%d %T') - Start"
+	sleep 3
+	@echo "$$(date +'%Y/%m/%d %T') - End"
+
+commit:
+	@echo "$$(date +'%Y/%m/%d %T') - Start $@"
+	docker commit experiment experiment.app:latest
+	@echo "$$(date +'%Y/%m/%d %T') - End $@"
+
+save: commit
+	@echo "$$(date +'%Y/%m/%d %T') - Start $@"
+	docker save experiment.app:latest | gzip > data/experiment.app.tar.gz
+	@echo "$$(date +'%Y/%m/%d %T') - End $@"
+
+load:
+	@echo "$$(date +'%Y/%m/%d %T') - Start $@"
+	docker load < data/experiment.app.tar.gz
+	@echo "$$(date +'%Y/%m/%d %T') - End $@"
+
+# ==========
 # docker compose aliases
 up: _up ssh
 

@@ -51,6 +51,7 @@ torch
 torchvision
 torchtext
 pytorch-forecasting
+tensorflow
 tensorflow-datasets
 
 fastparquet
