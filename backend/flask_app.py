@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, request, send_file
 from slackeventsapi import SlackEventAdapter
 
-from app.component.slack_event_handler import event_handler
+from app.component.slack.slack_event_handler import event_handler
 
 load_dotenv(".env")
 

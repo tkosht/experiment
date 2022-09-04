@@ -8,10 +8,8 @@ import traceback as tb
 import requests
 from bs4 import BeautifulSoup
 from janome.analyzer import Analyzer
-from janome.charfilter import (RegexReplaceCharFilter,
-                               UnicodeNormalizeCharFilter)
-from janome.tokenfilter import (ExtractAttributeFilter, LowerCaseFilter,
-                                POSKeepFilter)
+from janome.charfilter import RegexReplaceCharFilter, UnicodeNormalizeCharFilter
+from janome.tokenfilter import ExtractAttributeFilter, LowerCaseFilter, POSKeepFilter
 from janome.tokenizer import Tokenizer
 from wordcloud import WordCloud
 
@@ -26,7 +24,7 @@ class Downloader(object):
             raise Exception(f"HTTP status error {response.status_code=}")
 
         # assert response.content.decode(response.encoding) == response.text
-        text = response.content.decode(response.apparent_encoding) 
+        text = response.content.decode(response.apparent_encoding)
         return text
 
 
@@ -37,21 +35,29 @@ class WordCloudMaker(object):
         self.url = url
 
         self.tokenizer = Tokenizer()
-        self.char_filters = [UnicodeNormalizeCharFilter(),
-                        RegexReplaceCharFilter('<.*?>', '')]
+        self.char_filters = [
+            UnicodeNormalizeCharFilter(),
+            RegexReplaceCharFilter("<.*?>", ""),
+        ]
 
-        self.token_filters = [POSKeepFilter(['名詞']),
-                        LowerCaseFilter(),
-                        ExtractAttributeFilter('base_form')]
+        self.token_filters = [
+            POSKeepFilter(["名詞"]),
+            LowerCaseFilter(),
+            ExtractAttributeFilter("base_form"),
+        ]
 
-        self.alz = Analyzer(char_filters=self.char_filters, tokenizer=self.tokenizer, token_filters=self.token_filters)
+        self.alz = Analyzer(
+            char_filters=self.char_filters,
+            tokenizer=self.tokenizer,
+            token_filters=self.token_filters,
+        )
 
         self.params = dict(
             background_color="white",
             font_path=self.font_path,
             width=600,
             height=400,
-            min_font_size=15
+            min_font_size=15,
         )
         self.wc = WordCloud(**self.params)
         self.dir_name = "data/wc"
@@ -60,11 +66,13 @@ class WordCloudMaker(object):
         sentences = []
         sents = text.split("。")
         for s in sents:
-            poses = [tkn.part_of_speech.split(",")[0] for tkn in self.tokenizer.tokenize(s)]
+            poses = [
+                tkn.part_of_speech.split(",")[0] for tkn in self.tokenizer.tokenize(s)
+            ]
             if "動詞" not in poses:
                 continue
             sentences.append(s)
-        
+
         return "。".join(sentences)
 
     def count_words(self, text: str) -> dict:
@@ -75,7 +83,7 @@ class WordCloudMaker(object):
         dwl = Downloader()
         text = dwl.download(self.url)
 
-        soup = BeautifulSoup(text, 'html.parser')
+        soup = BeautifulSoup(text, "html.parser")
         text = re.sub(r"\n+", "\n", soup.text)
         cleaned = self.clean_text(text)
         words = self.count_words(cleaned)
@@ -89,6 +97,7 @@ class WordCloudMaker(object):
 
 def _main():
     import ulid
+
     try:
         # url: str = "https://www.jiji.com/jc/article?k=2022072000771&g=soc"
         url: str = "https://www3.nhk.or.jp/news/html/20220720/k10013728301000.html"
@@ -105,4 +114,5 @@ def _main():
 
 if __name__ == "__main__":
     import typer
+
     typer.run(_main)

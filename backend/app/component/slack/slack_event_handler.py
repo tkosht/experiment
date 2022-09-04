@@ -5,14 +5,13 @@ import re
 import threading
 import traceback as tb
 
+import ulid
 from app.component.params import add_args
-from app.component.slack_client import SlackClient
-from app.component.slack_event_data import SlackEventData
+from app.component.slack.slack_client import SlackClient
+from app.component.slack.slack_event_data import SlackEventData
 from app.domain.localdb_provider import LocalDbProvider
 from app.domain.slack_block_builder import build_block_image
 from app.domain.wordcloud_maker import WordCloudMaker
-
-import ulid
 
 
 def event_handler(event_data: dict):
@@ -26,11 +25,12 @@ class EventHandler(object):
     lock = threading.Lock()
     board_processing = {}
 
-
     def __init__(self, slack_event: SlackEventData) -> None:
         self.slack_event = slack_event
 
-    @add_args(params_file="conf/app.yml", root_key = "/slack/server/localdb", as_default = False)
+    @add_args(
+        params_file="conf/app.yml", root_key="/slack/server/localdb", as_default=False
+    )
     def store_db(self, slack_event: SlackEventData, do_store: bool):
         if not do_store:
             return
@@ -63,7 +63,10 @@ class EventHandler(object):
         slack_event = self.slack_event
 
         if self.is_processing():
-            print(f"Suppressed: Possibly resent message: {slack_event.type=} {slack_event.subtype=} {slack_event.user=} {slack_event.is_bot=}")
+            print(
+                "Suppressed: Possibly resent message: "
+                f"{slack_event.type=} {slack_event.subtype=} {slack_event.user=} {slack_event.is_bot=}"
+            )
             return
 
         print(f"{slack_event.type=}")
@@ -84,11 +87,15 @@ class EventHandler(object):
     def _extract_urls(self, text: str) -> list[str]:
         urls = []
         for line in text.split("¥n"):
-            _urls = re.findall('https?://(?:[-\w.]|/|(?:%[\da-fA-F]{2}))+', line)
+            _urls = re.findall(r"https?://(?:[-\w.]|/|(?:%[\da-fA-F]{2}))+", line)
             urls.extend(_urls)
         return urls
 
-    @add_args(params_file="conf/app.yml", root_key = "/slack/server/action/hello", as_default = False)
+    @add_args(
+        params_file="conf/app.yml",
+        root_key="/slack/server/action/hello",
+        as_default=False,
+    )
     def find_hello_message(self, patterns: list[tuple(str, str)]) -> str:
         text = self.slack_event.text.strip().lower()
         for ptn, msg in patterns:
@@ -100,12 +107,16 @@ class EventHandler(object):
         slack_event = self.slack_event
         # subtype があるメッセージは、何もしない
         if slack_event.subtype:
-            print(f"Suppressed: {slack_event.type=} {slack_event.subtype=} {slack_event.user=} {slack_event.is_bot=}")
+            print(
+                f"Suppressed: {slack_event.type=} {slack_event.subtype=} {slack_event.user=} {slack_event.is_bot=}"
+            )
             return
 
         # bot メッセージは、何もしない
         if slack_event.is_bot:
-            print(f"Suppressed: {slack_event.type=} {slack_event.subtype=} {slack_event.user=} {slack_event.is_bot=}")
+            print(
+                f"Suppressed: {slack_event.type=} {slack_event.subtype=} {slack_event.user=} {slack_event.is_bot=}"
+            )
             return
 
         slc = SlackClient()
