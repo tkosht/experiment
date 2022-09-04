@@ -26,11 +26,6 @@ pip: _pip save
 _pip:
 	docker compose exec app pip install -r requirements.txt
 
-sleep:
-	@echo "$$(date +'%Y/%m/%d %T') - Start"
-	sleep 3
-	@echo "$$(date +'%Y/%m/%d %T') - End"
-
 commit:
 	@echo "$$(date +'%Y/%m/%d %T') - Start $@"
 	docker commit experiment experiment.app:latest

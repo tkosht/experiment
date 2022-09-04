@@ -7,13 +7,17 @@ flask:
 webapi:
 	uwsgi conf/uwsgi.ini 
 
-
 # webapi:
 # 	uvicorn \
 #         --host=0.0.0.0 \
 #         --log-config=conf/logging.ini \
 #         --app-dir=. \
 #         webapi:app
+
+wikidata:
+	@echo "$$(date +'%Y/%m/%d %T') - Start $@"
+	python -m app.executable.make_wikidata
+	@echo "$$(date +'%Y/%m/%d %T') - End $@"
 
 test-unit: 
 	python -m pytest test

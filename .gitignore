@@ -12,6 +12,7 @@ tmp/
 .ssh/
 .*.swp
 .env
+~
 
 
 # Byte-compiled / optimized / DLL files
