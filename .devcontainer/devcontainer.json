@@ -1,7 +1,7 @@
 {
 	"name": "Experiment Project",
 	"dockerComposeFile": [
-		"../docker-compose.yml"
+		"../compose.yml"
 	],
 	"service": "app",
 	"workspaceFolder": "/home/dsuser/workspace",
@@ -31,12 +31,12 @@
 	// "postCreateCommand": "apt-get update && apt-get install -y git",
 	"extensions": [
 		"ms-python.python",
-		"ms-python.vscode-pylance",
+		// "ms-python.vscode-pylance",
 		// "donjayamanne.python-extension-pack",
 		// "tushortz.python-extended-snippets",
 		// "littlefoxteam.vscode-python-test-adapter",
 		// "littlefoxteam.vscode-python",
-		"tabnine.tabnine-vscode",
+		// "tabnine.tabnine-vscode",
 		"octref.vetur",
 		"msjsdiag.debugger-for-chrome",
 		"donjayamanne.githistory",

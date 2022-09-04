@@ -1,10 +1,11 @@
-from fastapi import FastAPI, Query, Body, File, UploadFile
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse
-import pandas
 from io import BytesIO
-from app.controller.apicontroller import ApiController
 
+import pandas
+from fastapi import Body, FastAPI, File, Query, UploadFile
+from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
+
+from app.samples.controller.apicontroller import ApiController
 
 app = FastAPI()
 app.mount("/front", StaticFiles(directory="frontend/dist"), name="front")
