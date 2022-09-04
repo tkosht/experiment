@@ -23,14 +23,14 @@
             "ms-python.python",
             "ms-python.vscode-pylance",
             "oderwat.indent-rainbow",
-            "donjayamanne.python-extension-pack",
-            "littlefoxteam.vscode-python-test-adapter",
-            "tushortz.python-extended-snippets",
-            "octref.vetur",
-            "msjsdiag.debugger-for-chrome",
             "donjayamanne.githistory",
             "hediet.vscode-drawio",
-            "tabnine.tabnine-vscode",
+            // "littlefoxteam.vscode-python-test-adapter",
+            // "donjayamanne.python-extension-pack",
+            // "tushortz.python-extended-snippets",
+            // "octref.vetur",
+            // "msjsdiag.debugger-for-chrome",
+            // "tabnine.tabnine-vscode",
         ]
     }
 }
