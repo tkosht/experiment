@@ -38,26 +38,26 @@ omegaconf
 notebook
 python-dotenv
 
-# for project
-fastapi
-aiofiles
-python-multipart
-uvicorn
+# # for project
+# fastapi
+# aiofiles
+# python-multipart
+# uvicorn
 
 torch
 torchvision
-torchtext
-pytorch-forecasting
+# torchtext
+# pytorch-forecasting
 tensorflow-datasets
 
-fastparquet
-python-snappy
-pyro-ppl
+# fastparquet
+# python-snappy
+# pyro-ppl
 # pystan==2.19.1.1
-pystan
-# fbprophet
-neo4j
-neomodel
+# pystan
+# # fbprophet
+# neo4j
+# neomodel
 
 # spacy[cuda110]
 spacy

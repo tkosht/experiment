@@ -1,4 +1,5 @@
-FROM nvidia/cuda:11.0.3-devel-ubuntu20.04
+FROM nvidia/cuda:11.8.0-devel-ubuntu22.04
+# FROM nvidia/cuda:11.0.3-devel-ubuntu20.04
 
 LABEL maintainer="tkosht <takehito.oshita.business@gmail.com>"
 
@@ -30,13 +31,13 @@ RUN echo "AuthorizedKeysFile workspace/.ssh/authorized_keys" >> /etc/ssh/sshd_co
 # RUN npm install -g vue-axios axios
 
 RUN apt-get install -y --fix-missing --no-install-recommends \
-        python3.8 \
-        python3.8-dev \
+        python3.10 \
+        python3.10-dev \
         python3-pip \
         python3-setuptools \
         python3-wheel
 
-RUN ln -s /usr/bin/python3.8 /usr/bin/python \
+RUN ln -s /usr/bin/python3.10 /usr/bin/python \
      && ln -s /usr/bin/pdb3 /usr/bin/pdb 
 
 #     && ln -s /usr/bin/pip3 /usr/bin/pip \
