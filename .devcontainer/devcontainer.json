@@ -1,7 +1,7 @@
 {
 	"name": "Experiment Project",
 	"dockerComposeFile": [
-		"../docker-compose.yml"
+		"../compose.yml"
 	],
 	"service": "app",
 	"workspaceFolder": "/home/dsuser/workspace",
