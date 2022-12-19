@@ -1,7 +1,7 @@
 # for data science
+scikit-learn
 numpy
 pandas
-sklearn
 scipy
 sympy
 tqdm
