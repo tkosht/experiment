@@ -53,6 +53,8 @@ torchtext
 pytorch-forecasting
 tensorflow
 tensorflow-datasets
+apache-beam
+apache-beam[gcp]
 
 fastparquet
 python-snappy
@@ -77,3 +79,4 @@ gensim
 janome
 wordcloud
 slack_sdk
+
