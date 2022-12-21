@@ -4,6 +4,7 @@ import datetime
 import traceback as tb
 
 import tensorflow_datasets as tfds
+
 from app.infra.wikidb import WikiDb, WikiRecord
 
 
@@ -105,6 +106,6 @@ if __name__ == "__main__":
     ]
 
     for mode, ds in batchs:
-        print(now(), "dataset:", mode, len(ds_train))
+        print(now(), "dataset:", mode, len(ds))
         maker = WikiDbMaker(mode)
         maker.execute(ds)
