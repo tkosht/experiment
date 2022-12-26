@@ -5,6 +5,7 @@ import traceback as tb
 
 import tensorflow_datasets as tfds
 
+from app.component.ulid import build_ulid
 from app.infra.wikidb import WikiDb, WikiRecord
 
 
@@ -40,7 +41,11 @@ class WikiDbMaker(object):
             lines = rec["text"].decode().split("\n")
             parsed = self.parse(lines)
 
-            recs = [WikiRecord().from_dict(prg).to_record() for prg in parsed]
+            doc_id = build_ulid(prefix="Doc")
+            recs = [
+                WikiRecord(document_id=doc_id).from_dict(prg).to_record()
+                for prg in parsed
+            ]
             records.extend(recs)
             if len(records) >= self.n_intervals:
                 self.db.insert_many(records)

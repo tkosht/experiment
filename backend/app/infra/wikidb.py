@@ -11,6 +11,7 @@ g_log = print
 
 @dataclass
 class WikiRecord(DbIf):
+    document_id: str
     article: str = None
     section: str = None
     paragraph: str = None
@@ -26,9 +27,16 @@ class WikiRecord(DbIf):
         return self
 
     def to_record(self):
-        return (self.paragraph_id, self.article, self.section, self.paragraph)
+        return (
+            self.document_id,
+            self.paragraph_id,
+            self.article,
+            self.section,
+            self.paragraph,
+        )
 
     def assert_available(self):
+        assert self.document_id is not None
         assert self.article is not None
         assert self.section is not None
         assert self.paragraph is not None
@@ -68,13 +76,14 @@ class WikiDb(DbIf):
         g_log(f"CREATE TABLE {self.table_name}", "Start")
         self.execute(
             f"""CREATE TABLE IF NOT EXISTS {self.table_name} (
+            document_id STRING NOT NULL,
             paragraph_id STRING NOT NULL,
             article STRING,
             section STRING,
             paragraph TEXT,
             created_at DATETIME NOT NULL,
             updated_at DATETIME,
-            PRIMARY KEY (paragraph_id)
+            PRIMARY KEY (document_id, paragraph_id)
         )
         """
         )
@@ -82,17 +91,35 @@ class WikiDb(DbIf):
 
     def insert_sql(self) -> str:
         return f"""INSERT INTO {self.table_name} (
-                paragraph_id, article, section, paragraph,
+                document_id, paragraph_id, article, section, paragraph,
                 created_at
-            ) VALUES (?, ?, ?, ?, datetime('now', 'localtime'))
+            ) VALUES (?, ?, ?, ?, ?, datetime('now', 'localtime'))
             """
 
-    def insert(self, paragraph_id: str, article: str, section: str, paragraph: str):
-        values = [paragraph_id, article, section, paragraph]
+    def insert(
+        self,
+        document_id: str,
+        paragraph_id: str,
+        article: str,
+        section: str,
+        paragraph: str,
+    ):
+        values = [document_id, paragraph_id, article, section, paragraph]
         sql: str = self.insert_sql()
         self.execute(sql, values)
 
-    def insert_many(self, values: list[tuple[str, str, str, str]]):
-        # values[n] == (paragraph_id, article, section, paragraph)
+    def insert_many(self, values: list[tuple[str, str, str, str, str]]):
+        # values[n] == (document_id, paragraph_id, article, section, paragraph)
         sql: str = self.insert_sql()
         self.execute_many(sql, values)
+
+    def select(self, n_limits=-1):
+        sql = f"""SELECT
+                document_id, paragraph_id, article, section, paragraph, created_at
+                FROM {self.table_name}
+            """
+        if n_limits > 0:
+            sql += f" LIMIT {n_limits}"
+        records = self.execute(sql)
+        records = list(records)
+        return records
