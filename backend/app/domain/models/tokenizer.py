@@ -6,5 +6,5 @@ class TokenizerSubWord(Tokenizer):
         # NOTE: SentencePiece モデルを使う
         pass
 
-    def forward(X: Texts) -> TextSequences:
+    def forward(self, X: Texts) -> TextSequences:
         return X

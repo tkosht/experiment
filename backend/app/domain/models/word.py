@@ -5,7 +5,7 @@ class EncoderWord(Model):
     def __init__(self) -> None:
         pass
 
-    def forward(X: Tensor) -> Tensor:
+    def forward(self, X: Tensor) -> Tensor:
         return X
 
 
@@ -13,5 +13,5 @@ class DecoderWord(Model):
     def __init__(self) -> None:
         pass
 
-    def forward(X: Tensor) -> Tensor:
+    def forward(self, X: Tensor) -> Tensor:
         return X

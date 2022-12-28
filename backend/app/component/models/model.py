@@ -10,7 +10,8 @@ TensorAny: TypeAlias = TensorDense | TensorSparse
 
 Texts: TypeAlias = list[str]
 TextSequences: TypeAlias = list[list[str]]
-TensorOneHot: TypeAlias = TensorSparse
+TensorNumeric: TypeAlias = TensorSparse  # index vector like (9, 3, ..., 2, 1, 2)
+TensorOneHot: TypeAlias = TensorSparse  # like (0, ..., 0, 1, 0, ..., 0)
 TensorEmbed: TypeAlias = TensorDense
 
 
@@ -42,7 +43,7 @@ class Tokenizer(Model):
 
 
 class Numericalizer(Model):
-    def forward(self, X: TextSequences) -> TensorOneHot:
+    def forward(self, X: TextSequences) -> TensorOneHot | TensorNumeric:
         raise NotImplementedError(f"{type(self).__name__}.forward()")
 
 

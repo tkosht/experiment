@@ -1,4 +1,11 @@
-from app.component.models.model import Numericalizer, TensorOneHot, TextSequences
+import torch.nn.functional as F
+
+from app.component.models.model import (
+    Numericalizer,
+    TensorNumeric,
+    TensorOneHot,
+    TextSequences,
+)
 
 
 class NumericalizerSubWord(Numericalizer):
@@ -6,5 +13,14 @@ class NumericalizerSubWord(Numericalizer):
         # NOTE: SentencePiece モデルを使う
         pass
 
-    def forward(X: TextSequences) -> TensorOneHot:
+    def forward(self, X: TextSequences) -> TensorNumeric:
         return X
+
+
+class ToOneHot(Numericalizer):
+    def __init__(self, n_classes: int) -> None:
+        # NOTE: SentencePiece モデルを使う
+        self.n_classes: int = n_classes
+
+    def forward(self, X: TensorNumeric) -> TensorOneHot:
+        return F.one_hot(self.n_classes)
