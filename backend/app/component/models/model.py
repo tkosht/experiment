@@ -37,9 +37,19 @@ class Decoder(Model):
         raise NotImplementedError(f"{type(self).__name__}.loss()")
 
 
+class Preprocesser(Model):
+    pass
+
+
 class Tokenizer(Model):
+    def transform(self, X: Texts) -> TextSequences:
+        raise NotImplementedError(f"{type(self).__name__}.transform()")
+
+    def fit(self, X: Texts, y: Texts) -> TextSequences:
+        return self
+
     def forward(self, X: Texts) -> TextSequences:
-        raise NotImplementedError(f"{type(self).__name__}.forward()")
+        return self.transform(X)
 
 
 class Numericalizer(Model):
