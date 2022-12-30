@@ -10,6 +10,7 @@ import MeCab
 import sentencepiece as spm
 import sudachipy.dictionary
 import sudachipy.tokenizer
+from typing_extensions import Self
 
 from app.component.models.model import Texts, TextSequences, Tokenizer
 
@@ -27,8 +28,8 @@ g_stoppoes = ["BOS/EOS", "助詞", "助動詞", "接続詞", "記号", "補助�
 
 
 class JpTokenizer(Tokenizer):
-    def __init__(self, use_stoppoes: bool = False) -> None:
-        self.use_stoppoes: bool = use_stoppoes
+    def _initialize(self) -> Self:
+        return self
 
     def transform(self, X, **kwargs) -> TextSequences:
         docs = []
@@ -48,15 +49,23 @@ class JpTokenizer(Tokenizer):
         return docs
 
     def tokenize(self, line: str) -> Texts:
-        # return line.split(" ") for example
+        # NOTE:
+        # # return line.split(" ") for example
         raise NotImplementedError("tokenize()")
 
 
 class JpTokenizerMeCab(JpTokenizer):
-    def __init__(self):
+    def __init__(self, use_stoppoes: bool = False) -> None:
+        super().__init__()  # must be called at first
+
+        self.use_stoppoes: bool = use_stoppoes
         self.dicdir = "/usr/lib/x86_64-linux-gnu/mecab/dic" "/mecab-ipadic-neologd"
         self.taggerstr = f"-O chasen -d {self.dicdir}"
+        self._initialize()
+
+    def _initialize(self) -> Self:
         self.tokenizer = MeCab.Tagger(self.taggerstr)
+        return self
 
     def tokenize(self, line: str) -> Texts:
         sentence = []
@@ -72,20 +81,15 @@ class JpTokenizerMeCab(JpTokenizer):
                 sentence.append(word)
         return sentence
 
-    def __getstate__(self):
-        state = {
-            "dicdir": self.dicdir,
-            "taggerstr": self.taggerstr,
-        }
-        return state
-
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-        self.tokenizer = MeCab.Tagger(self.taggerstr)
-
 
 class JpTokenizerJanome(JpTokenizer):
-    def __init__(self):
+    def __init__(self, use_stoppoes: bool = False) -> None:
+        super().__init__()  # must be called at first
+
+        self.use_stoppoes: bool = use_stoppoes
+        self._initialize()
+
+    def _initialize(self) -> Self:
         char_filters = [janome.charfilter.UnicodeNormalizeCharFilter()]
         tokenizer = janome.tokenizer.Tokenizer()
 
@@ -94,6 +98,7 @@ class JpTokenizerJanome(JpTokenizer):
         self.aly = janome.analyzer.Analyzer(
             char_filters=char_filters, tokenizer=tokenizer, token_filters=token_filters
         )
+        return self
 
     def tokenize(self, line: str) -> Texts:
         sentence = []
@@ -101,20 +106,19 @@ class JpTokenizerJanome(JpTokenizer):
             sentence.append(token.base_form)
         return sentence
 
-    def __getstate__(self):
-        state = {}
-        return state
-
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-        self.__init__()
-
 
 class JpTokenizerSudachi(JpTokenizer):
-    def __init__(self):
+    def __init__(self, use_stoppoes: bool = False) -> None:
+        super().__init__()  # must be called at first
+
+        self.use_stoppoes: bool = use_stoppoes
+        self._initialize()
+
+    def _initialize(self) -> Self:
         self.toker = sudachipy.dictionary.Dictionary().create()
         self.mode = sudachipy.tokenizer.Tokenizer.SplitMode.C
         # self.mode = sudachipy.tokenizer.Tokenizer.SplitMode.B
+        return self
 
     def tokenize(self, line: str) -> Texts:
         sentence = []
@@ -125,19 +129,12 @@ class JpTokenizerSudachi(JpTokenizer):
             sentence.append(token.surface())
         return sentence
 
-    def __getstate__(self):
-        state = {}
-        return state
-
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-        self.__init__()
-
 
 class JpTokenizerSentencePiece(JpTokenizer):
     def __init__(
         self, input_txt="data/wk/sp.txt", model_prefix="data/wk/sp", vocab_size=2000
     ):
+        super().__init__()  # must be called at first
 
         self.input_txt = input_txt
         self.model_prefix = model_prefix
@@ -168,15 +165,13 @@ class JpTokenizerSentencePiece(JpTokenizer):
         pieces = self.sp.encode_as_pieces(line)
         return pieces
 
-    def __getstate__(self):
-        state = {
-            "input_txt": self.input_txt,
-            "model_prefix": self.model_prefix,
-            "vocab_size": self.vocab_size,
-            "model_file": self.model_file,
-        }
-        return state
 
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-        self._load_model()
+if __name__ == "__main__":
+    import joblib
+
+    tokenizer = JpTokenizerJanome(True)
+    state = tokenizer.__getstate__()
+    joblib.dump(tokenizer, "data/tokenizer.gz", compress=("gzip", 3))
+    obj = joblib.load("data/tokenizer.gz")
+    repr(obj)
+    print(obj)

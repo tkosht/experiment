@@ -1,7 +1,9 @@
+from sklearn.pipeline import Pipeline as PipelineSklearn
+
 from .model import Labeller, Model, Tensor
 
 
-class Pipeline(Model):
+class Pipeline(Model, PipelineSklearn):
     def __init__(self, steps=list[tuple(Model, Labeller)]) -> None:
         super().__init__()
 
