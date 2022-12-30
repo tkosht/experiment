@@ -13,7 +13,7 @@ import sudachipy.tokenizer
 
 from app.component.models.model import Texts, TextSequences, Tokenizer
 
-g_stop_poses = ["BOS/EOS", "助詞", "助動詞", "接続詞", "記号", "補助記号", "未知語"]
+g_stoppoes = ["BOS/EOS", "助詞", "助動詞", "接続詞", "記号", "補助記号", "未知語"]
 
 
 # class TokenizerSubWord(Tokenizer):
@@ -27,8 +27,8 @@ g_stop_poses = ["BOS/EOS", "助詞", "助動詞", "接続詞", "記号", "補助
 
 
 class JpTokenizer(Tokenizer):
-    def __init__(self, use_stopwords: bool = False) -> None:
-        self.use_stopwords: bool = use_stopwords
+    def __init__(self, use_stoppoes: bool = False) -> None:
+        self.use_stoppoes: bool = use_stoppoes
 
     def transform(self, X, **kwargs) -> TextSequences:
         docs = []
@@ -68,7 +68,7 @@ class JpTokenizerMeCab(JpTokenizer):
             word = s[0]  # surface form / form in text
             # word = s[2]  # original form
             pos = s[3].split("-")[0]
-            if self.use_stopwords and pos not in g_stop_poses:
+            if self.use_stoppoes and pos not in g_stoppoes:
                 sentence.append(word)
         return sentence
 
@@ -89,8 +89,8 @@ class JpTokenizerJanome(JpTokenizer):
         char_filters = [janome.charfilter.UnicodeNormalizeCharFilter()]
         tokenizer = janome.tokenizer.Tokenizer()
 
-        stop_poses = g_stop_poses if self.use_stopwords else []
-        token_filters = [janome.tokenfilter.POSStopFilter(stop_poses)]
+        stoppoes = g_stoppoes if self.use_stoppoes else []
+        token_filters = [janome.tokenfilter.POSStopFilter(stoppoes)]
         self.aly = janome.analyzer.Analyzer(
             char_filters=char_filters, tokenizer=tokenizer, token_filters=token_filters
         )
@@ -119,7 +119,7 @@ class JpTokenizerSudachi(JpTokenizer):
     def tokenize(self, line: str) -> Texts:
         sentence = []
         for token in self.toker.tokenize(line, self.mode):
-            if self.use_stopwords and token.part_of_speech()[0] in g_stop_poses:
+            if self.use_stoppoes and token.part_of_speech()[0] in g_stoppoes:
                 continue
             # sentence.append(token.dictionary_form())
             sentence.append(token.surface())
