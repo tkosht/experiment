@@ -5,7 +5,7 @@ from .model import Preprocesser, Tensor, TextSequences
 
 
 class Vectorizer(Preprocesser):
-    def __init__(self, use_stoppoes: bool = False) -> None:
+    def __init__(self) -> None:
         super().__init__()  # must be called at first
         self._initialize()
 
@@ -13,10 +13,10 @@ class Vectorizer(Preprocesser):
         return self
 
     def transform(self, X: TextSequences) -> Tensor:
-        raise NotImplementedError(f"{type(self).__name__}.forward()")
+        raise NotImplementedError(f"{type(self).__name__}.transform()")
 
     def fit(self, X: TextSequences) -> Tensor:
-        raise NotImplementedError(f"{type(self).__name__}.forward()")
+        raise NotImplementedError(f"{type(self).__name__}.fit()")
 
     def forward(self, X: TextSequences) -> Tensor:
         return self.transform(X)
@@ -34,3 +34,13 @@ class VectorizerWord2vec(Vectorizer):
     def transform(self, X: TextSequences) -> Tensor:
         y = [self.model.wv[seq] for seq in X]
         return y
+
+    def __getstate__(self):
+        state = super().__getstate__()
+        state.update(dict(model=self.model))
+        return state
+
+    def __setstate__(self, state):
+        model = state.pop("model", None)
+        super().__setstate__(state)
+        self.model = model
