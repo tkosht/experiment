@@ -70,13 +70,18 @@ beautifulsoup4
 # spacy[cuda110]
 spacy
 # spacy-transformers==1.1.3
-ipywidgets
 ginza
 ja_ginza_electra
-networkx
+mecab
+janome
+sudachipy
+sudachidict_core
+sentencepiece
 
 gensim
-janome
 wordcloud
+
+ipywidgets
+networkx
 slack_sdk
 
