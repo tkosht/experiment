@@ -17,7 +17,7 @@ from app.component.models.model import Texts, TextSequences, Tokenizer
 g_stoppoes = ["BOS/EOS", "助詞", "助動詞", "接続詞", "記号", "補助記号", "未知語"]
 
 
-class TokenizerSubWordBase(Tokenizer):
+class JpTokenizerSubWordBase(Tokenizer):
     def __init__(self) -> None:
         # NOTE: SentencePiece モデルを使う
         pass
@@ -27,7 +27,7 @@ class TokenizerSubWordBase(Tokenizer):
         # return X
 
 
-class TokenizerWordBase(Tokenizer):
+class JpTokenizerWordBase(Tokenizer):
     def __init__(self) -> None:
         # NOTE: MeCab, Janome, Sudachi を使う
         pass

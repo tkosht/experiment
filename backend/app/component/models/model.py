@@ -20,6 +20,12 @@ class Model(nn.Module):
     def __init__(self) -> None:
         super().__init__()  # must be called at first
 
+    def fit(self, X: Tensor, **kwargs) -> Tensor:
+        raise NotImplementedError(f"{type(self).__name__}.fit()")
+
+    def transform(self, X: Tensor, **kwargs) -> Tensor:
+        raise NotImplementedError(f"{type(self).__name__}.transform()")
+
     def forward(self, X: Tensor) -> Tensor:
         raise NotImplementedError(f"{type(self).__name__}.forward()")
 
@@ -69,7 +75,7 @@ class Tokenizer(Model):
     def transform(self, X: Texts) -> TextSequences:
         raise NotImplementedError(f"{type(self).__name__}.transform()")
 
-    def fit(self, X: Texts, y: Texts) -> TextSequences:
+    def fit(self, X: Texts, **kwargs) -> TextSequences:
         return self
 
     def forward(self, X: Texts) -> TextSequences:

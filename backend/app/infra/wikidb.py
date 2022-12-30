@@ -12,10 +12,10 @@ g_log = print
 @dataclass
 class WikiRecord(DbIf):
     document_id: str
+    paragraph_id: str = None
     article: str = None
     section: str = None
     paragraph: str = None
-    paragraph_id: str = None
 
     def __post_init__(self):
         self.paragraph_id = build_ulid(prefix="Prg")
@@ -44,13 +44,18 @@ class WikiRecord(DbIf):
 
 
 class WikiDb(DbIf):
-    def __init__(self, mode: str = "train", db_file: str = "data/wiki.db") -> None:
+    def __init__(
+        self, mode: str = "train", db_file: str = "data/wiki.db", do_connect=True
+    ) -> None:
         self.mode = mode  # train|valid|test
         self.db_file = db_file
 
         self.table_name = f"{self.mode}_data"
         self.cnn: sqlite3.Connection = None
         self.csr: sqlite3.Cursor = None
+
+        if do_connect:
+            self.connect()
 
     def connect(self):
         self.cnn = sqlite3.connect(self.db_file)
@@ -64,13 +69,17 @@ class WikiDb(DbIf):
             self.cnn.close()
             self.cnn = None
 
-    def execute(self, sql: str, values: list = []):
-        self.csr.execute(sql, values)
+    def execute(self, sql: str, values: list = []) -> list:
+        results = self.csr.execute(sql, values)
+        results = list(results)
         self.cnn.commit()
+        return results
 
-    def execute_many(self, sql: str, values: list = []):
-        self.csr.executemany(sql, values)
+    def execute_many(self, sql: str, values: list = []) -> list:
+        results = self.csr.executemany(sql, values)
+        results = list(results)
         self.cnn.commit()
+        return results
 
     def create_tables(self):
         g_log(f"CREATE TABLE {self.table_name}", "Start")
@@ -115,11 +124,10 @@ class WikiDb(DbIf):
 
     def select(self, n_limits=-1):
         sql = f"""SELECT
-                document_id, paragraph_id, article, section, paragraph, created_at
+                document_id, paragraph_id, article, section, paragraph
                 FROM {self.table_name}
             """
         if n_limits > 0:
             sql += f" LIMIT {n_limits}"
         records = self.execute(sql)
-        records = list(records)
         return records

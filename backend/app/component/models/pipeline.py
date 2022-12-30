@@ -16,6 +16,24 @@ class Pipeline(Model):
             setattr(self, f"{self.name}_layer_{idx:03d}", m)
         return self
 
+    def fit(self, X: Tensor, **kwargs) -> Tensor:
+        h = X
+        for model, labeller in self.steps:
+            if labeller is not None:
+                assert hasattr(model, "loss")
+                t = labeller(h)
+                model.fit(h, t, **kwargs)
+                continue
+            model.fit(h, **kwargs)
+            h = model.transform(h)
+
+    def transform(self, X: Tensor, **kwargs) -> Tensor:
+        h = X
+        for model, _ in self.steps:
+            h = model(h)
+        y = h
+        return y
+
     def forward(self, X: Tensor) -> Tensor:
         y = None  # output
 
@@ -27,7 +45,7 @@ class Pipeline(Model):
             # NOTE: just a simple implement
             if labeller is not None:
                 assert hasattr(model, "loss")
-                t = labeller(y)
+                t = labeller(h)
                 loss: Tensor = model.loss(y, t)
                 print(f"loss={loss.data}")
 
