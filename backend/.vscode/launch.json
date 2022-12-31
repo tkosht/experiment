@@ -16,6 +16,20 @@
             "justMyCode": false
         },
         {
+            "name": "train_wordvector",
+            "type": "python",
+            "request": "launch",
+            "program": "app/executable/train_wordvector.py",
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "args": [
+                "--n-limit=64"
+            ],
+            "justMyCode": false
+        },
+        {
             "name": "Python: Flask",
             "type": "python",
             "request": "launch",
