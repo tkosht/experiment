@@ -87,8 +87,9 @@ class JpTokenizerMeCab(JpTokenizer):
             word = s[0]  # surface form / form in text
             # word = s[2]  # original form
             pos = s[3].split("-")[0]
-            if self.use_stoppoes and pos not in g_stoppoes:
-                sentence.append(word)
+            if self.use_stoppoes and pos in g_stoppoes:
+                continue
+            sentence.append(word)
         return sentence
 
 

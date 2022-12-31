@@ -122,12 +122,12 @@ class WikiDb(DbIf):
         sql: str = self.insert_sql()
         self.execute_many(sql, values)
 
-    def select(self, n_limits=-1):
+    def select(self, n_limit=-1):
         sql = f"""SELECT
                 document_id, paragraph_id, article, section, paragraph
                 FROM {self.table_name}
             """
-        if n_limits > 0:
-            sql += f" LIMIT {n_limits}"
+        if n_limit > 0:
+            sql += f" LIMIT {n_limit}"
         records = self.execute(sql)
         return records
