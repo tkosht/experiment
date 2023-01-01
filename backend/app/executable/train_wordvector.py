@@ -13,7 +13,6 @@ def main(
 ):
     # pickup wiki data
     wdb = WikiDb(mode=mode)
-    # records = wdb.select(n_limits=)
     records = wdb.select(n_limit=n_limit)
     X: TextSequences = [WikiRecord(*rec).paragraph.splitlines() for rec in records]
 
