@@ -131,3 +131,22 @@ class WikiDb(DbIf):
             sql += f" LIMIT {n_limit}"
         records = self.execute(sql)
         return records
+
+    # def select_by_article(self, articles: list[str]):
+    #     sql = f"""SELECT
+    #             document_id, paragraph_id, article, section, paragraph
+    #             FROM {self.table_name}
+    #             where article = ?
+    #         """
+    #     records = self.execute(sql, articles)
+    #     return records
+
+    def select_by_document_id(self, document_ids: list[str]):
+        sql_params = ["?"] * len(document_ids)
+        sql = f"""SELECT
+                document_id, paragraph_id, article, section, paragraph
+                FROM {self.table_name}
+                where document_id IN ({", ".join(sql_params)})
+            """
+        records = self.execute(sql, document_ids)
+        return records

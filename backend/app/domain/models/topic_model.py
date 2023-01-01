@@ -17,7 +17,7 @@ class TopicModel(Model):
         # NOTE:
         #   alpha: A-priori belief on document-topic distribution
         #   eta: A-priori belief on topic-word distribution
-        self.params = dict(num_topics=K, iterations=100, alpha=1 / K, eta=1 / K)
+        self.params = dict(num_topics=K, iterations=500, alpha=1 / K, eta=1 / K)
         # self.params = dict(num_topics=K, iterations=100, alpha="auto", eta="auto")
 
     def get_topic_probabilities(self, s: slice = slice(None)) -> numpy.ndarray:
@@ -34,3 +34,13 @@ class TopicModel(Model):
 
     def forward(self, X: Tensor) -> Tensor:
         return self.transform(X)
+
+    def __getstate__(self):
+        state = super().__getstate__()
+        state.update(dict(model=self.model))
+        return state
+
+    def __setstate__(self, state):
+        model = state.pop("model", None)
+        super().__setstate__(state)
+        self.model = model
