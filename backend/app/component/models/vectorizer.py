@@ -1,3 +1,4 @@
+from gensim.corpora.dictionary import Dictionary
 from gensim.models import word2vec
 from typing_extensions import Self
 
@@ -44,3 +45,31 @@ class VectorizerWord2vec(Vectorizer):
         model = state.pop("model", None)
         super().__setstate__(state)
         self.model = model
+
+
+class VectorizerBoW(Vectorizer):
+    # def __init__(self) -> None:
+    #     super().__init__()  # must be called at first
+    #     self._initialize()
+
+    def _initialize(self) -> Self:
+        self.params = dict()
+        return self
+
+    def fit(self, X: TextSequences, **kwargs) -> Tensor:
+        self.vocab = Dictionary(X)
+        return self
+
+    def transform(self, X: TextSequences) -> Tensor:
+        y = [self.vocab.doc2bow(tokens) for tokens in X]
+        return y
+
+    def __getstate__(self):
+        state = super().__getstate__()
+        state.update(dict(vocab=self.vocab))
+        return state
+
+    def __setstate__(self, state):
+        vocab = state.pop("vocab", None)
+        super().__setstate__(state)
+        self.vocab = vocab

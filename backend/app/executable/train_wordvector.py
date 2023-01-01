@@ -16,12 +16,14 @@ def main(
     records = wdb.select(n_limit=n_limit)
     X: TextSequences = [WikiRecord(*rec).paragraph.splitlines() for rec in records]
 
-    pipe = Pipeline(steps=[(TokenizerWord(), None), (VectorizerWord2vec(), None)])
+    pipe_vectorizer = Pipeline(
+        steps=[(TokenizerWord(), None), (VectorizerWord2vec(), None)]
+    )
 
-    pipe.fit(X)
-    # y = pipe(X)
+    pipe_vectorizer.fit(X)
+    # y = pipe_vectorizer(X)
 
-    joblib.dump(pipe, pipe_file, compress=("gzip", 3))
+    joblib.dump(pipe_vectorizer, pipe_file, compress=("gzip", 3))
 
 
 if __name__ == "__main__":

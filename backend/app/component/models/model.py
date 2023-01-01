@@ -1,10 +1,11 @@
 from inspect import signature
 from typing import TypeAlias
 
+import numpy
 import torch
 import torch.nn as nn
 
-Tensor: TypeAlias = torch.FloatTensor
+Tensor: TypeAlias = torch.FloatTensor | numpy.ndarray
 TensorSparse: TypeAlias = Tensor | torch.LongTensor
 TensorDense: TypeAlias = Tensor
 TensorAny: TypeAlias = TensorDense | TensorSparse
