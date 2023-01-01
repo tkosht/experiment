@@ -16,6 +16,15 @@ class Pipeline(Model):
             setattr(self, f"{self.name}_layer_{idx:03d}", m)
         return self
 
+    def __getitem__(self, item):
+        return self.steps[item]
+
+    def get_model(self, idx: int):
+        return self.steps[idx][0]
+
+    def get_labeller(self, idx: int):
+        return self.steps[idx][1]
+
     def fit(self, X: Tensor, **kwargs) -> Tensor:
         h = X
         for model, labeller in self.steps:
