@@ -1,5 +1,7 @@
 from typing_extensions import Self
 
+from app.component.simple_logger import log_info
+
 from .model import Labeller, Model, Tensor
 
 
@@ -27,14 +29,18 @@ class Pipeline(Model):
 
     def fit(self, X: Tensor, **kwargs) -> Tensor:
         h = X
-        for model, labeller in self.steps:
+        for n_step, (model, labeller) in enumerate(self.steps):
+            log_info("Start", "to fit", f"{n_step=}", f"{model=}")
             if labeller is not None:
                 assert hasattr(model, "loss")
                 t = labeller(h)
                 model.fit(h, t, **kwargs)
                 continue
             model.fit(h, **kwargs)
+            log_info("End", "to fit", f"{n_step=}", f"{model=}")
+            log_info("Start", "to transform", f"{n_step=}", f"{model=}")
             h = model.transform(h)
+            log_info("End", "to transform", f"{n_step=}", f"{model=}")
 
     def transform(self, X: Tensor, **kwargs) -> Tensor:
         h = X
