@@ -40,8 +40,9 @@ class VectorizerWord2vec(Vectorizer):
         return self
 
     def transform(self, X: TextSequences) -> Tensor:
-        y = [self.model.wv[seq] for seq in X]
-        return y
+        # y = [self.model.wv[seq] for seq in X]
+        # return y
+        return X
 
     def __getstate__(self):
         state = super().__getstate__()
