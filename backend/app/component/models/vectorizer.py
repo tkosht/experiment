@@ -25,7 +25,14 @@ class Vectorizer(Preprocesser):
 
 class VectorizerWord2vec(Vectorizer):
     def _initialize(self) -> Self:
-        self.params = dict(vector_size=200, min_count=1, window=15, epochs=100)
+        self.params = dict(
+            vector_size=128,
+            sg=1,
+            max_vocab_size=1000 * 1000,
+            min_count=10,
+            window=7,
+            epochs=20,
+        )
         return self
 
     def fit(self, X: TextSequences, **params) -> Tensor:
