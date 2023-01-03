@@ -65,11 +65,14 @@ class JpTokenizer(Tokenizer):
 
 
 class JpTokenizerMeCab(JpTokenizer):
-    def __init__(self, use_stoppoes: bool = False, filterpos=[]) -> None:
+    def __init__(
+        self, use_stoppoes: bool = False, filterpos=[], use_orgform: bool = False
+    ) -> None:
         super().__init__()  # must be called at first
 
         self.use_stoppoes: bool = use_stoppoes
         self.filterpos: list = filterpos
+        self.use_orgform: list = use_orgform
 
         self.dicdir = "/usr/lib/x86_64-linux-gnu/mecab/dic" "/mecab-ipadic-neologd"
         self.taggerstr = f"-O chasen -d {self.dicdir}"
@@ -86,8 +89,10 @@ class JpTokenizerMeCab(JpTokenizer):
         for s in splitted:
             if len(s) == 1:  # may be "EOS"
                 break
-            word = s[0]  # surface form / form in text
-            # word = s[2]  # original form
+            # NOTE:
+            # s[2] : original form
+            # s[0] : surface form / form in text
+            word = s[2] if self.use_orgform else s[0]
             pos = s[3].split("-")[0]
             if self.use_stoppoes and pos in g_stoppoes:
                 continue

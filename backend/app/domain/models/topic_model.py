@@ -6,8 +6,9 @@ from app.component.models.model import Model, Tensor
 
 
 class TopicModel(Model):
-    def __init__(self, n_topic: int = 50) -> None:
+    def __init__(self, n_topic: int = 50, n_epoch: int = 100) -> None:
         self.n_topic = n_topic  # topics
+        self.n_epoch = n_epoch  # topics
         self.model = None
 
         self._initialize()
@@ -17,7 +18,9 @@ class TopicModel(Model):
         # NOTE:
         #   alpha: A-priori belief on document-topic distribution
         #   eta: A-priori belief on topic-word distribution
-        self.params = dict(num_topics=K, iterations=100, alpha=1 / K, eta=1 / K)
+        self.params = dict(
+            num_topics=K, iterations=self.n_epoch, alpha=1 / K, eta=1 / K
+        )
         # self.params = dict(num_topics=K, iterations=100, alpha="auto", eta="auto")
 
     def get_topic_probabilities(self, s: slice = slice(None)) -> numpy.ndarray:
