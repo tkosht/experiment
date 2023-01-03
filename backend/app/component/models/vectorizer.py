@@ -31,7 +31,7 @@ class VectorizerWord2vec(Vectorizer):
             max_vocab_size=1000 * 1000,
             min_count=10,
             window=7,
-            epochs=100,
+            epochs=5,
         )
         return self
 
