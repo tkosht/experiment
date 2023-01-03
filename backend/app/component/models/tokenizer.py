@@ -65,10 +65,12 @@ class JpTokenizer(Tokenizer):
 
 
 class JpTokenizerMeCab(JpTokenizer):
-    def __init__(self, use_stoppoes: bool = False) -> None:
+    def __init__(self, use_stoppoes: bool = False, filterpos=[]) -> None:
         super().__init__()  # must be called at first
 
         self.use_stoppoes: bool = use_stoppoes
+        self.filterpos: list = filterpos
+
         self.dicdir = "/usr/lib/x86_64-linux-gnu/mecab/dic" "/mecab-ipadic-neologd"
         self.taggerstr = f"-O chasen -d {self.dicdir}"
         self._initialize()
@@ -88,6 +90,8 @@ class JpTokenizerMeCab(JpTokenizer):
             # word = s[2]  # original form
             pos = s[3].split("-")[0]
             if self.use_stoppoes and pos in g_stoppoes:
+                continue
+            if self.filterpos and (pos not in self.filterpos):
                 continue
             sentence.append(word)
         return sentence

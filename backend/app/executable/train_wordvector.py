@@ -24,7 +24,10 @@ def main(
 
     log_info("Start", "Create Pipeline")
     pipe_vectorizer = Pipeline(
-        steps=[(TokenizerWord(use_stoppoes=True), None), (VectorizerWord2vec(), None)]
+        steps=[
+            (TokenizerWord(use_stoppoes=False, filterpos=["名詞"]), None),
+            (VectorizerWord2vec(), None),
+        ]
     )
     log_info("End", "Create Pipeline")
 
