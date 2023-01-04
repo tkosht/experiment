@@ -6,11 +6,20 @@ from .model import Labeller, Model, Tensor
 
 
 class Pipeline(Model):
-    def __init__(self, steps=list[tuple[Model, Labeller]], name="pipeline") -> None:
+    def __init__(
+        self,
+        steps=list[tuple[Model, Labeller]],
+        name: str = "pipeline",
+        do_print: bool = True,
+        *args,  # for dump/load
+        **kwargs,  # for dump/load
+    ) -> None:
         super().__init__()
 
         self.name = name
         self.steps: list[tuple[Model, Labeller]] = steps
+        self.do_print = do_print
+
         self._initialize()
 
     def _initialize(self) -> Self:
@@ -19,7 +28,7 @@ class Pipeline(Model):
         return self
 
     def __getitem__(self, item):
-        return self.steps[item]
+        return Pipeline(steps=self.steps[item], name=f"{self.name}[{item}]")
 
     def get_model(self, idx: int):
         return self.steps[idx][0]
@@ -27,20 +36,25 @@ class Pipeline(Model):
     def get_labeller(self, idx: int):
         return self.steps[idx][1]
 
+    def _log(self, *args, **kwargs):
+        if not self.do_print:
+            return
+        log_info(*args, **kwargs)
+
     def fit(self, X: Tensor, **kwargs) -> Tensor:
         h = X
         for n_step, (model, labeller) in enumerate(self.steps):
-            log_info("Start", "to fit", f"{n_step=}", f"{model=}")
+            self._log("Start", "to fit", f"{n_step=}", f"{model=}")
             if labeller is not None:
                 assert hasattr(model, "loss")
                 t = labeller(h)
                 model.fit(h, t, **kwargs)
                 continue
             model.fit(h, **kwargs)
-            log_info("End", "to fit", f"{n_step=}", f"{model=}")
-            log_info("Start", "to transform", f"{n_step=}", f"{model=}")
+            self._log("End", "to fit", f"{n_step=}", f"{model=}")
+            self._log("Start", "to transform", f"{n_step=}", f"{model=}")
             h = model.transform(h)
-            log_info("End", "to transform", f"{n_step=}", f"{model=}")
+            self._log("End", "to transform", f"{n_step=}", f"{model=}")
 
     def transform(self, X: Tensor, **kwargs) -> Tensor:
         h = X

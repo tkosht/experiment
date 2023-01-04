@@ -24,7 +24,9 @@ class TopicModel(Model):
         # self.params = dict(num_topics=K, iterations=100, alpha="auto", eta="auto")
 
     def get_topic_probabilities(self, s: slice = slice(None)) -> numpy.ndarray:
-        return self.model.expElogbeta[s]
+        p = self.model.expElogbeta[s]
+        p /= numpy.expand_dims(p.sum(-1), -1)
+        return p
 
     def fit(self, X: Tensor) -> Self:
         self.model = LdaModel(X, **self.params)
