@@ -19,6 +19,8 @@ class Pipeline(Model):
         self.name = name
         self.steps: list[tuple[Model, Labeller]] = steps
         self.do_print = do_print
+        self.args: tuple = args
+        self.kwargs: dict = kwargs
 
         self._initialize()
 
@@ -28,7 +30,13 @@ class Pipeline(Model):
         return self
 
     def __getitem__(self, item):
-        return Pipeline(steps=self.steps[item], name=f"{self.name}[{item}]")
+        return Pipeline(
+            steps=self.steps[item],
+            name=f"{self.name}[{item}]",
+            do_print=self.do_print,
+            *self.args,
+            **self.kwargs,
+        )
 
     def get_model(self, idx: int):
         return self.steps[idx][0]
