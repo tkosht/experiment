@@ -19,7 +19,11 @@ class TopicModel(Model):
         #   alpha: A-priori belief on document-topic distribution
         #   eta: A-priori belief on topic-word distribution
         self.params = dict(
-            num_topics=K, iterations=self.n_epoch, alpha=1 / K, eta=1 / K
+            num_topics=K,
+            iterations=self.n_epoch,
+            alpha=1 / K,
+            eta=1 / K,
+            random_state=numpy.random.RandomState(777),
         )
         # self.params = dict(num_topics=K, iterations=100, alpha="auto", eta="auto")
 

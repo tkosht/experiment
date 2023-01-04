@@ -41,7 +41,7 @@ class Pipeline(Model):
             return
         log_info(*args, **kwargs)
 
-    def fit(self, X: Tensor, **kwargs) -> Tensor:
+    def fit(self, X: Tensor, **kwargs) -> Self:
         h = X
         for n_step, (model, labeller) in enumerate(self.steps):
             self._log("Start", "to fit", f"{n_step=}", f"{model=}")
@@ -55,6 +55,7 @@ class Pipeline(Model):
             self._log("Start", "to transform", f"{n_step=}", f"{model=}")
             h = model.transform(h)
             self._log("End", "to transform", f"{n_step=}", f"{model=}")
+        return self
 
     def transform(self, X: Tensor, **kwargs) -> Tensor:
         h = X
