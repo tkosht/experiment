@@ -65,6 +65,7 @@ pystan
 neo4j
 neomodel
 
+lxml
 beautifulsoup4
 
 # spacy[cuda110]
@@ -80,6 +81,9 @@ sentencepiece
 
 gensim
 wordcloud
+pyldavis
+
+scrapy
 
 ipywidgets
 networkx
