@@ -1,4 +1,4 @@
-# Scrapy settings for scrapy_test project
+# Scrapy settings for newspy project
 #
 # For simplicity, this file contains only settings considered important or
 # commonly used. You can find more settings consulting the documentation:
@@ -7,14 +7,14 @@
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
-BOT_NAME = "scrapy_test"
+BOT_NAME = "newspy"
 
-SPIDER_MODULES = ["scrapy_test.spiders"]
-NEWSPIDER_MODULE = "scrapy_test.spiders"
+SPIDER_MODULES = ["newspy.spiders"]
+NEWSPIDER_MODULE = "newspy.spiders"
 
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
-# USER_AGENT = 'scrapy_test (+http://www.yourdomain.com)'
+# USER_AGENT = 'newspy (+http://www.yourdomain.com)'
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = True
@@ -45,13 +45,13 @@ DOWNLOAD_DELAY = 3
 # Enable or disable spider middlewares
 # See https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 # SPIDER_MIDDLEWARES = {
-#    'scrapy_test.middlewares.ScrapyTestSpiderMiddleware': 543,
+#    'newspy.middlewares.ScrapyTestSpiderMiddleware': 543,
 # }
 
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 # DOWNLOADER_MIDDLEWARES = {
-#    'scrapy_test.middlewares.ScrapyTestDownloaderMiddleware': 543,
+#    'newspy.middlewares.ScrapyTestDownloaderMiddleware': 543,
 # }
 
 # Enable or disable extensions
@@ -62,9 +62,9 @@ DOWNLOAD_DELAY = 3
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-# ITEM_PIPELINES = {
-#    'scrapy_test.pipelines.ScrapyTestPipeline': 300,
-# }
+ITEM_PIPELINES = {
+   'newspy.pipelines.NewsPipeline': 300,
+}
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
@@ -91,5 +91,5 @@ HTTPCACHE_STORAGE = "scrapy.extensions.httpcache.FilesystemCacheStorage"
 REQUEST_FINGERPRINTER_IMPLEMENTATION = "2.7"
 TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 
-DEPTH_LIMIT = 3
+DEPTH_LIMIT = 7
 

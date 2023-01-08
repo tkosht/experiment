@@ -24,24 +24,34 @@ class Vectorizer(Preprocesser):
 
 
 class VectorizerWord2vec(Vectorizer):
-    def _initialize(self) -> Self:
+    def __init__(
+        self,
+        vector_size=128,
+        sg=1,
+        max_vocab_size=1000 * 1000,
+        min_count=10,
+        window=7,
+        epochs=5,
+    ) -> None:
+        super().__init__()  # must be called at first
+
         self.params = dict(
-            vector_size=128,
-            sg=1,
-            max_vocab_size=1000 * 1000,
-            min_count=10,
-            window=7,
-            epochs=5,
+            vector_size=vector_size,
+            sg=sg,
+            max_vocab_size=max_vocab_size,
+            min_count=min_count,
+            window=window,
+            epochs=epochs,
         )
+
+        self.__dict__.update(self.params)
         return self
 
-    def fit(self, X: TextSequences, **params) -> Tensor:
+    def fit(self, X: TextSequences, **kwargs) -> Tensor:
         self.model = word2vec.Word2Vec(X, **self.params)
         return self
 
-    def transform(self, X: TextSequences) -> Tensor:
-        # y = [self.model.wv[seq] for seq in X]
-        # return y
+    def transform(self, X: TextSequences, **kwargs) -> Tensor:
         return X
 
     def __getstate__(self):

@@ -11,7 +11,7 @@ TensorDense: TypeAlias = Tensor
 TensorAny: TypeAlias = TensorDense | TensorSparse
 
 Texts: TypeAlias = list[str]
-TextSequences: TypeAlias = list[list[str]]
+TextSequences: TypeAlias = list[Texts]
 TensorNumeric: TypeAlias = TensorSparse  # index vector like (9, 3, ..., 2, 1, 2)
 TensorOneHot: TypeAlias = TensorSparse  # like (0, ..., 0, 1, 0, ..., 0)
 TensorEmbed: TypeAlias = TensorDense
