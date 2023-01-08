@@ -25,7 +25,7 @@ class NewsSpider(scrapy.Spider):
             if not url:
                 continue
 
-            if url[0] in ["/", "#"]:
+            if url[0] in ["/"]:
                 url = urljoin(response.url, url)
 
             scheme = "http"
