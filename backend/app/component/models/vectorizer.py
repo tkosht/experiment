@@ -45,14 +45,50 @@ class VectorizerWord2vec(Vectorizer):
         )
 
         self.__dict__.update(self.params)
+        self.model = None
+
+    def clear_model(self) -> Self:
+        # NOTE: if you would like to train as the first take
+        self.model = None
         return self
 
     def fit(self, X: TextSequences, **kwargs) -> Tensor:
-        self.model = word2vec.Word2Vec(X, **self.params)
+        if self.model is None:
+            # the first training
+            print("[DEBUG] train firstly")
+            self.model = word2vec.Word2Vec(X, **self.params)
+        else:
+            # the updating training
+            print("[DEBUG] train updately")
+            self.model.build_vocab(X, update=True)
+            self.model.train(
+                X, total_examples=self.model.corpus_count, epochs=self.model.epochs
+            )
         return self
 
     def transform(self, X: TextSequences, **kwargs) -> Tensor:
-        return X
+        ws = self.window
+        y = []
+        for s in X:
+            for idw, w in enumerate(s):
+                if w in self.model.wv:
+                    y.append(self.model.wv[w])
+                else:
+                    # 辞書にないトークンは、モデルのwindowサイズを前後の文脈語彙として類似ベクトルを推定
+                    tokens = [
+                        tkn
+                        for tkn in s[max(idw - ws, 0) : idw + ws]
+                        if tkn in self.model.wv
+                    ]
+                    try:
+                        v = self.model.wv.most_similar(tokens)
+                    except Exception as e:
+                        raise Exception(
+                            f"{e.args[0]} : couldn't get most_similar({tokens=})"
+                        )
+                    y.append(v)
+
+        return y
 
     def __getstate__(self):
         state = super().__getstate__()
