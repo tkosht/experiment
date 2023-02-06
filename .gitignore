@@ -14,6 +14,9 @@ tmp/
 .env
 ~
 ?.sh
+*.gz
+*.zip
+*.tgz
 
 
 # Byte-compiled / optimized / DLL files
