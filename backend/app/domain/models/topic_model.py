@@ -6,15 +6,21 @@ from app.component.models.model import Model, Tensor
 
 
 class TopicModel(Model):
-    def __init__(self, n_topic: int = 50, n_epoch: int = 100) -> None:
-        self.n_topic = n_topic  # topics
-        self.n_epoch = n_epoch  # topics
+    def __init__(
+        self,
+        n_topics: int = 50,
+        n_epoch: int = 100,
+        random_state=numpy.random.RandomState(777),
+    ) -> None:
+        self.n_topics = n_topics  # topics
+        self.n_epoch = n_epoch
+        self.random_state = random_state
         self.model = None
 
         self._initialize()
 
     def _initialize(self):
-        K = self.n_topic
+        K = self.n_topics
         # NOTE:
         #   alpha: A-priori belief on document-topic distribution
         #   eta: A-priori belief on topic-word distribution
@@ -23,7 +29,7 @@ class TopicModel(Model):
             iterations=self.n_epoch,
             alpha=1 / K,
             eta=1 / K,
-            random_state=numpy.random.RandomState(777),
+            random_state=self.random_state,
         )
         # self.params = dict(num_topics=K, iterations=100, alpha="auto", eta="auto")
 

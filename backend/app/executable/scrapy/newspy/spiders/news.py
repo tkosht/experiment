@@ -1,5 +1,5 @@
 import logging
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 import scrapy
 from newspy.items import NewsItem
@@ -9,8 +9,25 @@ g_logger = logging.getLogger(__name__)
 
 class NewsSpider(scrapy.Spider):
     name = "news"
-    allowed_domains = ["news.yahoo.co.jp"]
-    start_urls = ["https://news.yahoo.co.jp/"]
+    start_urls = [
+        # 一般
+        # "https://news.yahoo.co.jp/",
+        "https://www.nikkei.com/",
+        # "https://www3.nhk.or.jp/news/",
+        # "https://www.jiji.com/",
+        # "https://diamond-rm.net/",
+        # IT
+        "https://xtech.nikkei.com/top/it/",
+        "https://www.itmedia.co.jp/news/",
+        "https://japan.zdnet.com/",
+        # AI
+        "https://ledge.ai/theme/news/",
+        "https://ainow.ai/",
+        "https://news.mynavi.jp/techplus/tag/artificial_intelligence/",
+        "https://ja.stateofaiguides.com/",
+        "https://www.itmedia.co.jp/news/subtop/aiplus/",
+    ]
+    allowed_domains = [urlparse(u).netloc for u in start_urls]
 
     def parse(self, response):
 
@@ -30,7 +47,9 @@ class NewsSpider(scrapy.Spider):
 
             scheme = "http"
             if url[: len(scheme)] != scheme:
-                g_logger.warning(f"Found non {scheme} scheme: skipped [{url=}]")
+                g_logger.warning(
+                    f"Found non {scheme} scheme: skipped [{url=}][parent.url={response.url}]"
+                )
                 continue
 
             yield scrapy.Request(url, callback=self.parse)
