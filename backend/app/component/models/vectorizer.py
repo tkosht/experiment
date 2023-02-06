@@ -1,3 +1,4 @@
+import numpy
 from gensim.corpora.dictionary import Dictionary
 from gensim.models import word2vec
 from typing_extensions import Self
@@ -75,17 +76,18 @@ class VectorizerWord2vec(Vectorizer):
                     y.append(self.model.wv[w])
                 else:
                     # 辞書にないトークンは、モデルのwindowサイズを前後の文脈語彙として類似ベクトルを推定
-                    tokens = [
-                        tkn
-                        for tkn in s[max(idw - ws, 0) : idw + ws]
-                        if tkn in self.model.wv
-                    ]
+                    context = s[max(idw - ws, 0) : idw + ws]
+                    tokens = [tkn for tkn in context if tkn in self.model.wv]
                     try:
                         v = self.model.wv.most_similar(tokens)
                     except Exception as e:
-                        raise Exception(
-                            f"{e.args[0]} : couldn't get most_similar({tokens=})"
+                        # raise Exception(
+                        #     f"{e.args[0]} : couldn't get most_similar({tokens=})"
+                        # )
+                        print(
+                            f"[WARNING] {e.args[0]} : couldn't get most_similar({tokens=}) / {context=}"
                         )
+                        v = numpy.zeros(self.vector_size)
                     y.append(v)
 
         return y
