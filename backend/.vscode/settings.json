@@ -8,6 +8,7 @@
     "files.watcherExclude": {
         "**/.git/objects/**": true,
         "**/.git/subtree-cache/**": true,
+        "**/data/*/**": true,
         "**/result/*/**": true,
         "**/mlruns/*/**": true
     },
