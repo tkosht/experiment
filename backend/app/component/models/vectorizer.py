@@ -72,8 +72,9 @@ class VectorizerWord2vec(Vectorizer):
         y = []
         for s in X:
             for idw, w in enumerate(s):
+                v = None
                 if w in self.model.wv:
-                    y.append(self.model.wv[w])
+                    v = self.model.wv[w]
                 else:
                     # 辞書にないトークンは、モデルのwindowサイズを前後の文脈語彙として類似ベクトルを推定
                     context = s[max(idw - ws, 0) : idw + ws]
@@ -81,14 +82,14 @@ class VectorizerWord2vec(Vectorizer):
                     try:
                         v = self.model.wv.most_similar(tokens)
                     except Exception as e:
-                        # raise Exception(
-                        #     f"{e.args[0]} : couldn't get most_similar({tokens=})"
-                        # )
+                        # most_similar を取得できなかったら、完全な unknown としてゼロベクトルをセット
+                        # # このケースは、対象の文(s) のすべてのトークンが min_count 未満の時に発生する
                         print(
                             f"[WARNING] {e.args[0]} : couldn't get most_similar({tokens=}) / {context=}"
                         )
                         v = numpy.zeros(self.vector_size)
-                    y.append(v)
+                assert v is not None
+                y.append(v)
 
         return y
 

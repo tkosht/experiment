@@ -1,5 +1,6 @@
 import joblib
 import typer
+from tqdm import tqdm
 
 from app.component.models.model import TextSequences
 from app.component.models.pipeline import Pipeline
@@ -31,13 +32,18 @@ def main(
                 ),
                 None,
             ),
-            (VectorizerWord2vec(), None),
+            (VectorizerWord2vec(min_count=1), None),
         ]
     )
     log_info("End", "Create Pipeline")
 
     log_info("Start", "Fit Wiki data")
-    pipe_vectorizer.fit(X)
+    n = len(X)
+    bs = 128
+    for bch_idx, offset in enumerate(tqdm(range(0, n, bs))):
+        log_info("Processing ...", f"{bch_idx=}")
+        bch = X[offset : offset + bs]
+        pipe_vectorizer.fit(bch)
     # y = pipe_vectorizer(X)
     log_info("End", "Fit Wiki data")
 
