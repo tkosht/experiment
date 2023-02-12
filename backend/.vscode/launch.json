@@ -14,7 +14,8 @@
                 "PYTHONPATH": "${workspaceFolder}"
             },
             "args": [
-                "--n-limit=300"
+                "--n-limit=300",
+                "--batch-size=128",
             ],
             "justMyCode": false
         },

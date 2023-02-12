@@ -2,16 +2,25 @@ import joblib
 import typer
 from tqdm import tqdm
 
+from app.component.logger import Logger
 from app.component.models.model import TextSequences
 from app.component.models.pipeline import Pipeline
 from app.component.models.vectorizer import VectorizerWord2vec
-from app.component.simple_logger import log_info
 from app.domain.models.tokenizer import TokenizerWord
 from app.infra.wikidb import WikiDb, WikiRecord
 
+g_logger = Logger(logger_name="train_wordvector")
+
+
+def log_info(*args, **kwargs):
+    g_logger.info(*args, **kwargs)
+
 
 def main(
-    n_limit: int = -1, mode: str = "train", pipe_file: str = "data/pipe_wikivec.gz"
+    n_limit: int = -1,
+    mode: str = "train",
+    batch_size: int = 10000,
+    pipe_file: str = "data/pipe_wikivec.gz",
 ):
     # pickup wiki data
     wdb = WikiDb(mode=mode)
@@ -39,10 +48,9 @@ def main(
 
     log_info("Start", "Fit Wiki data")
     n = len(X)
-    bs = 128
-    for bch_idx, offset in enumerate(tqdm(range(0, n, bs))):
+    for bch_idx, offset in enumerate(tqdm(range(0, n, batch_size))):
         log_info("Processing ...", f"{bch_idx=}")
-        bch = X[offset : offset + bs]
+        bch = X[offset : offset + batch_size]
         pipe_vectorizer.fit(bch)
     # y = pipe_vectorizer(X)
     log_info("End", "Fit Wiki data")
