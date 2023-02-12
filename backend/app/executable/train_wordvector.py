@@ -22,6 +22,8 @@ def main(
     batch_size: int = 10000,
     pipe_file: str = "data/pipe_wikivec.gz",
 ):
+    log_info("Start", "train_wordvector")
+
     # pickup wiki data
     wdb = WikiDb(mode=mode)
     log_info("Start", "Select WikiDb")
@@ -58,6 +60,8 @@ def main(
     log_info("Start", "Dump Pipeline for Wiki vectorizer")
     joblib.dump(pipe_vectorizer, pipe_file, compress=("gzip", 3))
     log_info("End", "Dump Pipeline for Wiki vectorizer")
+
+    log_info("End", "train_wordvector")
 
 
 if __name__ == "__main__":
