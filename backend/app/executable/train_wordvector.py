@@ -54,7 +54,6 @@ def main(
         log_info("Processing ...", f"{bch_idx=}")
         bch = X[offset : offset + batch_size]
         pipe_vectorizer.fit(bch)
-    # y = pipe_vectorizer(X)
     log_info("End", "Fit Wiki data")
 
     log_info("Start", "Dump Pipeline for Wiki vectorizer")
