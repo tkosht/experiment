@@ -9,6 +9,7 @@ img/
 wk/
 work/
 tmp/
+temp/
 .ssh/
 .*.swp
 .env
@@ -17,6 +18,8 @@ tmp/
 *.gz
 *.zip
 *.tgz
+.scrapy/
+httpcache/
 
 
 # Byte-compiled / optimized / DLL files
