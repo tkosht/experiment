@@ -17,6 +17,11 @@ mlflow
 tensorboard
 tensorboardX
 python-dateutil==2.8.0
+apache-airflow
+airflow-code-editor
+apache-airflow-providers-docker
+# black fs-s3fs fs-gcsfs
+
 
 
 # for sqa
@@ -32,6 +37,9 @@ pytest-xdist
 pytest-html
 docutils==0.15
 Sphinx
+pipdeptree
+pip-licenses
+
 
 # other tools
 omegaconf

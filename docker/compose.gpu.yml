@@ -11,12 +11,13 @@ services:
     image: $image_name
     container_name: $container_name
     tty: true
+    init: true
     deploy:
       resources:
         reservations:
           devices:
             - driver: nvidia
-              count: 1
+              count: all
               capabilities: [gpu, utility, compute, video]
     volumes:
       - .:/home/$user_name/workspace
