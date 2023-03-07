@@ -14,7 +14,7 @@ def main(n_limit: int = -1, pipe_file: str = "data/pipe_topic.gz"):
         steps=[
             (TokenizerWord(use_stoppoes=True), None),
             (VectorizerBoW(), None),
-            (TopicModel(n_topics=50), None),
+            (TopicModel(n_topics=5), None),
         ]
     )
 
