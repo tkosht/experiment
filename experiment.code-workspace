@@ -22,6 +22,7 @@
         "recommendations": [
             "ms-python.python",
             "ms-python.vscode-pylance",
+            "ms-python.flake8",
             "oderwat.indent-rainbow",
             "donjayamanne.githistory",
             "hediet.vscode-drawio",

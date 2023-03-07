@@ -21,10 +21,10 @@ mode:
 
 # ==========
 # general tasks
-pip: _pip save
+pip: _pip commit
 
 _pip:
-	docker compose exec app pip install -r requirements.txt
+	docker compose exec app python -m pip install -r requirements.txt
 
 commit:
 	@echo "$$(date +'%Y/%m/%d %T') - Start $@"

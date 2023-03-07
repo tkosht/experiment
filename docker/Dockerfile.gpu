@@ -59,20 +59,22 @@ RUN git config --global http.postBuffer 1048576000 \
     && pip install unidic-lite
 
 # Sudachi
-RUN pip install sudachidict_core sudachidict_small sudachidict_full
+RUN python -m pip install sudachidict_core sudachidict_small sudachidict_full
 
+# matplotlib
+RUN python -m pip install matplotlib
+
+# requirements
+COPY ./requirements.txt /requirements.txt
+RUN python -m pip install --upgrade pip \
+    && python -m pip install -r /requirements.txt \
+    && rm -f /requirements.txt
 
 # - upgrade system
 RUN apt-get upgrade -y \
     && apt-get autoremove -y \
     && apt-get clean -y
     # && rm -rf /var/lib/apt/lists/*
-
-COPY ./requirements.txt /requirements.txt
-
-RUN python -m pip install --upgrade pip \
-    && python -m pip install -r /requirements.txt \
-    && rm -f /requirements.txt
 
 # setup matplotlib for japanese
 # ARG matplotlibrc=/usr/local/lib/python3.8/dist-packages/matplotlib/mpl-data/matplotlibrc

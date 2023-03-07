@@ -1,8 +1,8 @@
 # for data science
+scipy
 scikit-learn
 numpy
 pandas
-scipy
 sympy
 tqdm
 matplotlib
@@ -21,7 +21,6 @@ apache-airflow
 airflow-code-editor
 apache-airflow-providers-docker
 # black fs-s3fs fs-gcsfs
-
 
 
 # for sqa
@@ -58,20 +57,19 @@ slackeventsapi
 torch
 torchvision
 torchtext
-pytorch-forecasting
-tensorflow
 tensorflow-datasets
-apache-beam
-apache-beam[gcp]
+# pytorch-forecasting
+# tensorflow
+# apache-beam
+# apache-beam[gcp]
 
-fastparquet
-python-snappy
-pyro-ppl
-# pystan==2.19.1.1
-pystan
+# fastparquet
+# python-snappy
+# pyro-ppl
+# pystan
 # fbprophet
-neo4j
-neomodel
+# neo4j
+# neomodel
 
 lxml
 beautifulsoup4
@@ -93,7 +91,7 @@ pyldavis
 
 scrapy
 
-ipywidgets
-networkx
-slack_sdk
+# ipywidgets
+# networkx
+# slack_sdk
 

@@ -8,8 +8,8 @@ services:
       args:
         user_name: $user_name
         group_name: $group_name
-    image: $image_name
-    container_name: $container_name
+    image: $pj_name.app
+    container_name: $pj_name.app
     tty: true
     init: true
     deploy:
