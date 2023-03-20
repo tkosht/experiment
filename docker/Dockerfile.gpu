@@ -1,5 +1,4 @@
 FROM nvidia/cuda:11.8.0-devel-ubuntu22.04
-# FROM nvidia/cuda:11.0.3-devel-ubuntu20.04
 
 LABEL maintainer="tkosht <takehito.oshita.business@gmail.com>"
 
@@ -9,13 +8,14 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update -y && apt-get upgrade -y \
     && apt-get install --fix-missing -y sudo build-essential autoconf \
         vim tmux tzdata locales dialog git openssh-server bash-completion \
-        jq sqlite3 curl nodejs npm \
-        libsnappy-dev fontconfig fonts-ipaexfont \
+        jq sqlite3 curl nodejs npm default-jre \
+        libgeos-dev libsnappy-dev fontconfig fonts-ipaexfont fonts-ipafont \
+        libmecab-dev mecab mecab-ipadic-utf8 mecab-utils file \
     && localedef -f UTF-8 -i ja_JP ja_JP.UTF-8
 
-RUN mkdir /var/run/sshd
-RUN echo "PubkeyAuthentication yes" >> /etc/ssh/sshd_config
-RUN echo "AuthorizedKeysFile workspace/.ssh/authorized_keys" >> /etc/ssh/sshd_config
+### RUN mkdir /var/run/sshd
+### RUN echo "PubkeyAuthentication yes" >> /etc/ssh/sshd_config
+### RUN echo "AuthorizedKeysFile workspace/.ssh/authorized_keys" >> /etc/ssh/sshd_config
 
 # RUN npm update -g npm \
 #     && npm install -g webpack-dev-server \
@@ -48,17 +48,33 @@ ENV LANG="ja_JP.UTF-8" \
     TZ="Asia/Tokyo" \
     TERM="xterm"
 
+# ======================== #
+# # Install for Tokenizers
+WORKDIR /tmp
+
+# MeCab
+RUN git config --global http.postBuffer 1048576000 \
+    && git clone https://github.com/neologd/mecab-ipadic-neologd.git \
+    && cd mecab-ipadic-neologd && bin/install-mecab-ipadic-neologd -n -a -y \
+    && pip install unidic-lite
+
+# Sudachi
+RUN python -m pip install sudachidict_core sudachidict_small sudachidict_full
+
+# matplotlib
+RUN python -m pip install matplotlib
+
+# requirements
+COPY ./requirements.txt /requirements.txt
+RUN python -m pip install --upgrade pip \
+    && python -m pip install -r /requirements.txt \
+    && rm -f /requirements.txt
+
 # - upgrade system
 RUN apt-get upgrade -y \
     && apt-get autoremove -y \
     && apt-get clean -y
     # && rm -rf /var/lib/apt/lists/*
-
-COPY ./requirements.txt /requirements.txt
-
-RUN python -m pip install --upgrade pip \
-    && python -m pip install -r /requirements.txt \
-    && rm -f /requirements.txt
 
 # setup matplotlib for japanese
 # ARG matplotlibrc=/usr/local/lib/python3.8/dist-packages/matplotlib/mpl-data/matplotlibrc

@@ -1,32 +1,37 @@
 {
-	"folders": [
-		{
+    "folders": [
+        {
             "name": "root",
-			"path": "."
-		},
-		{
+            "path": "."
+        },
+        {
             "name": "backend",
-			"path": "backend"
-		},
-		{
+            "path": "backend"
+        },
+        {
             "name": "frontend",
-			"path": "frontend"
-		}
-	],
-	"settings": {
+            "path": "frontend"
+        }
+    ],
+    "settings": {
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": true,
+        }
     },
     "extensions": {
         "recommendations": [
             "ms-python.python",
             "ms-python.vscode-pylance",
+            "ms-python.flake8",
             "oderwat.indent-rainbow",
-            // "donjayamanne.python-extension-pack",
-            // "littlefoxteam.vscode-python-test-adapter",
-            "tushortz.python-extended-snippets",
-            "octref.vetur",
-            "msjsdiag.debugger-for-chrome",
             "donjayamanne.githistory",
             "hediet.vscode-drawio",
+            "bracketpaircolordlw.bracket-pair-color-dlw"
+            // "littlefoxteam.vscode-python-test-adapter",
+            // "donjayamanne.python-extension-pack",
+            // "tushortz.python-extended-snippets",
+            // "octref.vetur",
+            // "msjsdiag.debugger-for-chrome",
             // "tabnine.tabnine-vscode",
         ]
     }
