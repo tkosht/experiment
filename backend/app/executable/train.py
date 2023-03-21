@@ -33,8 +33,14 @@ def _main(
         dataset["validation"], batch_size=batch_size, num_workers=2, pin_memory=True
     )
 
+    n_dim = bert.pooler.dense.out_features  # 768
     model = SimpleBertClassifier(
-        bert, n_dim=768, n_hidden=128, class_names=["differ", "same"]
+        bert,
+        n_dim=n_dim,
+        n_hidden=128,  # arbitrary number
+        class_names=["differ", "same"],
+        weight=torch.Tensor((1 / 9, 1 / 6)),
+        use_transdec=False,
     )
     optimizer = torch.optim.RAdam(
         model.parameters(), lr=1e-3, betas=(0.9, 0.999), eps=1e-08
