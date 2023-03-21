@@ -65,7 +65,11 @@ spacy
 ipywidgets
 ginza
 ja_ginza_electra
-networkx
+transformers
+datasets
+fugashi
+ipadic
+# networkx
 
 gensim
 janome

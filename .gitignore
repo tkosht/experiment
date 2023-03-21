@@ -9,6 +9,7 @@ work/
 tmp/
 .ssh/
 .*.swp
+?.sh
 
 
 # Byte-compiled / optimized / DLL files
