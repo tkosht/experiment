@@ -4,16 +4,15 @@ import torch.nn as nn
 from app.component.models.model import Classifier
 
 
-class SimpleClassifier(Classifier):
+class SimpleBertClassifier(Classifier):
     def __init__(
-        self, bert, class_names: list[str], n_dim=768, n_hidden=128, droprate=0.2
+        self, bert, class_names: list[str], n_dim=768, n_hidden=128, droprate=0.01
     ) -> None:
         super().__init__(class_names)
 
         self.bert: nn.Module = bert
         self.n_dim = n_dim
         self.n_hidden = n_hidden
-        self.n_classes = len(class_names)
         self.droprate = droprate
 
         self.clf = nn.Sequential(

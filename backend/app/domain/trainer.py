@@ -13,7 +13,7 @@ def log(*args, **kwargs):
     g_logger.info(*args, **kwargs)
 
 
-class TrainerClassifier(object):
+class TrainerBertClassifier(object):
     def __init__(
         self,
         tokenizer,
@@ -44,16 +44,18 @@ class TrainerClassifier(object):
     def do_train(
         self,
         max_epoch: int = 1,
-        max_step=500,
+        max_batches: int = 500,
         log_interval: int = 10,
-        valid_interval: int = 100,
+        eval_interval: int = 100,
     ) -> None:
         log("Start training")
         self.model.to(self.device)
 
-        for epoch in range(max_epoch):
-            for bch_idx, bch in enumerate(tqdm(self.trainloader, desc="train")):
-                step = epoch * len(self.trainloader.dataset) + bch_idx
+        for epoch in tqdm(range(max_epoch), desc="epoch"):
+            log(f"{epoch=} Start")
+            for bch_idx, bch in enumerate(tqdm(self.trainloader, desc="trainloader")):
+                n_batches = min(max_batches, len(self.trainloader.dataset))
+                step = epoch * n_batches + bch_idx
                 inputs, t = self._t(bch)
 
                 # train
@@ -66,22 +68,24 @@ class TrainerClassifier(object):
                 if step % log_interval == 0:
                     log(f"{epoch=} / {step=}: loss={loss.item(): .3f}")
 
-                if step % valid_interval == 0:
-                    self.do_eval(max_step=50)
+                if step % eval_interval == 0:
+                    self.do_eval(max_batches=50, epoch=epoch, step=step)
 
-                if step >= max_step:
+                if max_batches > 0 and bch_idx >= max_batches:
                     break
+            log(f"{epoch=} End")
+
         log("End training")
 
-    def do_eval(self, max_step=50) -> None:
-        n_classes = len(self.model.class_names)
+    def do_eval(self, max_batches=200, epoch=None, step=None) -> None:
+        n_classes = self.model.n_classes
 
         total_loss = []
         n_corrects = 0
         n_totals = 0
         corrects = numpy.zeros(n_classes, dtype=int)
         totals = numpy.zeros(n_classes, dtype=int)
-        for bch_idx, bch in enumerate(tqdm(self.trainloader, desc="validation")):
+        for bch_idx, bch in enumerate(tqdm(self.validloader, desc="validloader")):
             inputs, t = self._t(bch)
 
             with torch.no_grad():
@@ -98,19 +102,23 @@ class TrainerClassifier(object):
                 corrects[ldx] += (_y.argmax(dim=-1) == _t).sum().item()  # +0 or +1
                 totals[ldx] += 1
 
-            if bch_idx >= max_step:
+            if bch_idx >= max_batches:
                 break
 
         # NOTE: print results
         loss_avg = numpy.array(total_loss).mean()
         log("=" * 80)
-        log(f"valid loss={loss_avg:.3f}")
-        log(f"total accuracy={n_corrects / n_totals:.3f} ({n_corrects} / {n_totals})")
+        log(f"{epoch=} / {step=}: total valid loss={loss_avg:.3f}")
+        log(
+            f"{epoch=} / {step=}: total valid accuracy={n_corrects / n_totals:.3f} "
+            f"({n_corrects} / {n_totals})"
+        )
         log("-" * 50)
 
         for ldx in range(n_classes):
             lbl = self.model.class_names[ldx]
             log(
-                f"{lbl}: {corrects[ldx] / totals[ldx]:.3f} ({corrects[ldx]} / {totals[ldx]})"
+                f"{epoch=} / {step=}: valid accuracy={lbl}: {corrects[ldx] / totals[ldx]:.3f} "
+                f"({corrects[ldx]} / {totals[ldx]}) "
             )
         log("=" * 80)

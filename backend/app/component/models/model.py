@@ -98,6 +98,8 @@ class Classifier(Model):
         super().__init__()  # must be called at first
 
         self.class_names = class_names
+
+        self.n_classes = len(class_names)
         self.criterion = nn.CrossEntropyLoss()
 
     def loss(self, y: torch.Tensor, t: torch.Tensor) -> torch.Tensor:

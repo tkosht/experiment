@@ -3,30 +3,16 @@ from torch.utils.data import DataLoader
 from transformers import AutoModel, AutoTokenizer
 from datasets import load_dataset
 
-from app.domain.trainer import TrainerClassifier
-from app.domain.models.simple_models import SimpleClassifier
-
-
-# class Tokenizer(object):
-#     def __init__(self, tokenizer, device: torch.device = torch.device("cpu")) -> None:
-#         self.tokenizer = tokenizer
-#         self.device = device
-#
-#     def __call__(self, bch: dict):
-#         sentences = bch["sentence"]
-#         labels = bch["label"]
-#
-#         inputs = self.tokenizer(sentences, return_tensors="pt", padding=True)
-#         for k, v in inputs.items():
-#             if isinstance(v, torch.Tensor):
-#                 inputs[k] = v.to(self.device)
-#         t = torch.Tensor(labels).to(self.device)
-#         return inputs, t
+from app.domain.trainer import TrainerBertClassifier
+from app.domain.models.simple_models import SimpleBertClassifier
 
 
 def _main(
+    max_epoch: int = 1,
     batch_size: int = 16,
     seed: int = 123456,
+    log_interval: int = 10,
+    eval_interval: int = 100,
 ):
     torch.manual_seed(seed)
 
@@ -47,12 +33,14 @@ def _main(
         dataset["validation"], batch_size=batch_size, num_workers=2, pin_memory=True
     )
 
-    model = SimpleClassifier(bert, class_names=["differ", "same"])
+    model = SimpleBertClassifier(
+        bert, n_dim=768, n_hidden=128, class_names=["differ", "same"]
+    )
     optimizer = torch.optim.RAdam(
         model.parameters(), lr=1e-3, betas=(0.9, 0.999), eps=1e-08
     )
 
-    trainer = TrainerClassifier(
+    trainer = TrainerBertClassifier(
         tokenizer=tokenizer,
         model=model,
         optimizer=optimizer,
@@ -61,7 +49,9 @@ def _main(
         device=device,
     )
 
-    trainer.do_train(max_epoch=1, log_interval=10)
+    trainer.do_train(
+        max_epoch=max_epoch, log_interval=log_interval, eval_interval=eval_interval
+    )
 
 
 if __name__ == "__main__":
