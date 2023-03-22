@@ -12,7 +12,6 @@ class BertClassifier(Classifier):
         class_names: list[str],
         n_dim=768,
         n_hidden=128,
-        n_out=None,
         droprate=0.5,
         weight=None,
     ) -> None:

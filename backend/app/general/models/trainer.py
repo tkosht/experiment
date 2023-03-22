@@ -47,10 +47,13 @@ class TrainerBertClassifier(TrainerBase):
 
         teachers = self.tokenizer(labels, return_tensors="pt", padding=True)
         self._to_device(teachers)
-        t = F.one_hot(teachers.input_ids, num_classes=self.tokenizer.vocab_size)
-        t = t.to(torch.float32)
+        t = teachers.input_ids
 
-        return inputs, t
+        T = F.one_hot(t, num_classes=self.tokenizer.vocab_size)
+        T = T.to(torch.float32)
+        inputs["target"] = T
+
+        return inputs, T
 
     def do_train(
         self,
@@ -67,13 +70,12 @@ class TrainerBertClassifier(TrainerBase):
             for bch_idx, bch in enumerate(tqdm(self.trainloader, desc="trainloader")):
                 n_batches = min(max_batches, len(self.trainloader.dataset))
                 step = epoch * n_batches + bch_idx
-                inputs, t = self._t(bch)
+                inputs, T = self._t(bch)
 
                 # train
-                inputs["target"] = t
                 self.optimizer.zero_grad()
                 y = self.model(**inputs)
-                loss = self.model.loss(y, t)
+                loss = self.model.loss(y, T)
                 loss.backward()
                 self.optimizer.step()
 
@@ -90,34 +92,38 @@ class TrainerBertClassifier(TrainerBase):
         log("End training")
 
     def do_eval(self, max_batches=200, epoch=None, step=None) -> None:
-        n_classes = self.model.n_classes
-
         total_loss = []
         n_corrects = 0
         n_totals = 0
-        label_corrects = numpy.zeros(n_classes, dtype=int)
-        labels = numpy.zeros(n_classes, dtype=int)
-        predicts = numpy.zeros(n_classes, dtype=int)
-        predict_corrects = numpy.zeros(n_classes, dtype=int)
+
+        label_corrects = {}
+        labels = {}
+        predicts = {}
+        predict_corrects = {}
+
         for bch_idx, bch in enumerate(tqdm(self.validloader, desc="validloader")):
-            inputs, t = self._t(bch)
+            inputs, T = self._t(bch)
 
             with torch.no_grad():
                 y = self.model(**inputs)
-                loss = self.model.loss(y, t)
+                loss = self.model.loss(y, T)
 
             total_loss.append(loss.item())
 
-            n_corrects += (y.argmax(dim=-1) == t).sum().item()
+            n_corrects += (y.argmax(dim=-1) == T.argmax(dim=-1)).sum().item()
             bs = len(y)
             n_totals += bs
-            for _y, _t in zip(y, t):
-                ldx = _t.item()
-                pdx = _y.argmax(dim=-1).item()
-                label_corrects[ldx] += pdx == ldx
-                labels[ldx] += 1
-                predict_corrects[pdx] += pdx == ldx
-                predicts[pdx] += 1
+
+            def _to_text(tsr: torch.Tensor) -> str:
+                return "".join(self.tokenizer.decode(tsr.argmax(dim=-1)))
+
+            for _y, _t in zip(y, T):
+                lbl = _to_text(_t)
+                prd = _to_text(_y)
+                label_corrects[lbl] = label_corrects.get(lbl, 0) + int(prd == lbl)
+                labels[lbl] = labels.get(lbl, 0) + 1
+                predict_corrects[prd] = predict_corrects.get(prd, 0) + int(prd == lbl)
+                predicts[prd] = predicts.get(prd, 0) + 1
 
             if bch_idx >= max_batches:
                 break
@@ -133,19 +139,19 @@ class TrainerBertClassifier(TrainerBase):
 
         # recall
         log("-" * 50)
-        for ldx in range(n_classes):
-            lbl = self.model.class_names[ldx]
+        for lbl in labels.keys():
             log(
-                f"{epoch=} / {step=}: valid recall: {lbl}={label_corrects[ldx] / labels[ldx]:.3f} "
-                f"({label_corrects[ldx]} / {labels[ldx]}) "
+                f"{epoch=} / {step=}: valid recall: {lbl}={label_corrects[lbl] / labels[lbl]:.3f} "
+                f"({label_corrects[lbl]} / {labels[lbl]}) "
             )
 
         # precision
         log("-" * 50)
-        for ldx in range(n_classes):
-            lbl = self.model.class_names[ldx]
+        for prd in predicts.keys():
+            if prd not in labels:
+                continue
             log(
-                f"{epoch=} / {step=}: valid precision: {lbl}={predict_corrects[ldx] / predicts[ldx]:.3f} "
-                f"({predict_corrects[ldx]} / {predicts[ldx]}) "
+                f"{epoch=} / {step=}: valid precision: {prd}={predict_corrects[prd] / predicts[prd]:.3f} "
+                f"({predict_corrects[prd]} / {predicts[prd]}) "
             )
         log("=" * 80)
