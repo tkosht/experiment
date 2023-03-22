@@ -52,7 +52,7 @@ class SimpleBertClassifier(Classifier):
         return y
 
 
-class GeneralBertClassifier(Classifier):
+class TransBertClassifier(Classifier):
     def __init__(
         self,
         bert,

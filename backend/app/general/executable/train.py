@@ -3,8 +3,8 @@ from datasets import load_dataset
 from torch.utils.data import DataLoader, Dataset
 from transformers import AutoModel, AutoTokenizer
 
-from app.simple.models.model import SimpleBertClassifier
-from app.simple.models.trainer import TrainerBase, TrainerBertClassifier
+from app.general.models.model import BertClassifier
+from app.general.models.trainer import TrainerBase, TrainerBertClassifier
 
 
 def buildup_trainer(
@@ -37,14 +37,12 @@ def buildup_trainer(
     )
 
     n_dim = bert.pooler.dense.out_features  # 768
-    model = SimpleBertClassifier(
+    model = BertClassifier(
         bert,
         n_dim=n_dim,
-        # n_hidden=128,  # arbitrary number
         n_hidden=16,  # arbitrary number
         class_names=["positive", "negative"],
         droprate=0.01,
-        # weight=torch.Tensor((1, 20)),
         weight=None,
     )
     optimizer = torch.optim.RAdam(
