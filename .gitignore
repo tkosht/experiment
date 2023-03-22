@@ -4,13 +4,13 @@ node_modules/
 dist/
 data/
 img/
+log/
 wk/
 work/
 tmp/
 .ssh/
 .*.swp
 ?.sh
-
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
