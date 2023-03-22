@@ -39,8 +39,9 @@ def _main(
         bert,
         n_dim=n_dim,
         n_hidden=128,  # arbitrary number
-        class_names=["differ", "same"],
-        weight=torch.Tensor((1 / 9, 1 / 6)),
+        class_names=["positive", "negative"],
+        # weight=torch.Tensor((1 / 9, 1 / 6)),
+        weight=torch.Tensor((1, 100)),
         use_transdec=use_trans,
     )
     optimizer = torch.optim.RAdam(
