@@ -7,8 +7,8 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 from typing_extensions import Self
 
-from app.component.logger import Logger
-from app.component.models.model import Classifier
+from app.base.component.logger import Logger
+from app.base.models.model import Classifier
 
 g_logger = Logger(logger_name="simple_trainer")
 
