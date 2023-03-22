@@ -40,7 +40,8 @@ def buildup_trainer(
     model = BertClassifier(
         bert,
         n_dim=n_dim,
-        n_hidden=16,  # arbitrary number
+        n_hidden=128,  # arbitrary number
+        n_out=tokenizer.vocab_size,
         class_names=["positive", "negative"],
         droprate=0.01,
         weight=None,

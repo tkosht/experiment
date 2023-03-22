@@ -12,6 +12,7 @@ class BertClassifier(Classifier):
         class_names: list[str],
         n_dim=768,
         n_hidden=128,
+        n_out=None,
         droprate=0.5,
         weight=None,
     ) -> None:
@@ -20,6 +21,7 @@ class BertClassifier(Classifier):
         self.bert: nn.Module = bert
         self.n_dim = n_dim
         self.n_hidden = n_hidden
+        self.n_out = len(class_names) if n_out is None else n_out
         self.droprate = droprate
         self.weight = weight
 
@@ -29,8 +31,8 @@ class BertClassifier(Classifier):
         self.decoder = nn.TransformerDecoder(decoder_layer, num_layers=2)
 
         self.clf = nn.Sequential(
-            # nn.BatchNorm1d(self.n_dim),
-            nn.Softmax(dim=-1),
+            nn.BatchNorm1d(self.n_out),
+            nn.LogSoftmax(dim=-1),
         )
 
         self._initialize()
@@ -68,7 +70,9 @@ class BertClassifier(Classifier):
         dec = torch.transpose(dec, 0, 1)  # -> (B, S', D)
         h = torch.matmul(dec, W.T)  # (B, S', V)
 
-        y = self.clf(h)
+        B, S, V = h.shape
+        h = h.reshape(-1, V)  # -> (B*S, V)
+        y = self.clf(h).reshape(B, S, V)
         return y
 
     def loss(self, y: torch.Tensor, t: torch.Tensor) -> torch.Tensor:

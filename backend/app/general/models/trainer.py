@@ -80,7 +80,7 @@ class TrainerBertClassifier(TrainerBase):
                 self.optimizer.step()
 
                 if step % log_interval == 0:
-                    log(f"{epoch=} / {step=}: loss={loss.item():.3f}")
+                    log(f"{epoch=} / {step=}: loss={loss.item():.7f}")
 
                 if step % eval_interval == 0:
                     self.do_eval(max_batches=50, epoch=epoch, step=step)
@@ -131,7 +131,7 @@ class TrainerBertClassifier(TrainerBase):
         # NOTE: print results
         loss_avg = numpy.array(total_loss).mean()
         log("=" * 80)
-        log(f"{epoch=} / {step=}: total valid loss={loss_avg:.3f}")
+        log(f"{epoch=} / {step=}: total valid loss={loss_avg:.7f}")
         log(
             f"{epoch=} / {step=}: total valid accuracy={n_corrects / n_totals:.3f} "
             f"({n_corrects} / {n_totals})"
