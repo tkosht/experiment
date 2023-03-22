@@ -1,48 +1,17 @@
-from inspect import signature
-
-import joblib
 import numpy
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from typing_extensions import Self
 
 from app.base.component.logger import Logger
 from app.base.models.model import Classifier
+from app.base.models.trainer import TrainerBase
 
 g_logger = Logger(logger_name="simple_trainer")
 
 
 def log(*args, **kwargs):
     g_logger.info(*args, **kwargs)
-
-
-class TrainerBase(object):
-    def do_train(self):
-        raise NotImplementedError("do_train()")
-
-    def do_eval(self):
-        raise NotImplementedError("do_eval()")
-
-    def __getstate__(self):
-        s = signature(self.__init__)
-        state = {}
-        for k in list(s.parameters):
-            state[k] = getattr(self, k)
-        return state
-
-    def load(self, load_file: str) -> Self:
-        state = joblib.load(load_file)
-        self.__init__(**state)
-        return self
-
-    def save(self, save_file: str) -> Self:
-        s = signature(self.__init__)
-        state = {}
-        for k in list(s.parameters):
-            state[k] = getattr(self, k)
-        joblib.dump(state, save_file, compress=("gzip", 3))
-        return self
 
 
 class TrainerBertClassifier(TrainerBase):
