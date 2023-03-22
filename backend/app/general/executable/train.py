@@ -3,8 +3,8 @@ from datasets import load_dataset
 from torch.utils.data import DataLoader, Dataset
 from transformers import AutoModel, AutoTokenizer
 
-from app.simple.domain.models.simple_models import SimpleBertClassifier
-from app.simple.domain.simple_trainer import TrainerBase, TrainerBertClassifier
+from app.simple.models.model import SimpleBertClassifier
+from app.simple.models.trainer import TrainerBase, TrainerBertClassifier
 
 
 def buildup_trainer(
