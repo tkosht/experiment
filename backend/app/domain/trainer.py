@@ -98,7 +98,7 @@ class TrainerBertClassifier(TrainerBase):
                 self.optimizer.step()
 
                 if step % log_interval == 0:
-                    log(f"{epoch=} / {step=}: loss={loss.item(): .3f}")
+                    log(f"{epoch=} / {step=}: loss={loss.item():.3f}")
 
                 if step % eval_interval == 0:
                     self.do_eval(max_batches=50, epoch=epoch, step=step)
@@ -115,8 +115,10 @@ class TrainerBertClassifier(TrainerBase):
         total_loss = []
         n_corrects = 0
         n_totals = 0
-        corrects = numpy.zeros(n_classes, dtype=int)
-        totals = numpy.zeros(n_classes, dtype=int)
+        label_corrects = numpy.zeros(n_classes, dtype=int)
+        labels = numpy.zeros(n_classes, dtype=int)
+        predicts = numpy.zeros(n_classes, dtype=int)
+        predict_corrects = numpy.zeros(n_classes, dtype=int)
         for bch_idx, bch in enumerate(tqdm(self.validloader, desc="validloader")):
             inputs, t = self._t(bch)
 
@@ -131,8 +133,11 @@ class TrainerBertClassifier(TrainerBase):
             n_totals += bs
             for _y, _t in zip(y, t):
                 ldx = _t.item()
-                corrects[ldx] += (_y.argmax(dim=-1) == _t).sum().item()  # +0 or +1
-                totals[ldx] += 1
+                pdx = _y.argmax(dim=-1).item()
+                label_corrects[ldx] += pdx == ldx
+                labels[ldx] += 1
+                predict_corrects[pdx] += pdx == ldx
+                predicts[pdx] += 1
 
             if bch_idx >= max_batches:
                 break
@@ -145,12 +150,22 @@ class TrainerBertClassifier(TrainerBase):
             f"{epoch=} / {step=}: total valid accuracy={n_corrects / n_totals:.3f} "
             f"({n_corrects} / {n_totals})"
         )
-        log("-" * 50)
 
+        # recall
+        log("-" * 50)
         for ldx in range(n_classes):
             lbl = self.model.class_names[ldx]
             log(
-                f"{epoch=} / {step=}: valid accuracy={lbl}: {corrects[ldx] / totals[ldx]:.3f} "
-                f"({corrects[ldx]} / {totals[ldx]}) "
+                f"{epoch=} / {step=}: valid recall: {lbl}={label_corrects[ldx] / labels[ldx]:.3f} "
+                f"({label_corrects[ldx]} / {labels[ldx]}) "
+            )
+
+        # precision
+        log("-" * 50)
+        for ldx in range(n_classes):
+            lbl = self.model.class_names[ldx]
+            log(
+                f"{epoch=} / {step=}: valid precision: {lbl}={predict_corrects[ldx] / predicts[ldx]:.3f} "
+                f"({predict_corrects[ldx]} / {predicts[ldx]}) "
             )
         log("=" * 80)
