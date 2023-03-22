@@ -1,10 +1,14 @@
+from inspect import signature
+
+import joblib
 import numpy
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+from typing_extensions import Self
 
 from app.component.logger import Logger
-from app.component.models.model import Classifier, State
+from app.component.models.model import Classifier
 
 g_logger = Logger(logger_name="simple_trainer")
 
@@ -13,22 +17,42 @@ def log(*args, **kwargs):
     g_logger.info(*args, **kwargs)
 
 
-class TrainerBase(State):
+class TrainerBase(object):
     def do_train(self):
         raise NotImplementedError("do_train()")
 
     def do_eval(self):
         raise NotImplementedError("do_eval()")
 
+    def __getstate__(self):
+        s = signature(self.__init__)
+        state = {}
+        for k in list(s.parameters):
+            state[k] = getattr(self, k)
+        return state
+
+    def load(self, load_file: str) -> Self:
+        state = joblib.load(load_file)
+        self.__init__(**state)
+        return self
+
+    def save(self, save_file: str) -> Self:
+        s = signature(self.__init__)
+        state = {}
+        for k in list(s.parameters):
+            state[k] = getattr(self, k)
+        joblib.dump(state, save_file, compress=("gzip", 3))
+        return self
+
 
 class TrainerBertClassifier(TrainerBase):
     def __init__(
         self,
-        tokenizer,
-        model: Classifier,
-        optimizer: torch.optim.Optimizer,
-        trainloader: DataLoader,
-        validloader: DataLoader,
+        tokenizer=None,
+        model: Classifier = None,
+        optimizer: torch.optim.Optimizer = None,
+        trainloader: DataLoader = None,
+        validloader: DataLoader = None,
         device: torch.device = torch.device("cpu"),
     ) -> None:
         self.tokenizer = tokenizer

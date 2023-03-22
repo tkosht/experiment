@@ -1,24 +1,21 @@
-import joblib
 import torch
-from torch.utils.data import DataLoader
-from transformers import AutoModel, AutoTokenizer
 from datasets import load_dataset
+from torch.utils.data import DataLoader, Dataset
+from transformers import AutoModel, AutoTokenizer
 
-from app.domain.trainer import TrainerBertClassifier
 from app.domain.models.simple_models import SimpleBertClassifier
+from app.domain.trainer import TrainerBase, TrainerBertClassifier
 
 
-def _main(
-    max_epoch: int = 1,
-    max_batches: int = 1,
-    batch_size: int = 16,
-    seed: int = 123456,
-    log_interval: int = 10,
-    eval_interval: int = 100,
+def buildup_trainer(
+    resume_file: str,
+    batch_size: int,
     use_trans: bool = False,
-    trained_file: str = "data/trainer.gz",
-):
-    torch.manual_seed(seed)
+) -> TrainerBase:
+    if resume_file is not None:
+        trainer = TrainerBertClassifier()
+        trainer.load(load_file=resume_file)
+        return trainer
 
     device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
     print(f"{device=}")
@@ -26,7 +23,7 @@ def _main(
     bert = AutoModel.from_pretrained("cl-tohoku/bert-base-japanese")
     tokenizer = AutoTokenizer.from_pretrained("cl-tohoku/bert-base-japanese")
 
-    dataset = load_dataset("shunk031/JGLUE", name="MARC-ja")
+    dataset: Dataset = load_dataset("shunk031/JGLUE", name="MARC-ja")
 
     # setup loader
     trainloader = DataLoader(
@@ -34,7 +31,10 @@ def _main(
     )
 
     validloader = DataLoader(
-        dataset["validation"], batch_size=batch_size, num_workers=2, pin_memory=True
+        dataset["validation"],
+        batch_size=batch_size,
+        num_workers=2,
+        pin_memory=True,
     )
 
     n_dim = bert.pooler.dense.out_features  # 768
@@ -61,6 +61,25 @@ def _main(
         validloader=validloader,
         device=device,
     )
+    return trainer
+
+
+def _main(
+    max_epoch: int = 1,
+    max_batches: int = 1,
+    batch_size: int = 16,
+    seed: int = 123456,
+    log_interval: int = 10,
+    eval_interval: int = 100,
+    use_trans: bool = False,
+    resume_file: str = None,  # like "data/trainer.gz"
+    trained_file: str = "data/trainer.gz",
+):
+    torch.manual_seed(seed)
+
+    trainer = buildup_trainer(
+        resume_file=resume_file, batch_size=batch_size, use_trans=use_trans
+    )
 
     trainer.do_train(
         max_epoch=max_epoch,
@@ -69,7 +88,7 @@ def _main(
         eval_interval=eval_interval,
     )
 
-    joblib.dump(trainer, trained_file, compress=("gzip", 3))
+    trainer.save(save_file=trained_file)
 
 
 if __name__ == "__main__":

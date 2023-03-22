@@ -14,6 +14,11 @@
             "env": {
                 "PYTHONPATH": ".",
             },
+            "args": [
+                "--resume-file=data/trainer.gz",
+                "--max-batches=1",
+                "--max-epoch=1",
+            ],
             "justMyCode": false
         },
         {

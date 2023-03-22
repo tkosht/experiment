@@ -17,7 +17,7 @@ TensorOneHot: TypeAlias = TensorSparse  # like (0, ..., 0, 1, 0, ..., 0)
 TensorEmbed: TypeAlias = TensorDense
 
 
-class State(object):
+class ModelState(nn.Module):
     def __repr__(self) -> str:
         s = signature(self.__init__)
         params = (f"{k}={self.__dict__[k]}" for k in s.parameters)
@@ -25,21 +25,31 @@ class State(object):
         return f"{type(self).__name__}({', '.join(params)})"
 
     def __getstate__(self):
+        # for non torch model
         s = signature(self.__init__)
         state = {}
         for k in list(s.parameters):
             state[k] = getattr(self, k)
+        # for torch model
+        state.update(self.state_dict())
         return state
 
     def __setstate__(self, state):
+        # for non torch model
         s = signature(self.__init__)
         kwargs = {}
         for k in list(s.parameters):
             kwargs[k] = state[k]
         self.__init__(**kwargs)
 
+        # for torch model
+        for k in kwargs.keys():
+            state.pop(k)
 
-class Model(nn.Module, State):
+        self.load_state_dict(state)
+
+
+class Model(ModelState):
     def __init__(self) -> None:
         super().__init__()  # must be called at first
 
