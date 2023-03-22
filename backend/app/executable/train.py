@@ -1,3 +1,4 @@
+import joblib
 import torch
 from torch.utils.data import DataLoader
 from transformers import AutoModel, AutoTokenizer
@@ -9,11 +10,13 @@ from app.domain.models.simple_models import SimpleBertClassifier
 
 def _main(
     max_epoch: int = 1,
+    max_batches: int = 1,
     batch_size: int = 16,
     seed: int = 123456,
     log_interval: int = 10,
     eval_interval: int = 100,
     use_trans: bool = False,
+    trained_file: str = "data/trainer.gz",
 ):
     torch.manual_seed(seed)
 
@@ -38,10 +41,12 @@ def _main(
     model = SimpleBertClassifier(
         bert,
         n_dim=n_dim,
-        n_hidden=128,  # arbitrary number
+        # n_hidden=128,  # arbitrary number
+        n_hidden=16,  # arbitrary number
         class_names=["positive", "negative"],
-        # weight=torch.Tensor((1 / 9, 1 / 6)),
-        weight=torch.Tensor((1, 100)),
+        droprate=0.01,
+        # weight=torch.Tensor((1, 20)),
+        weight=None,
         use_transdec=use_trans,
     )
     optimizer = torch.optim.RAdam(
@@ -58,8 +63,13 @@ def _main(
     )
 
     trainer.do_train(
-        max_epoch=max_epoch, log_interval=log_interval, eval_interval=eval_interval
+        max_epoch=max_epoch,
+        max_batches=max_batches,
+        log_interval=log_interval,
+        eval_interval=eval_interval,
     )
+
+    joblib.dump(trainer, trained_file, compress=("gzip", 3))
 
 
 if __name__ == "__main__":

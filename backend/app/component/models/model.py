@@ -17,7 +17,29 @@ TensorOneHot: TypeAlias = TensorSparse  # like (0, ..., 0, 1, 0, ..., 0)
 TensorEmbed: TypeAlias = TensorDense
 
 
-class Model(nn.Module):
+class State(object):
+    def __repr__(self) -> str:
+        s = signature(self.__init__)
+        params = (f"{k}={self.__dict__[k]}" for k in s.parameters)
+        # params = {k: self.__dict__[k] for k in s.parameters}
+        return f"{type(self).__name__}({', '.join(params)})"
+
+    def __getstate__(self):
+        s = signature(self.__init__)
+        state = {}
+        for k in list(s.parameters):
+            state[k] = getattr(self, k)
+        return state
+
+    def __setstate__(self, state):
+        s = signature(self.__init__)
+        kwargs = {}
+        for k in list(s.parameters):
+            kwargs[k] = state[k]
+        self.__init__(**kwargs)
+
+
+class Model(nn.Module, State):
     def __init__(self) -> None:
         super().__init__()  # must be called at first
 
@@ -32,26 +54,6 @@ class Model(nn.Module):
 
     def loss(self, X: Tensor, y: Tensor) -> Tensor:
         return Tensor([0.0])
-
-    def __repr__(self) -> str:
-        s = signature(self.__init__)
-        params = (f"{k}={self.__dict__[k]}" for k in s.parameters)
-        # params = {k: self.__dict__[k] for k in s.parameters}
-        return f"{type(self).__name__}({', '.join(params)})"
-
-    def __getstate__(self):
-        s = signature(self.__init__)
-        state = {}
-        for k in list(s.parameters):
-            state[k] = self.__dict__[k]
-        return state
-
-    def __setstate__(self, state):
-        s = signature(self.__init__)
-        kwargs = {}
-        for k in list(s.parameters):
-            kwargs[k] = state[k]
-        self.__init__(**kwargs)
 
 
 class Labeller(Model):

@@ -44,7 +44,7 @@ class SimpleBertClassifier(Classifier):
         for p in self.bert.parameters():
             p.requires_grad = False
 
-        for lyr in self.clf:
+        for lyr in self.clf.parameters():
             if isinstance(lyr, nn.Linear):
                 torch.nn.init.kaiming_uniform_(lyr.weight)
 

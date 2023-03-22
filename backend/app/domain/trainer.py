@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from app.component.logger import Logger
-from app.component.models.model import Classifier
+from app.component.models.model import Classifier, State
 
 g_logger = Logger(logger_name="simple_trainer")
 
@@ -13,7 +13,15 @@ def log(*args, **kwargs):
     g_logger.info(*args, **kwargs)
 
 
-class TrainerBertClassifier(object):
+class TrainerBase(State):
+    def do_train(self):
+        raise NotImplementedError("do_train()")
+
+    def do_eval(self):
+        raise NotImplementedError("do_eval()")
+
+
+class TrainerBertClassifier(TrainerBase):
     def __init__(
         self,
         tokenizer,
