@@ -13,6 +13,7 @@ def _main(
     seed: int = 123456,
     log_interval: int = 10,
     eval_interval: int = 100,
+    use_trans: bool = False,
 ):
     torch.manual_seed(seed)
 
@@ -40,7 +41,7 @@ def _main(
         n_hidden=128,  # arbitrary number
         class_names=["differ", "same"],
         weight=torch.Tensor((1 / 9, 1 / 6)),
-        use_transdec=False,
+        use_transdec=use_trans,
     )
     optimizer = torch.optim.RAdam(
         model.parameters(), lr=1e-3, betas=(0.9, 0.999), eps=1e-08
