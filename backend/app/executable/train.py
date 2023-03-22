@@ -10,7 +10,6 @@ from app.domain.trainer import TrainerBase, TrainerBertClassifier
 def buildup_trainer(
     resume_file: str,
     batch_size: int,
-    use_trans: bool = False,
 ) -> TrainerBase:
     if resume_file is not None:
         trainer = TrainerBertClassifier()
@@ -47,7 +46,6 @@ def buildup_trainer(
         droprate=0.01,
         # weight=torch.Tensor((1, 20)),
         weight=None,
-        use_transdec=use_trans,
     )
     optimizer = torch.optim.RAdam(
         model.parameters(), lr=1e-3, betas=(0.9, 0.999), eps=1e-08
@@ -71,15 +69,12 @@ def _main(
     seed: int = 123456,
     log_interval: int = 10,
     eval_interval: int = 100,
-    use_trans: bool = False,
     resume_file: str = None,  # like "data/trainer.gz"
     trained_file: str = "data/trainer.gz",
 ):
     torch.manual_seed(seed)
 
-    trainer = buildup_trainer(
-        resume_file=resume_file, batch_size=batch_size, use_trans=use_trans
-    )
+    trainer = buildup_trainer(resume_file=resume_file, batch_size=batch_size)
 
     trainer.do_train(
         max_epoch=max_epoch,
