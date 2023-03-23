@@ -24,6 +24,7 @@ class Score(object):
         self.tokenizer = tokenizer
 
         self.n_corrects = 0
+        self.n_totals = 0
         self.label_corrects = {}
         self.labels = {}
         self.predicts = {}
@@ -34,14 +35,14 @@ class Score(object):
         self.Ts.append(T)
         return self
 
-    def calculate(self):
-        def _to_text(tsr: torch.Tensor) -> str:
-            return "".join(self.tokenizer.decode(tsr.argmax(dim=-1)))
+    def _to_text(self, tsr: torch.Tensor) -> str:
+        return "".join(self.tokenizer.decode(tsr.argmax(dim=-1)))
 
+    def calculate(self):
         for _P, _T in zip(self.Ps, self.Ts):
             for p, t in zip(_P, _T):
-                lbl = _to_text(t)
-                prd = _to_text(p)
+                lbl = self._to_text(t)
+                prd = self._to_text(p)
                 self.label_corrects[lbl] = self.label_corrects.get(lbl, 0) + int(
                     prd == lbl
                 )
@@ -51,12 +52,7 @@ class Score(object):
                 )
                 self.predicts[prd] = self.predicts.get(prd, 0) + 1
                 self.n_corrects += int(prd == lbl)
-
-    def correct_count(self) -> numpy.array:
-        return self.n_corrects
-
-    def total_count(self) -> numpy.array:
-        return len(self.Ps)
+                self.n_totals += 1
 
 
 class TrainerBertClassifier(TrainerBase):
@@ -174,8 +170,8 @@ class TrainerBertClassifier(TrainerBase):
         score.calculate()
 
         # accuracy
-        n_corrects = score.correct_count()
-        n_totals = score.total_count()
+        n_corrects = score.n_corrects
+        n_totals = score.n_totals
         log(
             f"{epoch=} / {step=}: total {key} accuracy={n_corrects / n_totals:.3f} "
             f"({n_corrects} / {n_totals})"

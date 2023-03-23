@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader, Dataset
 from transformers import AutoModel, AutoTokenizer
 
 from app.general.models.model import BertClassifier
-from app.general.models.trainer import TrainerBase, TrainerBertClassifier
+from app.general.models.trainer import TrainerBase, TrainerBertClassifier, g_logger
 
 
 def buildup_trainer(
@@ -73,16 +73,23 @@ def _main(
 ):
     torch.manual_seed(seed)
 
-    trainer = buildup_trainer(resume_file=resume_file, batch_size=batch_size)
+    g_logger.info("Start", "train")
+    try:
+        trainer = buildup_trainer(resume_file=resume_file, batch_size=batch_size)
 
-    trainer.do_train(
-        max_epoch=max_epoch,
-        max_batches=max_batches,
-        log_interval=log_interval,
-        eval_interval=eval_interval,
-    )
+        trainer.do_train(
+            max_epoch=max_epoch,
+            max_batches=max_batches,
+            log_interval=log_interval,
+            eval_interval=eval_interval,
+        )
 
-    trainer.save(save_file=trained_file)
+        trainer.save(save_file=trained_file)
+    except Exception as e:
+        g_logger.error("Error Occured", str(e))
+        raise e
+    finally:
+        g_logger.info("End", "train")
 
 
 if __name__ == "__main__":
