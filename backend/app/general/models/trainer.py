@@ -170,9 +170,12 @@ class TrainerBertClassifier(TrainerBase):
 
     def load(self, load_file: str) -> Self:
         log(f"Loading trainer ... [{load_file}]")
-        return super().load(load_file)
+        me = super().load(load_file)
+        log(f"Loaded trainer ... [{load_file}]")
+        return me
 
     def save(self, save_file: str) -> Self:
         log(f"Saving trainer ... [{save_file}]")
         super().save(save_file)
+        log(f"Saved trainer ... [{save_file}]")
         return self
