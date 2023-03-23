@@ -144,14 +144,25 @@ class TrainerBertClassifier(TrainerBase):
                 f"{epoch=} / {step=}: valid recall: {lbl}={label_corrects[lbl] / labels[lbl]:.3f} "
                 f"({label_corrects[lbl]} / {labels[lbl]}) "
             )
+            # setup fake info
+            if lbl not in predicts:
+                predicts[lbl] = -1
+                predict_corrects[lbl] = 0
 
         # precision
         log("-" * 50)
+        n_predicts = n_predict_corrects = 0
         for prd in predicts.keys():
             if prd not in labels:
+                n_predicts += predicts[prd]
+                n_predict_corrects += predict_corrects[prd]
                 continue
             log(
                 f"{epoch=} / {step=}: valid precision: {prd}={predict_corrects[prd] / predicts[prd]:.3f} "
                 f"({predict_corrects[prd]} / {predicts[prd]}) "
             )
+        log(
+            f"{epoch=} / {step=}: valid precision: others={n_predict_corrects / n_predicts:.3f} "
+            f"({n_predict_corrects} / {n_predicts}) "
+        )
         log("=" * 80)
