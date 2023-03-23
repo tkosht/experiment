@@ -74,6 +74,16 @@ def _main(
     torch.manual_seed(seed)
 
     g_logger.info("Start", "train")
+
+    g_logger.info(f"{max_epoch=}")
+    g_logger.info(f"{max_batches=}")
+    g_logger.info(f"{batch_size=}")
+    g_logger.info(f"{seed=}")
+    g_logger.info(f"{log_interval=}")
+    g_logger.info(f"{eval_interval=}")
+    g_logger.info(f"{resume_file=}")
+    g_logger.info(f"{trained_file=}")
+
     try:
         trainer = buildup_trainer(resume_file=resume_file, batch_size=batch_size)
 
