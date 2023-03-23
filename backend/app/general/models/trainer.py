@@ -3,6 +3,7 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+from typing_extensions import Self
 
 from app.base.component.logger import Logger
 from app.base.models.model import Classifier
@@ -110,10 +111,6 @@ class TrainerBertClassifier(TrainerBase):
 
             total_loss.append(loss.item())
 
-            n_corrects += (y.argmax(dim=-1) == T.argmax(dim=-1)).sum().item()
-            bs = len(y)
-            n_totals += bs
-
             def _to_text(tsr: torch.Tensor) -> str:
                 return "".join(self.tokenizer.decode(tsr.argmax(dim=-1)))
 
@@ -124,6 +121,10 @@ class TrainerBertClassifier(TrainerBase):
                 labels[lbl] = labels.get(lbl, 0) + 1
                 predict_corrects[prd] = predict_corrects.get(prd, 0) + int(prd == lbl)
                 predicts[prd] = predicts.get(prd, 0) + 1
+                n_corrects += int(prd == lbl)
+
+            bs = len(y)
+            n_totals += bs
 
             if bch_idx >= max_batches:
                 break
@@ -166,3 +167,12 @@ class TrainerBertClassifier(TrainerBase):
             f"({n_predict_corrects} / {n_predicts}) "
         )
         log("=" * 80)
+
+    def load(self, load_file: str) -> Self:
+        log(f"Loading trainer ... [{load_file}]")
+        return super().load(load_file)
+
+    def save(self, save_file: str) -> Self:
+        log(f"Saving trainer ... [{save_file}]")
+        super().save(save_file)
+        return self
