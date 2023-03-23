@@ -1,10 +1,19 @@
+from datetime import datetime
 from inspect import signature
 
 import joblib
+from torch.utils.tensorboard import SummaryWriter
 from typing_extensions import Self
 
 
 class TrainerBase(object):
+    def __init__(self) -> None:
+        # setup tensorboard writer
+        experiment_id = datetime.now().strftime("%Y%m%d%H%M%S")
+        logdir = f"result/{experiment_id}"
+        self.writer = SummaryWriter(log_dir=logdir)
+        self.experiment_id = experiment_id
+
     def do_train(self):
         raise NotImplementedError("do_train()")
 
@@ -17,6 +26,12 @@ class TrainerBase(object):
         for k in list(s.parameters):
             state[k] = getattr(self, k)
         return state
+
+    def write_graph(self, trainset):
+        self.writer.add_graph(self.model, (trainset.ti, trainset.tc, trainset.kn))
+
+    def write_board(self, key: str, value: float, step: int = None):
+        self.writer.add_scalar(key, value, step)
 
     def load(self, load_file: str) -> Self:
         state = joblib.load(load_file)
