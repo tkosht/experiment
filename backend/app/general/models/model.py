@@ -132,4 +132,4 @@ class BertClassifier(Classifier):
         return loss
 
     def loss_difference(self, y: torch.Tensor, t: torch.Tensor):
-        return self.cos(y, t).mean() + self.mse(y, t)
+        return self.mse(y, t) + torch.abs(1 - self.cos(y, t).mean())
