@@ -9,7 +9,7 @@ from app.base.component.logger import Logger
 from app.base.models.model import Classifier
 from app.base.models.trainer import TrainerBase
 
-g_logger = Logger(logger_name="simple_trainer")
+g_logger = Logger(logger_name="general_trainer")
 
 
 def log(*args, **kwargs):
@@ -61,6 +61,7 @@ class TrainerBertClassifier(TrainerBase):
         tokenizer=None,
         model: Classifier = None,
         optimizer: torch.optim.Optimizer = None,
+        scheduler: torch.optim.lr_scheduler.LRScheduler = None,
         trainloader: DataLoader = None,
         validloader: DataLoader = None,
         device: torch.device = torch.device("cpu"),
@@ -70,6 +71,7 @@ class TrainerBertClassifier(TrainerBase):
         self.tokenizer = tokenizer
         self.model = model
         self.optimizer = optimizer
+        self.scheduler = scheduler
         self.trainloader = trainloader
         self.validloader = validloader
         self.device = device
@@ -106,9 +108,14 @@ class TrainerBertClassifier(TrainerBase):
     ) -> None:
         log("Start training")
         self.model.to(self.device)
+        n_batches = len(self.trainloader)
 
+        step = 0
         for epoch in tqdm(range(max_epoch), desc="epoch"):
             log(f"{epoch=} Start")
+            for lrx, lr in enumerate(self.scheduler.get_last_lr()):
+                self.write_board(f"10.learnig_rate/{lrx:02d}", lr, step)
+
             for bch_idx, bch in enumerate(tqdm(self.trainloader, desc="trainloader")):
                 n_batches = min(max_batches, len(self.trainloader.dataset))
                 step = epoch * n_batches + bch_idx
@@ -136,6 +143,8 @@ class TrainerBertClassifier(TrainerBase):
                 if max_batches > 0 and bch_idx >= max_batches:
                     break
             log(f"{epoch=} End")
+
+            self.scheduler.step()
 
         log("End training")
 

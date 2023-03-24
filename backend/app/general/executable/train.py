@@ -2,7 +2,11 @@ import torch
 from datasets import load_dataset
 from torch.utils.data import DataLoader, Dataset
 from transformers import AutoModel, AutoTokenizer
-
+from torch.optim.lr_scheduler import (
+    CosineAnnealingWarmRestarts,
+    ChainedScheduler,
+    ConstantLR,
+)
 from app.general.models.model import BertClassifier
 from app.general.models.trainer import TrainerBase, TrainerBertClassifier, g_logger
 
@@ -46,15 +50,21 @@ def buildup_trainer(
         droprate=0.01,
         weight=None,
     )
-    model.context["tokenizer"] = tokenizer
     optimizer = torch.optim.RAdam(
         model.parameters(), lr=1e-3, betas=(0.9, 0.999), eps=1e-08
+    )
+    scheduler = ChainedScheduler(
+        [
+            ConstantLR(optimizer, factor=0.1, total_iters=5),
+            CosineAnnealingWarmRestarts(optimizer, T_0=100, T_mult=2, eta_min=1e-4),
+        ]
     )
 
     trainer = TrainerBertClassifier(
         tokenizer=tokenizer,
         model=model,
         optimizer=optimizer,
+        scheduler=scheduler,
         trainloader=trainloader,
         validloader=validloader,
         device=device,
@@ -87,6 +97,7 @@ def _main(
 
     try:
         trainer = buildup_trainer(resume_file=resume_file, batch_size=batch_size)
+        trainer.model.context["tokenizer"] = trainer.tokenizer
 
         trainer.do_train(
             max_epoch=max_epoch,
