@@ -123,7 +123,7 @@ class TrainerBertClassifier(TrainerBase):
 
                 if step % log_interval == 0:
                     log(f"{epoch=} / {step=}: loss={loss.item():.7f}")
-                    self.write_board("loss/train", loss.item(), step)
+                    self.write_board("01.loss/train", loss.item(), step)
 
                     score = Score(self.tokenizer).append(y.detach(), T.detach())
                     loss_train = loss.item()
@@ -217,7 +217,7 @@ class TrainerBertClassifier(TrainerBase):
             f"({n_predict_corrects} / {n_predicts}) "
         )
         self.write_board(
-            f"precision/{key}/others", n_predict_corrects / n_predicts, step
+            f"04.precision/{key}/others", n_predict_corrects / n_predicts, step
         )
         log("=" * 80)
 
