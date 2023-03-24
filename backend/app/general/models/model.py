@@ -25,8 +25,6 @@ class BertClassifier(Classifier):
         self.droprate = droprate
         self.weight = weight
 
-        self.criterion = nn.CrossEntropyLoss(weight=weight)
-
         decoder_layer = nn.TransformerDecoderLayer(d_model=n_dim, nhead=8)
         self.decoder = nn.TransformerDecoder(decoder_layer, num_layers=2)
 
@@ -34,6 +32,12 @@ class BertClassifier(Classifier):
             nn.BatchNorm1d(self.n_out),
             nn.LogSoftmax(dim=-1),
         )
+
+        # loss
+        self.context = {}
+        self.cel = nn.CrossEntropyLoss(weight=weight)
+        self.cos = nn.CosineSimilarity(dim=-1, eps=1e-6)
+        self.mse = nn.MSELoss()
 
         self._initialize()
 
@@ -51,6 +55,7 @@ class BertClassifier(Classifier):
         T = kwargs.pop("target")
         T = torch.transpose(T, 0, 1)  # -> (S', B, V)
         W = self.bert.embeddings.word_embeddings.weight  # (V, D)
+        self.context["target"] = T
 
         o = self.bert(*args, **kwargs)
         lh = o["last_hidden_state"]
@@ -68,6 +73,7 @@ class BertClassifier(Classifier):
         dec = dec[1 : tgt.shape[0]]  # -> (S', B, D)
         assert dec.shape[:-1] == T.shape[:-1]
         dec = torch.transpose(dec, 0, 1)  # -> (B, S', D)
+        self.context["decoded"] = dec
         h = torch.matmul(dec, W.T)  # (B, S', V)
 
         B, S, V = h.shape
@@ -76,4 +82,18 @@ class BertClassifier(Classifier):
         return y
 
     def loss(self, y: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
-        return super().loss(y, t)
+        loss = super().loss(y, t) + self.loss_difference(y, t) + self.loss_middle()
+        return loss
+
+    def loss_middle(self):
+        W = self.bert.embeddings.word_embeddings.weight  # (V, D)
+        T = self.context["target"]  # -> (S', B, V)
+        trg = torch.matmul(T, W)  # -> (S', B, D)
+
+        dec = self.context["decoded"]  # -> (B, S', D)
+        dec = torch.transpose(dec, 0, 1)  # -> (S', B, D)
+        loss = self.loss_difference(dec, trg)
+        return loss
+
+    def loss_difference(self, y: torch.Tensor, t: torch.Tensor):
+        return self.cos(y, t).mean() + self.mse(y, t)
