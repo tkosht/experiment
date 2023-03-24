@@ -164,7 +164,7 @@ class TrainerBertClassifier(TrainerBase):
     ):
         log("=" * 80)
         log(f"{epoch=} / {step=}: {key} loss={loss_value:.7f}")
-        self.write_board(f"loss/{key}", loss_value, step)
+        self.write_board(f"01.loss/{key}", loss_value, step)
 
     def log_scores(self, key: str, score: Score, epoch: int = None, step: int = None):
         score.calculate()
@@ -176,7 +176,7 @@ class TrainerBertClassifier(TrainerBase):
             f"{epoch=} / {step=}: total {key} accuracy={n_corrects / n_totals:.3f} "
             f"({n_corrects} / {n_totals})"
         )
-        self.write_board(f"accuracy/{key}", n_corrects / n_totals, step)
+        self.write_board(f"02.accuracy/{key}", n_corrects / n_totals, step)
 
         # recall
         log("-" * 50)
@@ -186,7 +186,7 @@ class TrainerBertClassifier(TrainerBase):
                 f"({score.label_corrects[lbl]} / {score.labels[lbl]}) "
             )
             self.write_board(
-                f"recall/{key}/{lbl}",
+                f"03.recall/{key}/{lbl}",
                 score.label_corrects[lbl] / score.labels[lbl],
                 step,
             )
@@ -208,7 +208,7 @@ class TrainerBertClassifier(TrainerBase):
                 f"({score.predict_corrects[prd]} / {score.predicts[prd]}) "
             )
             self.write_board(
-                f"precision/{key}/{lbl}",
+                f"04.precision/{key}/{lbl}",
                 score.predict_corrects[prd] / score.predicts[prd],
                 step,
             )
