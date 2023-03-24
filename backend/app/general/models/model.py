@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from typing_extensions import Self
 
 from app.base.models.model import Classifier
@@ -45,13 +46,39 @@ class BertClassifier(Classifier):
         for p in self.bert.parameters():
             p.requires_grad = False
 
-        for lyr in self.clf.parameters():
+        for lyr in self.parameters():
             if isinstance(lyr, nn.Linear):
                 torch.nn.init.kaiming_uniform_(lyr.weight)
 
         return self
 
+    def create_unk_for(self, mem: torch.Tensor):
+        # mem : (S, B, D)
+        W = self.bert.embeddings.word_embeddings.weight  # (V, D)
+        V, D = W.shape
+
+        # overwrite by unk vector
+        S, B, D = mem.shape
+        tokenizer = self.context["tokenizer"]
+        unk_idx = tokenizer.unk_token_id
+        unk = (
+            F.one_hot(torch.LongTensor([unk_idx]), num_classes=V)
+            .to(torch.float32)
+            .reshape(1, 1, -1)
+            .repeat(1, B, 1)
+            .to(W.device)
+        )
+        unk_vector = torch.matmul(unk, W)
+        U = torch.zeros_like(mem)
+        noise_idx = torch.randint(0, S, (1,)).item()
+        U[noise_idx] = unk_vector - mem.detach()[noise_idx]
+
+        return U
+
     def forward(self, *args, **kwargs):
+        # TODO:
+        #   onehot にノイズ -> UNK に変える / self.tokenizer.unk_token_id
+        #   decoder の入力(bert の出力ベクトル)にノイズ (torch.normal(0, 0.1, lh.shape))
         T = kwargs.pop("target")
         T = torch.transpose(T, 0, 1)  # -> (S', B, V)
         W = self.bert.embeddings.word_embeddings.weight  # (V, D)
@@ -62,6 +89,15 @@ class BertClassifier(Classifier):
         # po = o["pooler_output"]
 
         mem = torch.transpose(lh, 0, 1)  # -> (S, B, D)
+
+        # add unk tensor (more exactly, replace unk vectors)
+        U = self.create_unk_for(mem)
+        mem = mem + U
+
+        # add noise
+        D = lh.shape[-1]
+        N = torch.normal(0, 0.1 / D, mem.shape).to(W.device)
+        mem = mem + N
 
         shp = list(T.shape)
         shp[0] += 1  # -> (S'+1, B, V)

@@ -46,6 +46,7 @@ def buildup_trainer(
         droprate=0.01,
         weight=None,
     )
+    model.context["tokenizer"] = tokenizer
     optimizer = torch.optim.RAdam(
         model.parameters(), lr=1e-3, betas=(0.9, 0.999), eps=1e-08
     )
