@@ -30,7 +30,7 @@ class BertClassifier(Classifier):
         self.decoder = nn.TransformerDecoder(decoder_layer, num_layers=2)
 
         self.clf = nn.Sequential(
-            nn.BatchNorm1d(self.n_out),
+            # nn.BatchNorm1d(self.n_out),
             nn.LogSoftmax(dim=-1),
         )
 
@@ -106,7 +106,8 @@ class BertClassifier(Classifier):
         tgt = torch.matmul(tgt, W)  # -> (S'+1, B, D)
 
         dec = self.decoder(mem, tgt)
-        dec = dec[1 : tgt.shape[0]]  # -> (S', B, D)
+        # dec = dec[1 : tgt.shape[0]]  # -> (S', B, D)
+        dec = dec[: tgt.shape[0] - 1]  # -> (S', B, D)
         assert dec.shape[:-1] == T.shape[:-1]
         dec = torch.transpose(dec, 0, 1)  # -> (B, S', D)
         self.context["decoded"] = dec
@@ -132,5 +133,6 @@ class BertClassifier(Classifier):
         return loss
 
     def loss_difference(self, y: torch.Tensor, t: torch.Tensor):
+        # return self.mse(y, t) - self.cos(y, t).mean()
         cos = self.cos(y, t)
         return self.mse(y, t) + F.l1_loss(cos, torch.ones_like(cos))

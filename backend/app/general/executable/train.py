@@ -107,6 +107,8 @@ def _main(
         )
 
         trainer.save(save_file=trained_file)
+    except KeyboardInterrupt:
+        g_logger.info("Captured KeyboardInterrupt")
     except Exception as e:
         g_logger.error("Error Occured", str(e))
         raise e
