@@ -217,7 +217,7 @@ class TrainerBertClassifier(TrainerBase):
                 f"({score.predict_corrects[prd]} / {score.predicts[prd]}) "
             )
             self.write_board(
-                f"04.precision/{key}/{lbl}",
+                f"04.precision/{key}/{prd}",
                 score.predict_corrects[prd] / score.predicts[prd],
                 step,
             )

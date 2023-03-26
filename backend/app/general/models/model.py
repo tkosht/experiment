@@ -119,7 +119,8 @@ class BertClassifier(Classifier):
         return y
 
     def loss(self, y: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
-        loss = super().loss(y, t) + self.loss_difference(y, t) + self.loss_middle()
+        # loss = super().loss(y, t) + self.loss_difference(y, t) + self.loss_middle()
+        loss = super().loss(y, t) + self.loss_middle()
         return loss
 
     def loss_middle(self):
