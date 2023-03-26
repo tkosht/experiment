@@ -95,7 +95,7 @@ def _main(params: DictConfig):
             run_name="train",
         )
         mlprovider.log_params(params)
-        mlprovider.log_artifact("conf/app.yml")
+        mlprovider.log_artifact("conf/app.yml", "conf")
         trainer.do_train(params)
 
         trainer.save(save_file=params.trained_file)
@@ -107,8 +107,8 @@ def _main(params: DictConfig):
         raise e
     finally:
         g_logger.info("End", "train")
-        mlprovider.log_artifact(params.trained_file)
-        mlprovider.log_artifact("log/app.log")
+        mlprovider.log_artifact(params.trained_file, "data")
+        mlprovider.log_artifact("log/app.log", "log")
         mlprovider.end_run()
 
 

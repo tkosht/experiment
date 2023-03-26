@@ -33,5 +33,5 @@ class MLFlowProvider(object):
     def log_metric(self, key: str, value: float, step: int):
         mlflow.log_metric(key=key, value=value, step=step)
 
-    def log_artifact(self, target_file: str):
-        mlflow.log_artifact(local_path=target_file)
+    def log_artifact(self, target_file: str, artifact_path: str = "."):
+        mlflow.log_artifact(local_path=target_file, artifact_path=artifact_path)
