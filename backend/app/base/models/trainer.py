@@ -1,3 +1,4 @@
+import pathlib
 from datetime import datetime
 from inspect import signature
 
@@ -43,5 +44,6 @@ class TrainerBase(object):
         state = {}
         for k in list(s.parameters):
             state[k] = getattr(self, k)
+        pathlib.Path(save_file).parent.mkdir(parents=True, exist_ok=True)
         joblib.dump(state, save_file, compress=("gzip", 3))
         return self

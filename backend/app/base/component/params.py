@@ -30,3 +30,17 @@ def add_args(
         return _wrapper
 
     return _decorator
+
+
+def from_config(params_file: str, root_key: str = "") -> callable:
+    @functools.wraps(add_args)
+    def _decorator(f: callable) -> callable:
+        @functools.wraps(f)
+        def _wrapper(*args, **kwargs) -> None:
+            cfg_params = OmegaConf.load(params_file)
+            cfg_params = _search_root(cfg_params, root_key)
+            return f(cfg_params)
+
+        return _wrapper
+
+    return _decorator

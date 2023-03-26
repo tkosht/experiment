@@ -1,6 +1,7 @@
 import numpy
 import torch
 import torch.nn.functional as F
+from omegaconf import DictConfig
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from typing_extensions import Self
@@ -99,25 +100,24 @@ class TrainerBertClassifier(TrainerBase):
 
         return inputs, T
 
-    def do_train(
-        self,
-        max_epoch: int = 1,
-        max_batches: int = 500,
-        log_interval: int = 10,
-        eval_interval: int = 100,
-    ) -> None:
+    def do_train(self, params: DictConfig) -> None:
+        # max_epoch: int = 1,
+        # max_batches: int = 500,
+        # log_interval: int = 10,
+        # eval_interval: int = 100,
+
         log("Start training")
         self.model.to(self.device)
         n_batches = len(self.trainloader)
 
         step = 0
-        for epoch in tqdm(range(max_epoch), desc="epoch"):
+        for epoch in tqdm(range(params.max_epoch), desc="epoch"):
             log(f"{epoch=} Start")
             for lrx, lr in enumerate(self.scheduler.get_last_lr()):
                 self.write_board(f"10.learnig_rate/{lrx:02d}", lr, step)
 
             for bch_idx, bch in enumerate(tqdm(self.trainloader, desc="trainloader")):
-                n_batches = min(max_batches, len(self.trainloader.dataset))
+                n_batches = min(params.max_batches, len(self.trainloader.dataset))
                 step = epoch * n_batches + bch_idx
                 inputs, T = self._t(bch)
 
@@ -128,7 +128,7 @@ class TrainerBertClassifier(TrainerBase):
                 loss.backward()
                 self.optimizer.step()
 
-                if step % log_interval == 0:
+                if step % params.log_interval == 0:
                     log(f"{epoch=} / {step=}: loss={loss.item():.7f}")
                     self.write_board("01.loss/train", loss.item(), step)
 
@@ -137,10 +137,10 @@ class TrainerBertClassifier(TrainerBase):
                     self.log_loss("train", loss_train, epoch, step)
                     self.log_scores("train", score, epoch, step)
 
-                if step % eval_interval == 0:
+                if step % params.eval_interval == 0:
                     self.do_eval(max_batches=50, epoch=epoch, step=step)
 
-                if max_batches > 0 and bch_idx >= max_batches:
+                if params.max_batches > 0 and bch_idx >= params.max_batches:
                     break
             log(f"{epoch=} End")
 

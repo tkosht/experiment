@@ -1,0 +1,14 @@
+hydra:
+    run:
+        dir: result/hydra/general/${hydra.job.name}/${now:%Y%m%d_%H%M%S}
+
+train:
+    max_epoch: 1
+    max_batches: 1
+    batch_size: 16
+    seed: 123456
+    log_interval: 10
+    eval_interval: 100
+    resume_file: null  # like "data/trainer.gz"
+    trained_file: "data/trainer.gz"
+

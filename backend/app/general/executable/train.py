@@ -1,20 +1,24 @@
 import torch
 from datasets import load_dataset
-from torch.utils.data import DataLoader, Dataset
-from transformers import AutoModel, AutoTokenizer
+from omegaconf import DictConfig
 from torch.optim.lr_scheduler import (
-    CosineAnnealingWarmRestarts,
     ChainedScheduler,
     ConstantLR,
+    CosineAnnealingWarmRestarts,
 )
+from torch.utils.data import DataLoader, Dataset
+from transformers import AutoModel, AutoTokenizer
+
+from app.base.component.mlflow_provider import MLFlowProvider
+from app.base.component.params import from_config
 from app.general.models.model import BertClassifier
-from app.general.models.trainer import TrainerBase, TrainerBertClassifier, g_logger
+from app.general.models.trainer import TrainerBertClassifier, g_logger
 
 
 def buildup_trainer(
     resume_file: str,
     batch_size: int,
-) -> TrainerBase:
+) -> TrainerBertClassifier:
     if resume_file is not None:
         trainer = TrainerBertClassifier()
         trainer.load(load_file=resume_file)
@@ -72,41 +76,30 @@ def buildup_trainer(
     return trainer
 
 
-def _main(
-    max_epoch: int = 1,
-    max_batches: int = 1,
-    batch_size: int = 16,
-    seed: int = 123456,
-    log_interval: int = 10,
-    eval_interval: int = 100,
-    resume_file: str = None,  # like "data/trainer.gz"
-    trained_file: str = "data/trainer.gz",
-):
-    torch.manual_seed(seed)
-
+@from_config(params_file="conf/app.yml", root_key="/train")
+def _main(params: DictConfig):
     g_logger.info("Start", "train")
-
-    g_logger.info(f"{max_epoch=}")
-    g_logger.info(f"{max_batches=}")
-    g_logger.info(f"{batch_size=}")
-    g_logger.info(f"{seed=}")
-    g_logger.info(f"{log_interval=}")
-    g_logger.info(f"{eval_interval=}")
-    g_logger.info(f"{resume_file=}")
-    g_logger.info(f"{trained_file=}")
+    g_logger.info("params", f"{params}")
 
     try:
-        trainer = buildup_trainer(resume_file=resume_file, batch_size=batch_size)
+        torch.manual_seed(params.seed)
+
+        trainer = buildup_trainer(
+            resume_file=params.resume_file, batch_size=params.batch_size
+        )
         trainer.model.context["tokenizer"] = trainer.tokenizer
 
-        trainer.do_train(
-            max_epoch=max_epoch,
-            max_batches=max_batches,
-            log_interval=log_interval,
-            eval_interval=eval_interval,
+        mlprovider = MLFlowProvider(
+            experiment_name="general_trainer",
+            base_dir=".",
+            run_name="train",
         )
+        mlprovider.log_params(params)
+        mlprovider.log_artifact("conf/app.yml")
+        trainer.do_train(params)
 
-        trainer.save(save_file=trained_file)
+        trainer.save(save_file=params.trained_file)
+
     except KeyboardInterrupt:
         g_logger.info("Captured KeyboardInterruption")
     except Exception as e:
@@ -114,9 +107,10 @@ def _main(
         raise e
     finally:
         g_logger.info("End", "train")
+        mlprovider.log_artifact(params.trained_file)
+        mlprovider.log_artifact("log/app.log")
+        mlprovider.end_run()
 
 
 if __name__ == "__main__":
-    import typer
-
-    typer.run(_main)
+    _main()

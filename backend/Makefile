@@ -25,16 +25,13 @@ test-request:
 
 # ==========
 # mlflow tasks
-mlflow-run:
-	mlflow run --no-conda .
-
-mlflow-ui:
-	mlflow ui --host=0.0.0.0
-
 mlflow-server:
 	mlflow server --host=0.0.0.0 \
 		--backend-store-uri sqlite:///result/mlflow.db \
 		--default-artifact-root=mlruns
+
+mlflow-ui:
+	mlflow ui --host=0.0.0.0
 
 # ==========
 # tensorboard tasks

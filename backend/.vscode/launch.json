@@ -15,8 +15,9 @@
                 "PYTHONPATH": ".",
             },
             "args": [
-                "--max-batches=1",
-                "--max-epoch=1",
+                // "--config-dir=${workspaceFolder}/conf",
+                // "--max-batches=1",
+                // "--max-epoch=1",
                 // "--resume-file=data/trainer-debug.gz",
             ],
             "justMyCode": false
