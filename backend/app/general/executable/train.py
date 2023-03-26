@@ -109,6 +109,7 @@ def _main(params: DictConfig):
 
         mlprovider.log_metric_from_dict(trainer.metrics)
         mlprovider.log_artifact(params.trained_file, "data")
+        mlprovider.log_artifacts(trainer.log_dir, "tb")
         mlprovider.log_artifact("log/app.log", "log")
         mlprovider.end_run()
 

@@ -42,3 +42,6 @@ class MLFlowProvider(object):
 
     def log_artifact(self, target_file: str, artifact_path: str = "."):
         mlflow.log_artifact(local_path=target_file, artifact_path=artifact_path)
+
+    def log_artifacts(self, target_dir: str, artifact_path: str = "."):
+        mlflow.log_artifacts(local_dir=target_dir, artifact_path=artifact_path)

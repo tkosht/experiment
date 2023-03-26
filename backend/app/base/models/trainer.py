@@ -10,10 +10,9 @@ from typing_extensions import Self
 class TrainerBase(object):
     def __init__(self) -> None:
         # setup tensorboard writer
-        experiment_id = datetime.now().strftime("%Y%m%d%H%M%S")
-        logdir = f"result/{experiment_id}"
-        self.writer = SummaryWriter(log_dir=logdir)
-        self.experiment_id = experiment_id
+        self.experiment_id = datetime.now().strftime("%Y%m%d%H%M%S")
+        self.log_dir = f"result/{self.experiment_id}"
+        self.writer = SummaryWriter(log_dir=self.log_dir)
 
     def do_train(self):
         raise NotImplementedError("do_train()")
