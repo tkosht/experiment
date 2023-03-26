@@ -48,3 +48,5 @@ nvidia nvidia-smi:
 	  -l 1
 
 
+clean-experiment:
+	rm -rf mlruns result/*
