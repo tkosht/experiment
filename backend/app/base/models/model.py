@@ -53,6 +53,8 @@ class Model(ModelState):
     def __init__(self) -> None:
         super().__init__()  # must be called at first
 
+        self.context: dict = {}
+
     def fit(self, X: Tensor, **kwargs) -> Tensor:
         raise NotImplementedError(f"{type(self).__name__}.fit()")
 

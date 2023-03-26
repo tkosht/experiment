@@ -35,7 +35,6 @@ class BertClassifier(Classifier):
         )
 
         # loss
-        self.context = {}
         self.cel = nn.CrossEntropyLoss(weight=weight)
         self.cos = nn.CosineSimilarity(dim=-1, eps=1e-6)
         self.mse = nn.MSELoss()
@@ -76,10 +75,10 @@ class BertClassifier(Classifier):
         return U
 
     def forward(self, *args, **kwargs):
-        T = kwargs.pop("target")
+        T = self.context["target"]
         T = torch.transpose(T, 0, 1)  # -> (S', B, V)
         W = self.bert.embeddings.word_embeddings.weight  # (V, D)
-        self.context["target"] = T
+        self.context["target.T"] = T
 
         o = self.bert(*args, **kwargs)
         lh = o["last_hidden_state"]
@@ -124,7 +123,7 @@ class BertClassifier(Classifier):
 
     def loss_middle(self):
         W = self.bert.embeddings.word_embeddings.weight  # (V, D)
-        T = self.context["target"]  # -> (S', B, V)
+        T = self.context["target.T"]  # -> (S', B, V)
         trg = torch.matmul(T, W)  # -> (S', B, D)
 
         dec = self.context["decoded"]  # -> (B, S', D)

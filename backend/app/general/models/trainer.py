@@ -98,7 +98,7 @@ class TrainerBertClassifier(TrainerBase):
 
         T = F.one_hot(t, num_classes=self.tokenizer.vocab_size)
         T = T.to(torch.float32)
-        inputs["target"] = T
+        self.model.context["target"] = T
 
         return inputs, T
 
@@ -118,7 +118,18 @@ class TrainerBertClassifier(TrainerBase):
                 step = epoch * n_batches + bch_idx
                 inputs, T = self._t(bch)
 
+                if params.write_graph and epoch == 0 and bch_idx == 0:
+                    batch_inputs = [
+                        inputs["input_ids"],
+                        inputs["attention_mask"],
+                        inputs["token_type_ids"],
+                    ]
+                    with torch.no_grad():
+                        self.model.eval()
+                        self.write_graph(batch_inputs)
+
                 # train
+                self.model.train()
                 self.optimizer.zero_grad()
                 y = self.model(**inputs)
                 loss = self.model.loss(y, T)

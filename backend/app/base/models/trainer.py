@@ -28,8 +28,8 @@ class TrainerBase(object):
             state[k] = getattr(self, k)
         return state
 
-    def write_graph(self, trainset):
-        self.writer.add_graph(self.model, (trainset.ti, trainset.tc, trainset.kn))
+    def write_graph(self, batch_inputs: list):
+        self.writer.add_graph(self.model, batch_inputs)
 
     def write_board(self, key: str, value: float, step: int = None):
         self.writer.add_scalar(key, value, step)
