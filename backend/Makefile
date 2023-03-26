@@ -36,7 +36,7 @@ mlflow-ui:
 # ==========
 # tensorboard tasks
 tensorboard:
-	$(eval logdir:=$(shell ls -trd result/* | tail -n 1))
+	$(eval logdir:=$(shell ls -trd result/* | egrep -v db | tail -n 1))
 	echo $(logdir)
 	tensorboard --host=0.0.0.0 --logdir=$(logdir)
 
