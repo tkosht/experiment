@@ -10,7 +10,7 @@ from app.base.component.logger import Logger
 from app.base.models.model import Classifier
 from app.base.models.trainer import TrainerBase
 
-g_logger = Logger(logger_name="general_trainer")
+g_logger = Logger(logger_name="app")
 
 
 def log(*args, **kwargs):
@@ -103,11 +103,6 @@ class TrainerBertClassifier(TrainerBase):
         return inputs, T
 
     def do_train(self, params: DictConfig) -> None:
-        # max_epoch: int = 1,
-        # max_batches: int = 500,
-        # log_interval: int = 10,
-        # eval_interval: int = 100,
-
         log("Start training")
         self.model.to(self.device)
         n_batches = len(self.trainloader)
