@@ -76,9 +76,6 @@ class BertClassifier(Classifier):
         return U
 
     def forward(self, *args, **kwargs):
-        # TODO:
-        #   onehot にノイズ -> UNK に変える / self.tokenizer.unk_token_id
-        #   decoder の入力(bert の出力ベクトル)にノイズ (torch.normal(0, 0.1, lh.shape))
         T = kwargs.pop("target")
         T = torch.transpose(T, 0, 1)  # -> (S', B, V)
         W = self.bert.embeddings.word_embeddings.weight  # (V, D)
@@ -88,6 +85,9 @@ class BertClassifier(Classifier):
         lh = o["last_hidden_state"]
         # po = o["pooler_output"]
 
+        # NOTE: mem に揺らぎを与える
+        #   - onehot を UNKnown に変える / self.tokenizer.unk_token_id
+        #   - decoder の入力(bert の出力ベクトル)にノイズ (torch.normal(0, 0.1, lh.shape))
         mem = torch.transpose(lh, 0, 1)  # -> (S, B, D)
 
         # add unk tensor (more exactly, replace unk vectors)
@@ -106,7 +106,6 @@ class BertClassifier(Classifier):
         tgt = torch.matmul(tgt, W)  # -> (S'+1, B, D)
 
         dec = self.decoder(mem, tgt)
-        # dec = dec[1 : tgt.shape[0]]  # -> (S', B, D)
         dec = dec[: tgt.shape[0] - 1]  # -> (S', B, D)
         assert dec.shape[:-1] == T.shape[:-1]
         dec = torch.transpose(dec, 0, 1)  # -> (B, S', D)

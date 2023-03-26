@@ -216,15 +216,18 @@ class TrainerBertClassifier(TrainerBase):
                 f"{epoch=} / {step=}: {key} precision: {prd}={score.predict_corrects[prd] / score.predicts[prd]:.3f} "
                 f"({score.predict_corrects[prd]} / {score.predicts[prd]}) "
             )
-            self.write_board(
-                f"04.precision/{key}/{prd}",
-                score.predict_corrects[prd] / score.predicts[prd],
-                step,
-            )
+
         log(
             f"{epoch=} / {step=}: {key} precision: others={n_predict_corrects / n_predicts:.3f} "
             f"({n_predict_corrects} / {n_predicts}) "
         )
+        # # to board
+        for lbl in score.labels.keys():
+            self.write_board(
+                f"04.precision/{key}/{lbl}",
+                score.predict_corrects[lbl] / score.predicts[lbl],
+                step,
+            )
         self.write_board(
             f"04.precision/{key}/others", n_predict_corrects / n_predicts, step
         )
