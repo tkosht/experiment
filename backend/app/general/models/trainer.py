@@ -110,6 +110,7 @@ class TrainerBertClassifier(TrainerBase):
         step = 0
         for epoch in tqdm(range(params.max_epoch), desc="epoch"):
             log(f"{epoch=} Start")
+            # log learning rate
             for lrx, lr in enumerate(self.scheduler.get_last_lr()):
                 self.write_board(f"10.learnig_rate/{lrx:02d}", lr, step)
 
@@ -118,15 +119,9 @@ class TrainerBertClassifier(TrainerBase):
                 step = epoch * n_batches + bch_idx
                 inputs, T = self._t(bch)
 
+                # write graph
                 if params.write_graph and epoch == 0 and bch_idx == 0:
-                    batch_inputs = [
-                        inputs["input_ids"],
-                        inputs["attention_mask"],
-                        inputs["token_type_ids"],
-                    ]
-                    with torch.no_grad():
-                        self.model.eval()
-                        self.write_graph(batch_inputs)
+                    self.write_graph(inputs)
 
                 # train
                 self.model.train()
@@ -181,6 +176,16 @@ class TrainerBertClassifier(TrainerBase):
         self.log_scores("valid", score, epoch, step)
         self.metrics["valid.loss"] = loss_valid
         self.metrics["valid.accuracy"] = score.n_corrects / score.n_totals
+
+    def write_graph(self, inputs):
+        batch_inputs = [
+            inputs["input_ids"],
+            inputs["attention_mask"],
+            inputs["token_type_ids"],
+        ]
+        with torch.no_grad():
+            self.model.eval()
+            super().write_graph(batch_inputs)
 
     def log_loss(
         self, key: str, loss_value: float, epoch: int = None, step: int = None

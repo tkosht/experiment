@@ -9,3 +9,8 @@ train:
     resume_file: null  # like "data/trainer.gz"
     trained_file: "data/trainer.gz"
 
+model:
+    transformer:
+        decoder:
+            nhead: 8
+            num_layers: 3

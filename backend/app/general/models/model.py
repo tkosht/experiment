@@ -3,10 +3,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 from typing_extensions import Self
 
+from app.base.component.params import add_args
 from app.base.models.model import Classifier
 
 
 class BertClassifier(Classifier):
+    @add_args(params_file="conf/app.yml", root_key="/model/transformer/decoder")
     def __init__(
         self,
         bert,
@@ -16,6 +18,8 @@ class BertClassifier(Classifier):
         n_out=None,
         droprate=0.5,
         weight=None,
+        nhead=8,
+        num_layers=2,
     ) -> None:
         super().__init__(class_names)
 
@@ -26,8 +30,8 @@ class BertClassifier(Classifier):
         self.droprate = droprate
         self.weight = weight
 
-        decoder_layer = nn.TransformerDecoderLayer(d_model=n_dim, nhead=8)
-        self.decoder = nn.TransformerDecoder(decoder_layer, num_layers=2)
+        decoder_layer = nn.TransformerDecoderLayer(d_model=n_dim, nhead=nhead)
+        self.decoder = nn.TransformerDecoder(decoder_layer, num_layers=num_layers)
 
         self.clf = nn.Sequential(
             # nn.BatchNorm1d(self.n_out),
