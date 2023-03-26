@@ -110,6 +110,7 @@ class TrainerBertClassifier(TrainerBase):
         step = 0
         for epoch in tqdm(range(params.max_epoch), desc="epoch"):
             log(f"{epoch=} Start")
+
             # log learning rate
             for lrx, lr in enumerate(self.scheduler.get_last_lr()):
                 self.write_board(f"10.learnig_rate/{lrx:02d}", lr, step)

@@ -29,6 +29,8 @@ class BertClassifier(Classifier):
         self.n_out = len(class_names) if n_out is None else n_out
         self.droprate = droprate
         self.weight = weight
+        self.nhead = nhead
+        self.num_layers = num_layers
 
         decoder_layer = nn.TransformerDecoderLayer(d_model=n_dim, nhead=nhead)
         self.decoder = nn.TransformerDecoder(decoder_layer, num_layers=num_layers)
