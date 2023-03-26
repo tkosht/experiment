@@ -91,13 +91,12 @@ def _main(params: DictConfig):
 
         mlprovider = MLFlowProvider(
             experiment_name="general_trainer",
-            base_dir=".",
             run_name="train",
         )
         mlprovider.log_params(params)
         mlprovider.log_artifact("conf/app.yml", "conf")
-        trainer.do_train(params)
 
+        trainer.do_train(params)
         trainer.save(save_file=params.trained_file)
 
     except KeyboardInterrupt:
@@ -107,6 +106,8 @@ def _main(params: DictConfig):
         raise e
     finally:
         g_logger.info("End", "train")
+
+        mlprovider.log_metric_from_dict(trainer.metrics)
         mlprovider.log_artifact(params.trained_file, "data")
         mlprovider.log_artifact("log/app.log", "log")
         mlprovider.end_run()

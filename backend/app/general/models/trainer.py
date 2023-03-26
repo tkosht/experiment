@@ -77,6 +77,8 @@ class TrainerBertClassifier(TrainerBase):
         self.validloader = validloader
         self.device = device
 
+        self.metrics = {}
+
     def _to_device(self, d: dict) -> dict:
         for k, v in d.items():
             if isinstance(v, torch.Tensor):
@@ -136,6 +138,10 @@ class TrainerBertClassifier(TrainerBase):
                     loss_train = loss.item()
                     self.log_loss("train", loss_train, epoch, step)
                     self.log_scores("train", score, epoch, step)
+                    self.metrics["step"] = step
+                    self.metrics["epoch"] = epoch
+                    self.metrics["train.loss"] = loss_train
+                    self.metrics["train.accuracy"] = score.n_corrects / score.n_totals
 
                 if step % params.eval_interval == 0:
                     self.do_eval(max_batches=50, epoch=epoch, step=step)
@@ -167,6 +173,8 @@ class TrainerBertClassifier(TrainerBase):
         loss_valid = numpy.array(total_loss).mean()
         self.log_loss("valid", loss_valid, epoch, step)
         self.log_scores("valid", score, epoch, step)
+        self.metrics["valid.loss"] = loss_valid
+        self.metrics["valid.accuracy"] = score.n_corrects / score.n_totals
 
     def log_loss(
         self, key: str, loss_value: float, epoch: int = None, step: int = None
