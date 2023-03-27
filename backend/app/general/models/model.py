@@ -129,11 +129,10 @@ class BertClassifier(Classifier):
 
     def loss_middle(self):
         W = self.bert.embeddings.word_embeddings.weight  # (V, D)
-        T = self.context["target.T"]  # -> (S', B, V)
-        trg = torch.matmul(T, W)  # -> (S', B, D)
+        tgt = self.context["target"]  # -> (B, S', V)
+        trg = torch.matmul(tgt, W)  # -> (B, S', D)
 
         dec = self.context["decoded"]  # -> (B, S', D)
-        dec = torch.transpose(dec, 0, 1)  # -> (S', B, D)
         loss = self.loss_difference(dec, trg)
         return loss
 

@@ -81,6 +81,11 @@ def _main(params: DictConfig):
     g_logger.info("Start", "train")
     g_logger.info("params", f"{params}")
 
+    mlprovider = MLFlowProvider(
+        experiment_name="general_trainer",
+        run_name="train",
+    )
+
     try:
         torch.manual_seed(params.seed)
 
@@ -89,10 +94,6 @@ def _main(params: DictConfig):
         )
         trainer.model.context["tokenizer"] = trainer.tokenizer
 
-        mlprovider = MLFlowProvider(
-            experiment_name="general_trainer",
-            run_name="train",
-        )
         mlprovider.log_params(params)
         mlprovider.log_artifact("conf/app.yml", "conf")
 
