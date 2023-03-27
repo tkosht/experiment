@@ -42,8 +42,14 @@ def buildup_trainer(params: DictConfig) -> TrainerBertClassifier:
         trainset, batch_size=params.batch_size, num_workers=2, pin_memory=True
     )
 
+    n_valid = (
+        params.eval.max_batches * params.batch_size
+        if params.eval.max_batches > 0
+        else len(dataset["validation"])
+    )
+    validset = dataset["validation"].select(range(n_valid))
     validloader = DataLoader(
-        dataset["validation"],
+        validset,
         batch_size=params.batch_size,
         num_workers=2,
         pin_memory=True,

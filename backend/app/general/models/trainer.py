@@ -145,17 +145,17 @@ class TrainerBertClassifier(TrainerBase):
                     self.metrics["train.accuracy"] = score.n_corrects / score.n_totals
 
                 if step % params.eval_interval == 0:
-                    self.do_eval(max_batches=50, epoch=epoch, step=step)
+                    self.do_eval(
+                        max_batches=params.eval.max_batches, epoch=epoch, step=step
+                    )
 
-                # if params.max_batches > 0 and bch_idx >= params.max_batches:
-                #     break
             log(f"{epoch=} End")
 
             self.scheduler.step()
 
         log("End training")
 
-    def do_eval(self, max_batches=200, epoch=None, step=None) -> None:
+    def do_eval(self, epoch=None, step=None) -> None:
         total_loss = []
         score = Score(self.tokenizer)
         for bch_idx, bch in enumerate(tqdm(self.validloader, desc="validloader")):
@@ -167,9 +167,6 @@ class TrainerBertClassifier(TrainerBase):
 
             total_loss.append(loss.item())
             score.append(y, T)
-
-            if bch_idx >= max_batches:
-                break
 
         loss_valid = numpy.array(total_loss).mean()
         self.log_loss("valid", loss_valid, epoch, step)

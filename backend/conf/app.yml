@@ -9,6 +9,8 @@ train:
     resume_file: null  # like "data/trainer.gz"
     # resume_file: "data/trainer.gz"
     trained_file: "data/trainer.gz"
+    eval:
+        max_batches: 50
 
 model:
     transformer:
