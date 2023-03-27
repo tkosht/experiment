@@ -81,7 +81,7 @@ class BertClassifier(Classifier):
         return U
 
     def forward(self, *args, **kwargs):
-        T = self.context["target"]
+        T = self.context["target"]  # (B, S', V)
         T = torch.transpose(T, 0, 1)  # -> (S', B, V)
         W = self.bert.embeddings.word_embeddings.weight  # (V, D)
         self.context["target.T"] = T
@@ -101,7 +101,7 @@ class BertClassifier(Classifier):
 
         # add noise
         D = lh.shape[-1]
-        N = torch.normal(0, 1e-3 / D, mem.shape).to(W.device)
+        N = torch.normal(0, 1e-6 / D, mem.shape).to(W.device)
         mem = mem + N
 
         shp = list(T.shape)
@@ -137,6 +137,5 @@ class BertClassifier(Classifier):
         return loss
 
     def loss_difference(self, y: torch.Tensor, t: torch.Tensor):
-        # return self.mse(y, t) - self.cos(y, t).mean()
         cos = self.cos(y, t)
-        return self.mse(y, t) + F.l1_loss(cos, torch.ones_like(cos))
+        return self.mse(y, t) + self.mse(cos, torch.ones_like(cos))

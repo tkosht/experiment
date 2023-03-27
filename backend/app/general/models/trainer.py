@@ -105,7 +105,6 @@ class TrainerBertClassifier(TrainerBase):
     def do_train(self, params: DictConfig) -> None:
         log("Start training")
         self.model.to(self.device)
-        n_batches = len(self.trainloader)
 
         step = 0
         for epoch in tqdm(range(params.max_epoch), desc="epoch"):
@@ -116,7 +115,7 @@ class TrainerBertClassifier(TrainerBase):
                 self.write_board(f"10.learnig_rate/{lrx:02d}", lr, step)
 
             for bch_idx, bch in enumerate(tqdm(self.trainloader, desc="trainloader")):
-                n_batches = min(params.max_batches, len(self.trainloader.dataset))
+                n_batches = min(params.max_batches, len(self.trainloader))
                 step = epoch * n_batches + bch_idx
                 inputs, T = self._t(bch)
 
@@ -148,8 +147,8 @@ class TrainerBertClassifier(TrainerBase):
                 if step % params.eval_interval == 0:
                     self.do_eval(max_batches=50, epoch=epoch, step=step)
 
-                if params.max_batches > 0 and bch_idx >= params.max_batches:
-                    break
+                # if params.max_batches > 0 and bch_idx >= params.max_batches:
+                #     break
             log(f"{epoch=} End")
 
             self.scheduler.step()

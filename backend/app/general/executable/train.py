@@ -15,13 +15,12 @@ from app.general.models.model import BertClassifier
 from app.general.models.trainer import TrainerBertClassifier, g_logger
 
 
-def buildup_trainer(
-    resume_file: str,
-    batch_size: int,
-) -> TrainerBertClassifier:
-    if resume_file is not None:
+def buildup_trainer(params: DictConfig) -> TrainerBertClassifier:
+    # resume_file: str,
+    # batch_size: int,
+    if params.resume_file is not None:
         trainer = TrainerBertClassifier()
-        trainer.load(load_file=resume_file)
+        trainer.load(load_file=params.resume_file)
         return trainer
 
     device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
@@ -33,13 +32,19 @@ def buildup_trainer(
     dataset: Dataset = load_dataset("shunk031/JGLUE", name="MARC-ja")
 
     # setup loader
+    n_train = (
+        params.max_batches * params.batch_size
+        if params.max_batches > 0
+        else len(dataset["train"])
+    )
+    trainset = dataset["train"].select(range(n_train))
     trainloader = DataLoader(
-        dataset["train"], batch_size=batch_size, num_workers=2, pin_memory=True
+        trainset, batch_size=params.batch_size, num_workers=2, pin_memory=True
     )
 
     validloader = DataLoader(
         dataset["validation"],
-        batch_size=batch_size,
+        batch_size=params.batch_size,
         num_workers=2,
         pin_memory=True,
     )
@@ -89,9 +94,8 @@ def _main(params: DictConfig):
     try:
         torch.manual_seed(params.seed)
 
-        trainer = buildup_trainer(
-            resume_file=params.resume_file, batch_size=params.batch_size
-        )
+        trainer = buildup_trainer(params)
+        # resume_file=params.resume_file, batch_size=params.batch_size
         trainer.model.context["tokenizer"] = trainer.tokenizer
 
         mlprovider.log_params(params)
