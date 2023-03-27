@@ -145,9 +145,7 @@ class TrainerBertClassifier(TrainerBase):
                     self.metrics["train.accuracy"] = score.n_corrects / score.n_totals
 
                 if step % params.eval_interval == 0:
-                    self.do_eval(
-                        max_batches=params.eval.max_batches, epoch=epoch, step=step
-                    )
+                    self.do_eval(epoch=epoch, step=step)
 
             log(f"{epoch=} End")
 
