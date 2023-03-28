@@ -1,5 +1,6 @@
 import numpy
 import torch
+
 import torch.nn.functional as F
 from omegaconf import DictConfig
 from torch.utils.data import DataLoader
@@ -94,11 +95,13 @@ class TrainerBertClassifier(TrainerBase):
 
         teachers = self.tokenizer(labels, return_tensors="pt", padding=True)
         self._to_device(teachers)
-        t = teachers.input_ids
 
+        t = teachers.input_ids
         T = F.one_hot(t, num_classes=self.tokenizer.vocab_size)
         T = T.to(torch.float32)
-        self.model.context["target"] = T
+
+        # self.model.context["target"] = T
+        self.model.context["teachers"] = teachers
 
         return inputs, T
 

@@ -17,6 +17,15 @@ TensorOneHot: TypeAlias = TensorSparse  # like (0, ..., 0, 1, 0, ..., 0)
 TensorEmbed: TypeAlias = TensorDense
 
 
+class Reshaper(nn.Module):
+    def __init__(self, shp=slice) -> None:
+        super().__init__()
+        self.shp = shp
+
+    def forward(self, x: torch.Tensor):
+        return x.reshape(self.shp)
+
+
 class ModelState(nn.Module):
     def __repr__(self) -> str:
         s = signature(self.__init__)

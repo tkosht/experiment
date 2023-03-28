@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from typing_extensions import Self
 
 from app.base.component.params import add_args
-from app.base.models.model import Classifier
+from app.base.models.model import Classifier, Reshaper
 
 
 class BertClassifier(Classifier):
@@ -36,9 +36,11 @@ class BertClassifier(Classifier):
         self.decoder = nn.TransformerDecoder(decoder_layer, num_layers=num_layers)
 
         self.clf = nn.Sequential(
-            # nn.BatchNorm1d(self.n_out),
-            # nn.LogSoftmax(dim=-1),
-            nn.Softmax(dim=-1),
+            nn.Linear(self.n_dim, self.n_out),
+            Reshaper(shp=(-1, self.n_out)),
+            nn.BatchNorm1d(self.n_out),
+            nn.LogSoftmax(dim=-1),
+            # nn.Softmax(dim=-1),
         )
 
         # loss
@@ -81,46 +83,53 @@ class BertClassifier(Classifier):
 
         return U
 
-    def forward(self, *args, **kwargs):
-        T = self.context["target"]  # (B, S', V)
-        T = torch.transpose(T, 0, 1)  # -> (S', B, V)
-        W = self.bert.embeddings.word_embeddings.weight  # (V, D)
-        self.context["target.T"] = T
+    def create_right_shift_target(self, T: torch.Tensor):
+        shp = list(T.shape)
+        shp[0] += 1  # -> (S'+1, B, D)
+        tgt = torch.zeros(shp, device=T.device)
+        tgt[1:] = T
+        return tgt
 
+    def forward(self, *args, **kwargs):
         o = self.bert(*args, **kwargs)
-        lh = o["last_hidden_state"]
+        mem = torch.transpose(o["last_hidden_state"], 0, 1)  # -> (S, B, D)
         # po = o["pooler_output"]
 
-        # NOTE: mem に揺らぎを与える
-        #   - onehot を UNKnown に変える / self.tokenizer.unk_token_id
-        #   - decoder の入力(bert の出力ベクトル)にノイズ (torch.normal(0, 0.1, lh.shape))
-        mem = torch.transpose(lh, 0, 1)  # -> (S, B, D)
+        teachers = self.context["teachers"]
+        to = self.bert(**teachers)
+        trg = to["last_hidden_state"]
+        T = torch.transpose(trg, 0, 1)  # -> (S', B, D)
+        self.context["target"] = trg  # -> (B, S', D)
+
+        # # NOTE: mem に揺らぎを与える
+        # #   - onehot を UNKnown に変える / self.tokenizer.unk_token_id
+        # #   - decoder の入力(bert の出力ベクトル)にノイズ (torch.normal(0, 0.1, lh.shape))
 
         # add unk tensor (more exactly, replace unk vectors)
         U = self.create_unk_for(mem)
         mem = mem + U
 
         # add noise
-        D = lh.shape[-1]
-        N = torch.normal(0, 1e-6 / D, mem.shape).to(W.device)
+        D = mem.shape[-1]
+        N = torch.normal(0, 1e-6 / D, mem.shape).to(mem.device)
         mem = mem + N
 
-        shp = list(T.shape)
-        shp[0] += 1  # -> (S'+1, B, V)
-        tgt = torch.zeros(shp, device=mem.device)
-        tgt[1:] = T
-        tgt = torch.matmul(tgt, W)  # -> (S'+1, B, D)
+        tgt = self.create_right_shift_target(T)  # -> (S'+1, B, D)
 
         dec = self.decoder(mem, tgt)
         dec = dec[: tgt.shape[0] - 1]  # -> (S', B, D)
-        assert dec.shape[:-1] == T.shape[:-1]
         dec = torch.transpose(dec, 0, 1)  # -> (B, S', D)
         self.context["decoded"] = dec
-        h = torch.matmul(dec, W.T)  # (B, S', V)
+        h = dec
 
-        B, S, V = h.shape
-        h = h.reshape(-1, V)  # -> (B*S, V)
-        y = self.clf(h).reshape(B, S, V)
+        # W = self.bert.embeddings.word_embeddings.weight  # (V, D)
+        # h = torch.matmul(dec, W.T)  # (B, S', V)
+        # B, S, V = h.shape
+        # h = h.reshape(-1, V)  # -> (B*S, V)
+        # y = self.clf(h).reshape(B, S, V)
+
+        B, S, D = h.shape
+        y = self.clf(h).reshape(B, S, -1)
         return y
 
     def loss(self, y: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
@@ -129,11 +138,8 @@ class BertClassifier(Classifier):
         return loss
 
     def loss_middle(self):
-        W = self.bert.embeddings.word_embeddings.weight  # (V, D)
-        tgt = self.context["target"]  # -> (B, S', V)
-        trg = torch.matmul(tgt, W)  # -> (B, S', D)
-
         dec = self.context["decoded"]  # -> (B, S', D)
+        trg = self.context["target"]  # -> (B, S', D)
         loss = self.loss_difference(dec, trg)
         return loss
 
