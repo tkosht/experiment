@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from typing_extensions import Self
 
 from app.base.component.params import add_args
-from app.base.models.model import Classifier, Reshaper
+from app.base.models.model import Classifier  # , Reshaper
 
 
 class BertClassifier(Classifier):
@@ -36,8 +36,8 @@ class BertClassifier(Classifier):
         self.decoder = nn.TransformerDecoder(decoder_layer, num_layers=num_layers)
 
         self.clf = nn.Sequential(
-            nn.Linear(self.n_dim, self.n_out),
-            Reshaper(shp=(-1, self.n_out)),
+            # nn.Linear(self.n_dim, self.n_out),
+            # Reshaper(shp=(-1, self.n_out)),
             nn.BatchNorm1d(self.n_out),
             nn.LogSoftmax(dim=-1),
             # nn.Softmax(dim=-1),
@@ -122,19 +122,18 @@ class BertClassifier(Classifier):
         self.context["decoded"] = dec
         h = dec
 
-        # W = self.bert.embeddings.word_embeddings.weight  # (V, D)
-        # h = torch.matmul(dec, W.T)  # (B, S', V)
-        # B, S, V = h.shape
-        # h = h.reshape(-1, V)  # -> (B*S, V)
-        # y = self.clf(h).reshape(B, S, V)
+        W = self.bert.embeddings.word_embeddings.weight  # (V, D)
+        h = torch.matmul(dec, W.T)  # (B, S', V)
+        B, S, V = h.shape
+        h = h.reshape(-1, V)  # -> (B*S, V)
+        y = self.clf(h).reshape(B, S, V)
 
-        B, S, D = h.shape
-        y = self.clf(h).reshape(B, S, -1)
+        # B, S, D = h.shape
+        # y = self.clf(h).reshape(B, S, -1)
         return y
 
     def loss(self, y: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
-        # loss = super().loss(y, t) + self.loss_difference(y, t) + self.loss_middle()
-        loss = super().loss(y, t) + self.loss_middle()
+        loss = super().loss(y, t) + self.loss_difference(y, t) + self.loss_middle()
         return loss
 
     def loss_middle(self):
