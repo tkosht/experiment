@@ -1,4 +1,5 @@
 import torch
+from inspect import signature
 from datasets import load_dataset
 from omegaconf import DictConfig
 from torch.optim.lr_scheduler import (
@@ -87,7 +88,6 @@ def buildup_trainer(params: DictConfig) -> TrainerBertClassifier:
     return trainer
 
 
-@from_config(params_file="conf/app.yml", root_key="/train")
 def _main(params: DictConfig):
     g_logger.info("Start", "train")
     g_logger.info("params", f"{params}")
@@ -108,7 +108,6 @@ def _main(params: DictConfig):
         mlprovider.log_artifact("conf/app.yml", "conf")
 
         trainer.do_train(params)
-        trainer.save(save_file=params.trained_file)
 
     except KeyboardInterrupt:
         g_logger.info("Captured KeyboardInterruption")
@@ -116,6 +115,11 @@ def _main(params: DictConfig):
         g_logger.error("Error Occured", str(e))
         raise e
     finally:
+        try:
+            if params.save_in_cancel:
+                trainer.save(save_file=params.trained_file)
+        except Exception:
+            pass
         g_logger.info("End", "train")
 
         mlprovider.log_metric_from_dict(trainer.metrics)
@@ -125,5 +129,35 @@ def _main(params: DictConfig):
         mlprovider.end_run()
 
 
+@from_config(params_file="conf/app.yml", root_key="/train")
+def config(cfg: DictConfig):
+    return cfg
+
+
+def main(
+    max_epoch: int = None,
+    max_batches: int = None,
+    batch_size: int = None,
+    seed: int = None,
+    write_graph: bool = None,
+    log_interval: int = None,
+    eval_interval: int = None,
+    resume_file: str = None,  # like "data/trainer.gz"
+    save_in_cancel: bool = None,
+):
+    s = signature(main)
+    kwargs = {}
+    for k in list(s.parameters):
+        v = locals()[k]
+        if v is not None:
+            kwargs[k] = v
+
+    params = config()  # use as default
+    params.update(kwargs)
+    return _main(params)
+
+
 if __name__ == "__main__":
-    _main()
+    import typer
+
+    typer.run(main)

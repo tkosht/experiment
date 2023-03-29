@@ -33,7 +33,7 @@ def add_args(
 
 
 def from_config(params_file: str, root_key: str = "") -> callable:
-    @functools.wraps(add_args)
+    @functools.wraps(from_config)
     def _decorator(f: callable) -> callable:
         @functools.wraps(f)
         def _wrapper(*args, **kwargs) -> None:

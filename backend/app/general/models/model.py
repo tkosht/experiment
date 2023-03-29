@@ -135,20 +135,23 @@ class BertClassifier(Classifier):
         return loss
 
     def _loss_end(self, y: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
-        loss = super().loss(y, t) + self._loss_difference(y, t)
+        B = y.shape[0]
+        _y = y.reshape((B, -1))  # -> (B, *)
+        _t = t.reshape((B, -1))  # -> (B, *)
+        loss = super().loss(y, t) + super().loss(_y, _t) + self._loss_difference(_y, _t)
         return loss
 
     def _loss_middle(self):
         dec: torch.Tensor = self.context["decoded"]  # -> (B, S', D)
         trg: torch.Tensor = self.context["target"]  # -> (B, S', D)
+        B = dec.shape[0]
+        dec = dec.reshape((B, -1))  # -> (B, *)
+        trg = trg.reshape((B, -1))  # -> (B, *)
         loss = self._loss_difference(dec, trg)
         return loss
 
     def _loss_difference(self, y: torch.Tensor, t: torch.Tensor):
         assert y.shape == t.shape
         assert len(y.shape) > 1
-        B = y.shape[0]
-        y = y.reshape((B, -1))  # -> (B, *)
-        t = t.reshape((B, -1))  # -> (B, *)
         cos = self.cos(y, t)
         return self.mse(y, t) + self.mse(cos, torch.ones_like(cos))
