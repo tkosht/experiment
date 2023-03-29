@@ -100,8 +100,8 @@ class TrainerBertClassifier(TrainerBase):
         T = F.one_hot(t, num_classes=self.tokenizer.vocab_size)
         T = T.to(torch.float32)
 
-        # self.model.context["target"] = T
-        self.model.context["teachers"] = teachers
+        # self.model.context["teachers"] = teachers
+        self.model.context["teachers"] = inputs
 
         return inputs, T
 
