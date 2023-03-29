@@ -138,16 +138,18 @@ class BertClassifier(Classifier):
         B = y.shape[0]
         _y = y.reshape((B, -1))  # -> (B, *)
         _t = t.reshape((B, -1))  # -> (B, *)
-        loss = super().loss(y, t) + super().loss(_y, _t) + self._loss_difference(_y, _t)
+        loss_token = super().loss(y, t) + self._loss_difference(y, t)
+        loss_seq = super().loss(_y, _t) + self._loss_difference(_y, _t)
+        loss = loss_token + loss_seq
         return loss
 
     def _loss_middle(self):
         dec: torch.Tensor = self.context["decoded"]  # -> (B, S', D)
         trg: torch.Tensor = self.context["target"]  # -> (B, S', D)
         B = dec.shape[0]
-        dec = dec.reshape((B, -1))  # -> (B, *)
-        trg = trg.reshape((B, -1))  # -> (B, *)
-        loss = self._loss_difference(dec, trg)
+        _dec = dec.reshape((B, -1))  # -> (B, *)
+        _trg = trg.reshape((B, -1))  # -> (B, *)
+        loss = self._loss_difference(dec, trg) + self._loss_difference(_dec, _trg)
         return loss
 
     def _loss_difference(self, y: torch.Tensor, t: torch.Tensor):
