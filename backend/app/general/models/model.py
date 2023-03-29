@@ -128,20 +128,27 @@ class BertClassifier(Classifier):
         h = h.reshape(-1, V)  # -> (B*S, V)
         y = self.clf(h).reshape(B, S, V)
 
-        # B, S, D = h.shape
-        # y = self.clf(h).reshape(B, S, -1)
         return y
 
     def loss(self, y: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
-        loss = super().loss(y, t) + self.loss_difference(y, t) + self.loss_middle()
+        loss = self._loss_end(y, t) + self._loss_middle()
         return loss
 
-    def loss_middle(self):
-        dec = self.context["decoded"]  # -> (B, S', D)
-        trg = self.context["target"]  # -> (B, S', D)
-        loss = self.loss_difference(dec, trg)
+    def _loss_end(self, y: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
+        loss = super().loss(y, t) + self._loss_difference(y, t)
         return loss
 
-    def loss_difference(self, y: torch.Tensor, t: torch.Tensor):
+    def _loss_middle(self):
+        dec: torch.Tensor = self.context["decoded"]  # -> (B, S', D)
+        trg: torch.Tensor = self.context["target"]  # -> (B, S', D)
+        loss = self._loss_difference(dec, trg)
+        return loss
+
+    def _loss_difference(self, y: torch.Tensor, t: torch.Tensor):
+        assert y.shape == t.shape
+        assert len(y.shape) > 1
+        B = y.shape[0]
+        y = y.reshape((B, -1))  # -> (B, *)
+        t = t.reshape((B, -1))  # -> (B, *)
         cos = self.cos(y, t)
         return self.mse(y, t) + self.mse(cos, torch.ones_like(cos))
