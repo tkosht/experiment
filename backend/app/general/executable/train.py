@@ -17,8 +17,6 @@ from app.general.models.trainer import TrainerBertClassifier, g_logger
 
 
 def buildup_trainer(params: DictConfig) -> TrainerBertClassifier:
-    # resume_file: str,
-    # batch_size: int,
     if params.resume_file is not None:
         trainer = TrainerBertClassifier()
         trainer.load(load_file=params.resume_file)
@@ -101,7 +99,6 @@ def _main(params: DictConfig):
         torch.manual_seed(params.seed)
 
         trainer = buildup_trainer(params)
-        # resume_file=params.resume_file, batch_size=params.batch_size
         trainer.model.context["tokenizer"] = trainer.tokenizer
 
         mlprovider.log_params(params)
