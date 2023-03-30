@@ -133,13 +133,13 @@ def _main(params: DictConfig):
         try:
             if params.save_in_last:
                 trainer.save(save_file=params.trained_file)
+                mlprovider.log_artifact(params.trained_file, "data")
         except Exception as ee:
             g_logger.error("Error Occured in trainer.save()", str(ee))
 
         g_logger.info("End", "train")
 
         mlprovider.log_metric_from_dict(trainer.metrics)
-        mlprovider.log_artifact(params.trained_file, "data")
         mlprovider.log_artifacts(trainer.log_dir, "tb")
         mlprovider.log_artifact("log/app.log", "log")
         mlprovider.end_run()
@@ -159,6 +159,7 @@ def main(
     log_interval: int = None,
     eval_interval: int = None,
     resume_file: str = None,  # like "data/trainer.gz"
+    trained_file: str = None,  # like "data/trainer.gz"
     save_in_last: bool = None,
 ):
     s = signature(main)
