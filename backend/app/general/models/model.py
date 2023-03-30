@@ -123,9 +123,9 @@ class BertClassifier(Classifier):
         # # self.context["T"] = torch.matmul(tgt, W.T).argmax(dim=-1)  # (B, S', V)
 
         # tgt = self.create_right_shift_target(T)  # -> (S'+1, B, D)
-        # dec = self.decoder(mem, tgt)
+        # dec = self.decoder(tgt, mem)
         # dec = dec[: tgt.shape[0] - 1]  # -> (S', B, D)
-        dec = self.decoder(mem, tgt)
+        dec = self.decoder(tgt, mem)
         dec = torch.transpose(dec, 0, 1)  # -> (B, S', D)
         self.context["dec"] = dec
 

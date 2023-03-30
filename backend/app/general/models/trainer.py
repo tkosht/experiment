@@ -60,12 +60,14 @@ class TrainerBertClassifier(TrainerBase):
         labels = self.tokenizer(label_names, return_tensors="pt", padding=True)
         self._to_device(labels, max_seqlen)
 
-        # teachers = labels.input_ids
-        teachers = inputs.input_ids
+        targets = labels
+        # targets = inputs
+
+        teachers = targets.input_ids
         t = F.one_hot(teachers, num_classes=self.tokenizer.vocab_size)
         t = t.to(torch.float32)
 
-        self.model.context["targets"] = labels
+        self.model.context["targets"] = targets
         # self.model.context["targets"] = inputs
 
         return inputs, t
