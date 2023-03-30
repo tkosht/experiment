@@ -80,31 +80,35 @@ class TrainerBertClassifier(TrainerBase):
 
         self.metrics = {}
 
-    def _to_device(self, d: dict) -> dict:
+    def _to_device(self, d: dict, max_seqlen=-1) -> dict:
         for k, v in d.items():
+            if max_seqlen > 0:
+                v = v[:, :max_seqlen]
             if isinstance(v, torch.Tensor):
                 d[k] = v.to(self.device)
         return d
 
     def _t(self, bch: dict) -> None:
+        # max_seqlen = 64
+        max_seqlen = -1
         sentences = bch["sentence"]
-        labels = [self.model.class_names[ldx] for ldx in bch["label"]]
+        label_names = [self.model.class_names[ldx] for ldx in bch["label"]]
 
         inputs = self.tokenizer(sentences, return_tensors="pt", padding=True)
-        self._to_device(inputs)
+        self._to_device(inputs, max_seqlen)
 
-        teachers = self.tokenizer(labels, return_tensors="pt", padding=True)
-        self._to_device(teachers)
+        labels = self.tokenizer(label_names, return_tensors="pt", padding=True)
+        self._to_device(labels, max_seqlen)
 
-        # t = teachers.input_ids
-        t = inputs.input_ids
-        T = F.one_hot(t, num_classes=self.tokenizer.vocab_size)
-        T = T.to(torch.float32)
+        # teachers = labels.input_ids
+        teachers = inputs.input_ids
+        t = F.one_hot(teachers, num_classes=self.tokenizer.vocab_size)
+        t = t.to(torch.float32)
 
-        # self.model.context["teachers"] = teachers
-        self.model.context["teachers"] = inputs
+        # self.model.context["targets"] = teachers
+        self.model.context["targets"] = inputs
 
-        return inputs, T
+        return inputs, t
 
     def do_train(self, params: DictConfig) -> None:
         log("Start training")
@@ -121,7 +125,7 @@ class TrainerBertClassifier(TrainerBase):
             for bch_idx, bch in enumerate(tqdm(self.trainloader, desc="trainloader")):
                 n_batches = min(params.max_batches, len(self.trainloader))
                 step = epoch * n_batches + bch_idx
-                inputs, T = self._t(bch)
+                inputs, t = self._t(bch)
 
                 # write graph
                 if params.write_graph and epoch == 0 and bch_idx == 0:
@@ -131,16 +135,16 @@ class TrainerBertClassifier(TrainerBase):
                 self.model.train()
                 self.optimizer.zero_grad()
                 y = self.model(**inputs)
-                loss = self.model.loss(y, T)
+                loss = self.model.loss(y, t)
                 loss.backward()
                 self.optimizer.step()
+                loss_train = loss.item()
 
                 if step % params.log_interval == 0:
-                    log(f"{epoch=} / {step=}: loss={loss.item():.7f}")
-                    self.write_board("01.loss/train", loss.item(), step)
+                    log(f"{epoch=} / {step=}: loss={loss_train:.7f}")
+                    self.write_board("01.loss/train", loss_train, step)
 
-                    score = Score(self.tokenizer).append(y.detach(), T.detach())
-                    loss_train = loss.item()
+                    score = Score(self.tokenizer).append(y.detach(), t.detach())
                     self.log_loss("train", loss_train, epoch, step)
                     self.log_scores("train", score, epoch, step)
                     self.metrics["step"] = step
@@ -161,14 +165,14 @@ class TrainerBertClassifier(TrainerBase):
         total_loss = []
         score = Score(self.tokenizer)
         for bch_idx, bch in enumerate(tqdm(self.validloader, desc="validloader")):
-            inputs, T = self._t(bch)
+            inputs, t = self._t(bch)
 
             with torch.no_grad():
                 y = self.model(**inputs)
-                loss = self.model.loss(y, T)
+                loss = self.model.loss(y, t)
 
             total_loss.append(loss.item())
-            score.append(y, T)
+            score.append(y.detach().cpu(), t.detach().cpu())
 
         loss_valid = numpy.array(total_loss).mean()
         self.log_loss("valid", loss_valid, epoch, step)

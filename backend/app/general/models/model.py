@@ -20,6 +20,7 @@ class BertClassifier(Classifier):
         weight=None,
         nhead=8,
         num_layers=2,
+        add_noise=True,
     ) -> None:
         super().__init__(class_names)
 
@@ -31,6 +32,7 @@ class BertClassifier(Classifier):
         self.weight = weight
         self.nhead = nhead
         self.num_layers = num_layers
+        self.add_noise = add_noise
 
         decoder_layer = nn.TransformerDecoderLayer(d_model=n_dim, nhead=nhead)
         self.decoder = nn.TransformerDecoder(decoder_layer, num_layers=num_layers)
@@ -94,32 +96,35 @@ class BertClassifier(Classifier):
         o = self.bert(*args, **kwargs)
         mem = torch.transpose(o["last_hidden_state"], 0, 1)  # -> (S, B, D)
         # po = o["pooler_output"]
+        # input_seqlen = 8
+        # mem = mem[:input_seqlen]
 
-        teachers = self.context["teachers"]
-        to = self.bert(**teachers)
+        targets = self.context["targets"]
+        to = self.bert(**targets)
         trg = to["last_hidden_state"]
         T = torch.transpose(trg, 0, 1)  # -> (S', B, D)
-        self.context["target"] = trg  # -> (B, S', D)
+        self.context["trg"] = trg  # -> (B, S', D)
 
         # # NOTE: mem に揺らぎを与える
         # #   - onehot を UNKnown に変える / self.tokenizer.unk_token_id
         # #   - decoder の入力(bert の出力ベクトル)にノイズ (torch.normal(0, 0.1, lh.shape))
+        if self.add_noise:
+            # add unk tensor (more exactly, replace unk vectors)
+            U = self.create_unk_for(mem)
+            mem = mem + U
 
-        # add unk tensor (more exactly, replace unk vectors)
-        U = self.create_unk_for(mem)
-        mem = mem + U
+            # add noise
+            D = mem.shape[-1]
+            N = torch.normal(0, 1e-6 / D, mem.shape).to(mem.device)
+            mem = mem + N
 
-        # add noise
-        D = mem.shape[-1]
-        N = torch.normal(0, 1e-6 / D, mem.shape).to(mem.device)
-        mem = mem + N
-
-        tgt = self.create_right_shift_target(T)  # -> (S'+1, B, D)
-
+        # tgt = self.create_right_shift_target(T)  # -> (S'+1, B, D)
+        # dec = self.decoder(mem, tgt)
+        # dec = dec[: tgt.shape[0] - 1]  # -> (S', B, D)
+        tgt = T
         dec = self.decoder(mem, tgt)
-        dec = dec[: tgt.shape[0] - 1]  # -> (S', B, D)
         dec = torch.transpose(dec, 0, 1)  # -> (B, S', D)
-        self.context["decoded"] = dec
+        self.context["dec"] = dec
         h = dec
 
         W = self.bert.embeddings.word_embeddings.weight  # (V, D)
@@ -132,7 +137,8 @@ class BertClassifier(Classifier):
 
     def loss(self, y: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
         # loss = self._loss_end(y, t) + self._loss_middle()
-        loss = self._loss_end(y, t)
+        # loss = self._loss_end(y, t)
+        loss = super().loss(y, t)
         return loss
 
     def _loss_end(self, y: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
@@ -145,8 +151,8 @@ class BertClassifier(Classifier):
         return loss
 
     def _loss_middle(self):
-        dec: torch.Tensor = self.context["decoded"]  # -> (B, S', D)
-        trg: torch.Tensor = self.context["target"]  # -> (B, S', D)
+        dec: torch.Tensor = self.context["dec"]  # -> (B, S', D)
+        trg: torch.Tensor = self.context["trg"]  # -> (B, S', D)
         B = dec.shape[0]
         _dec = dec.reshape((B, -1))  # -> (B, *)
         _trg = trg.reshape((B, -1))  # -> (B, *)

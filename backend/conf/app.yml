@@ -18,3 +18,4 @@ model:
         decoder:
             nhead: 8
             num_layers: 3
+            add_noise: True
