@@ -18,6 +18,7 @@
                 // "--config-dir=${workspaceFolder}/conf",
                 // "--max-batches=1",
                 "--max-epoch=1",
+                "--no-save-in-cancel",
                 // "--resume-file=data/trainer-debug.gz",
             ],
             "justMyCode": false

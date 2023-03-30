@@ -65,8 +65,8 @@ class TrainerBertClassifier(TrainerBase):
         t = F.one_hot(teachers, num_classes=self.tokenizer.vocab_size)
         t = t.to(torch.float32)
 
-        # self.model.context["targets"] = teachers
-        self.model.context["targets"] = inputs
+        self.model.context["targets"] = labels
+        # self.model.context["targets"] = inputs
 
         return inputs, t
 
@@ -108,8 +108,6 @@ class TrainerBertClassifier(TrainerBase):
                     self.log_scores("train", y, t, epoch, step)
                     self.log_text(
                         inputs,
-                        self.model.context["M"],
-                        self.model.context["T"],
                         y,
                         t,
                         "train",
@@ -147,8 +145,6 @@ class TrainerBertClassifier(TrainerBase):
         self.log_scores("valid", y, t, epoch, step)
         self.log_text(
             inputs,
-            self.model.context["M"],
-            self.model.context["T"],
             y,
             t,
             "valid",
@@ -193,8 +189,6 @@ class TrainerBertClassifier(TrainerBase):
     def log_text(
         self,
         inputs: dict,
-        M: torch.Tensor,
-        T: torch.Tensor,
         y: torch.Tensor,
         t: torch.Tensor,
         key: str = "train",
@@ -202,29 +196,19 @@ class TrainerBertClassifier(TrainerBase):
         n_logs: int = 5,  # -1,
     ) -> Self:
         X = inputs["input_ids"]
-        for idx, (_X, _M, _T, _y, _t) in enumerate(zip(X, M, T, y, t)):
+        for idx, (_X, _y, _t) in enumerate(zip(X, y, t)):
             self.write_text(
                 f"{key}/{idx:03d}/01.predict",
                 self.model.to_text(_y.detach()),
                 step,
             )
             self.write_text(
-                f"{key}/{idx:03d}/02.memory",
-                self.model.to_text(_M),
-                step,
-            )
-            self.write_text(
-                f"{key}/{idx:03d}/03.target",
-                self.model.to_text(_T),
-                step,
-            )
-            self.write_text(
-                f"{key}/{idx:03d}/04.input",
+                f"{key}/{idx:03d}/02.input",
                 self.model.to_text(_X, do_argmax=False),
                 step,
             )
             self.write_text(
-                f"{key}/{idx:03d}/05.label",
+                f"{key}/{idx:03d}/03.label",
                 self.model.to_text(_t.detach()),
                 step,
             )

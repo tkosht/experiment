@@ -131,7 +131,7 @@ def _main(params: DictConfig):
         raise e
     finally:
         try:
-            if params.save_in_cancel:
+            if params.save_in_last:
                 trainer.save(save_file=params.trained_file)
         except Exception:
             pass
@@ -158,7 +158,7 @@ def main(
     log_interval: int = None,
     eval_interval: int = None,
     resume_file: str = None,  # like "data/trainer.gz"
-    save_in_cancel: bool = None,
+    save_in_last: bool = None,
 ):
     s = signature(main)
     kwargs = {}
