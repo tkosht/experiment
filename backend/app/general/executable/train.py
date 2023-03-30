@@ -1,8 +1,10 @@
 import os
 import random
+import traceback as tb
+from inspect import signature
+
 import numpy
 import torch
-from inspect import signature
 from datasets import load_dataset
 from omegaconf import DictConfig
 from torch.optim.lr_scheduler import (
@@ -125,6 +127,7 @@ def _main(params: DictConfig):
         g_logger.info("Captured KeyboardInterruption")
     except Exception as e:
         g_logger.error("Error Occured", str(e))
+        tb.print_exc()
         raise e
     finally:
         try:
