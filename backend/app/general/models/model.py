@@ -118,16 +118,20 @@ class BertClassifier(Classifier):
             N = torch.normal(0, 1e-6 / D, mem.shape).to(mem.device)
             mem = mem + N
 
+        tgt = T
+
+        W = self.bert.embeddings.word_embeddings.weight  # (V, D)
+        self.context["M"] = torch.matmul(mem, W.T)  # (B, S', V)
+        self.context["T"] = torch.matmul(tgt, W.T)  # (B, S', V)
+
         # tgt = self.create_right_shift_target(T)  # -> (S'+1, B, D)
         # dec = self.decoder(mem, tgt)
         # dec = dec[: tgt.shape[0] - 1]  # -> (S', B, D)
-        tgt = T
         dec = self.decoder(mem, tgt)
         dec = torch.transpose(dec, 0, 1)  # -> (B, S', D)
         self.context["dec"] = dec
         h = dec
 
-        W = self.bert.embeddings.word_embeddings.weight  # (V, D)
         h = torch.matmul(dec, W.T)  # (B, S', V)
         B, S, V = h.shape
         h = h.reshape(-1, V)  # -> (B*S, V)
