@@ -27,7 +27,7 @@ test-request:
 # mlflow tasks
 mlflow-server:
 	mlflow server --host=0.0.0.0 \
-		--backend-store-uri sqlite:///result/mlflow.db \
+		--backend-store-uri sqlite:///data/mlflow.db \
 		--default-artifact-root=mlruns
 
 mlflow-ui:

@@ -16,7 +16,7 @@ class MLFlowProvider(object):
         self.run_name = run_name
 
         self.base_dir = base_dir
-        mlflow.set_tracking_uri(f"sqlite:///{self.base_dir}/result/mlflow.db")
+        mlflow.set_tracking_uri(f"sqlite:///{self.base_dir}/data/mlflow.db")
         self.experiment = mlflow.set_experiment(self.experiment_name)
         self.runner = mlflow.start_run(
             run_name=self.run_name, experiment_id=self.experiment.experiment_id
