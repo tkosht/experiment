@@ -133,8 +133,9 @@ def _main(params: DictConfig):
         try:
             if params.save_in_last:
                 trainer.save(save_file=params.trained_file)
-        except Exception:
-            pass
+        except Exception as ee:
+            g_logger.error("Error Occured in trainer.save()", str(ee))
+
         g_logger.info("End", "train")
 
         mlprovider.log_metric_from_dict(trainer.metrics)

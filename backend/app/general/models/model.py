@@ -136,7 +136,12 @@ class BertClassifier(Classifier):
     def to_text(self, y_rec: torch.Tensor, do_argmax=True) -> torch.Tensor:
         tokenizer = self.context["tokenizer"]
         y = y_rec.argmax(dim=-1) if do_argmax else y_rec
-        return "".join(tokenizer.decode(y))
+        return tokenizer.decode(y)
+
+    def to_tokens(self, y_rec: torch.Tensor, do_argmax=True) -> list[str]:
+        tokenizer = self.context["tokenizer"]
+        y = y_rec.argmax(dim=-1) if do_argmax else y_rec
+        return tokenizer.convert_ids_to_tokens(y)
 
     def loss(self, y: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
         # loss = self._loss_end(y, t) + self._loss_middle()
@@ -172,16 +177,27 @@ class BertClassifier(Classifier):
         import numpy
         from torchmetrics.functional import accuracy, bleu_score, rouge_score
 
-        acc = accuracy(y, t, task="multiclass", num_classes=self.n_out)
+        # accuracy
+        acc = accuracy(
+            y.argmax(dim=-1),
+            t.argmax(dim=-1),
+            task="multiclass",
+            num_classes=self.n_out,
+        )
         acc = acc.item()
 
         bleus = []
         rouges = {}
         for _y, _t in zip(y, t):
+            # BLEU
+            preds = " ".join(self.to_tokens(_y))
+            labls = " ".join(self.to_tokens(_t))
+            b = bleu_score(preds, [labls])
+            bleus.append(b)
+
+            # ROUGE
             pred_text = self.to_text(_y)
             labl_text = self.to_text(_t)
-            b = bleu_score(pred_text, [labl_text])
-            bleus.append(b)
             r = rouge_score(pred_text, labl_text)
             for k, v in r.items():
                 v = v.item()
@@ -190,6 +206,7 @@ class BertClassifier(Classifier):
                 else:
                     rouges[k] = [v]
 
+        # setup scores
         bleu = numpy.mean(bleus)
         scores = dict(accuracy=acc, bleu=bleu)
 
