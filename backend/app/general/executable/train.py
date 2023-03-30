@@ -1,3 +1,6 @@
+import os
+import random
+import numpy
 import torch
 from inspect import signature
 from datasets import load_dataset
@@ -14,6 +17,16 @@ from app.base.component.mlflow_provider import MLFlowProvider
 from app.base.component.params import from_config
 from app.general.models.model import BertClassifier
 from app.general.models.trainer import TrainerBertClassifier, g_logger
+
+
+def seed_everything(seed=42):
+    random.seed(seed)
+    os.environ["PYTHONHASHSEED"] = str(seed)
+    numpy.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
 
 def buildup_trainer(params: DictConfig) -> TrainerBertClassifier:
@@ -89,6 +102,8 @@ def buildup_trainer(params: DictConfig) -> TrainerBertClassifier:
 def _main(params: DictConfig):
     g_logger.info("Start", "train")
     g_logger.info("params", f"{params}")
+
+    seed_everything()
 
     mlprovider = MLFlowProvider(
         experiment_name="general_trainer",

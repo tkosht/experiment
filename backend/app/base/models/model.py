@@ -76,6 +76,9 @@ class Model(ModelState):
     def loss(self, X: Tensor, y: Tensor) -> Tensor:
         return Tensor([0.0])
 
+    def to_text(self, y: torch.Tensor) -> str:
+        return ""
+
 
 class Labeller(Model):
     pass

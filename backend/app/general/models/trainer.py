@@ -147,6 +147,9 @@ class TrainerBertClassifier(TrainerBase):
                     score = Score(self.tokenizer).append(y.detach(), t.detach())
                     self.log_loss("train", loss_train, epoch, step)
                     self.log_scores("train", score, epoch, step)
+                    self.log_text(y, t, "train", step)
+
+                    # store metrics
                     self.metrics["step"] = step
                     self.metrics["epoch"] = epoch
                     self.metrics["train.loss"] = loss_train
@@ -160,6 +163,21 @@ class TrainerBertClassifier(TrainerBase):
             self.scheduler.step()
 
         log("End training")
+
+    def log_text(
+        self, y: torch.Tensor, t: torch.Tensor, key: str = "train", step: int = None
+    ):
+        for idx, (_y, _t) in enumerate(zip(y, t)):
+            self.write_text(
+                f"{key}/{idx:03d}/predict",
+                self.model.to_text(_y.detach()),
+                step,
+            )
+            self.write_text(
+                f"{key}/{idx:03d}/label",
+                self.model.to_text(_t.detach()),
+                step,
+            )
 
     def do_eval(self, epoch=None, step=None) -> None:
         total_loss = []
@@ -177,6 +195,7 @@ class TrainerBertClassifier(TrainerBase):
         loss_valid = numpy.array(total_loss).mean()
         self.log_loss("valid", loss_valid, epoch, step)
         self.log_scores("valid", score, epoch, step)
+        self.log_text(y, t, "valid", step)
         self.metrics["valid.loss"] = loss_valid
         self.metrics["valid.accuracy"] = score.n_corrects / score.n_totals
 
@@ -208,6 +227,7 @@ class TrainerBertClassifier(TrainerBase):
             f"({n_corrects} / {n_totals})"
         )
         self.write_board(f"02.accuracy/{key}", n_corrects / n_totals, step)
+        return  # TODO: Refactoring
 
         # recall
         log("-" * 50)

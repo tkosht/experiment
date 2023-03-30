@@ -135,6 +135,10 @@ class BertClassifier(Classifier):
 
         return y
 
+    def to_text(self, y_rec: torch.Tensor) -> torch.Tensor:
+        tokenizer = self.context["tokenizer"]
+        return "".join(tokenizer.decode(y_rec.argmax(dim=-1)))
+
     def loss(self, y: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
         # loss = self._loss_end(y, t) + self._loss_middle()
         # loss = self._loss_end(y, t)

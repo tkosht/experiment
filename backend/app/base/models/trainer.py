@@ -33,6 +33,9 @@ class TrainerBase(object):
     def write_board(self, key: str, value: float, step: int = None):
         self.writer.add_scalar(key, value, step)
 
+    def write_text(self, key: str, value: str, step: int = None):
+        self.writer.add_text(key, value, step)
+
     def load(self, load_file: str) -> Self:
         state = joblib.load(load_file)
         self.__init__(**state)
