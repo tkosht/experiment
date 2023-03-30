@@ -48,6 +48,7 @@ python-dotenv
 torch
 torchvision
 torchmetrics
+nltk
 # torchtext
 # pytorch-forecasting
 tensorflow-datasets
