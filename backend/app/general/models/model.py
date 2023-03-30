@@ -38,8 +38,8 @@ class BertClassifier(Classifier):
         self.decoder = nn.TransformerDecoder(decoder_layer, num_layers=num_layers)
 
         self.clf = nn.Sequential(
-            nn.Linear(self.n_dim, self.n_out),
-            Reshaper(shp=(-1, self.n_out)),
+            # nn.Linear(self.n_dim, self.n_out),
+            # Reshaper(shp=(-1, self.n_out)),
             nn.BatchNorm1d(self.n_out),
             nn.LogSoftmax(dim=-1),
             # nn.Softmax(dim=-1),
@@ -100,7 +100,7 @@ class BertClassifier(Classifier):
         targets = self.context["targets"]
         to = self.bert(**targets)
         trg = to["last_hidden_state"]
-        T = torch.transpose(trg, 0, 1)  # -> (S', B, D)
+        tgt = torch.transpose(trg, 0, 1)  # -> (S', B, D)
         self.context["trg"] = trg  # -> (B, S', D)
 
         # # NOTE: mem に揺らぎを与える
@@ -116,27 +116,21 @@ class BertClassifier(Classifier):
             N = torch.normal(0, 1e-6 / D, mem.shape).to(mem.device)
             mem = mem + N
 
-        tgt = T
+        W = self.bert.embeddings.word_embeddings.weight  # (V, D)
 
-        # # W = self.bert.embeddings.word_embeddings.weight  # (V, D)
-        # # self.context["M"] = torch.matmul(mem, W.T).argmax(dim=-1)  # (B, S', V)
-        # # self.context["T"] = torch.matmul(tgt, W.T).argmax(dim=-1)  # (B, S', V)
-
-        # tgt = self.create_right_shift_target(T)  # -> (S'+1, B, D)
-        # dec = self.decoder(tgt, mem)
-        # dec = dec[: tgt.shape[0] - 1]  # -> (S', B, D)
+        tgt = self.create_right_shift_target(tgt)  # -> (S'+1, B, D)
         dec = self.decoder(tgt, mem)
-        dec = torch.transpose(dec, 0, 1)  # -> (B, S', D)
-        self.context["dec"] = dec
+        h = torch.matmul(dec, W.T)  # (B, S', V)
+        B, S, V = h.shape
+        h = h.reshape(-1, V)  # -> (B*S, V)
+        y = self.clf(h).reshape(B, S, V)
 
-        h = dec
-        # h = torch.matmul(dec, W.T)  # (B, S', V)
-        # B, S, V = h.shape
-        # h = h.reshape(-1, V)  # -> (B*S, V)
-        # y = self.clf(h).reshape(B, S, V)
-
-        B, S, D = h.shape
-        y = self.clf(h).reshape(B, S, -1)
+        # dec = dec[: tgt.shape[0] - 1]  # -> (S', B, D)
+        # dec = self.decoder(tgt, mem)
+        # dec = torch.transpose(dec, 0, 1)  # -> (B, S', D)
+        # self.context["dec"] = dec
+        # B, S, D = dec.shape
+        # y = self.clf(dec).reshape(B, S, -1)
         return y
 
     def to_text(self, y_rec: torch.Tensor, do_argmax=True) -> torch.Tensor:
