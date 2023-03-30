@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from typing_extensions import Self
 
 from app.base.component.params import add_args
-from app.base.models.model import Classifier, Reshaper
+from app.base.models.model import Classifier  # , Reshaper
 
 
 class BertClassifier(Classifier):
@@ -87,9 +87,8 @@ class BertClassifier(Classifier):
 
     def create_right_shift_target(self, T: torch.Tensor):
         shp = list(T.shape)
-        shp[0] += 1  # -> (S'+1, B, D)
         tgt = torch.zeros(shp, device=T.device)
-        tgt[1:] = T
+        tgt[1:] = T[:-1]
         return tgt
 
     def forward(self, *args, **kwargs):
@@ -120,7 +119,8 @@ class BertClassifier(Classifier):
 
         tgt = self.create_right_shift_target(tgt)  # -> (S'+1, B, D)
         dec = self.decoder(tgt, mem)
-        h = torch.matmul(dec, W.T)  # (B, S', V)
+        dec = torch.transpose(dec, 0, 1)  # -> (B, S', D)
+        h = torch.matmul(dec, W.T)  # (B, S'+1, V)
         B, S, V = h.shape
         h = h.reshape(-1, V)  # -> (B*S, V)
         y = self.clf(h).reshape(B, S, V)
