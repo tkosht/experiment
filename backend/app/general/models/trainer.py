@@ -50,14 +50,19 @@ class TrainerBertClassifier(TrainerBase):
 
     def _t(self, bch: dict) -> None:
         # max_seqlen = 64
-        max_seqlen = -1
+        max_seqlen = 8
         sentences = bch["sentence"]
         label_names = [self.model.class_names[ldx] for ldx in bch["label"]]
 
         inputs = self.tokenizer(sentences, return_tensors="pt", padding=True)
-        self._to_device(inputs, max_seqlen)
+        self._to_device(inputs)
 
-        labels = self.tokenizer(label_names, return_tensors="pt", padding=True)
+        labels = self.tokenizer(
+            label_names,
+            return_tensors="pt",
+            padding="max_length",
+            max_length=max_seqlen,
+        )
         self._to_device(labels, max_seqlen)
 
         targets = labels

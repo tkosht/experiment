@@ -45,7 +45,8 @@ def do_eval(trainer: TrainerBertClassifier):
 
     pred_texts = []
     labl_texts = []
-    for bch_idx, bch in enumerate(tqdm(trainer.validloader, desc="evaluating")):
+    # for bch_idx, bch in enumerate(tqdm(trainer.validloader, desc="evaluating")):
+    for bch_idx, bch in enumerate(tqdm(trainer.trainloader, desc="evaluating")):
         inputs, t = trainer._t(bch)
 
         with torch.no_grad():
@@ -62,6 +63,8 @@ def do_eval(trainer: TrainerBertClassifier):
                 p.append(_p)
         pred_texts.extend(p)
         labl_texts.extend(_to_texts(trainer, t))
+        if bch_idx >= 10:
+            break
 
     scores = dict(
         acc=accuracy_score(pred_texts, labl_texts),

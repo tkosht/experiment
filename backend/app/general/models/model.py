@@ -50,7 +50,14 @@ class BertClassifier(Classifier):
         self.cos = nn.CosineSimilarity(dim=-1, eps=1e-6)
         self.mse = nn.MSELoss()
 
+        self.device = torch.device("cpu")
+
         self._initialize()
+
+    def to(self, obj):
+        super().to(obj)
+        if isinstance(obj, torch.device):
+            self.device = obj
 
     def _initialize(self) -> Self:
         for p in self.bert.parameters():
@@ -91,6 +98,17 @@ class BertClassifier(Classifier):
         tgt[1:] = T[:-1]
         return tgt
 
+    def create_mask(self, seq_len, PAD_IDX):
+        mask = (
+            torch.triu(torch.ones((seq_len, seq_len), device=self.device)) == 1
+        ).transpose(0, 1)
+        mask = (
+            mask.float()
+            .masked_fill(mask == 0, float("-inf"))
+            .masked_fill(mask == PAD_IDX, float(0.0))
+        )
+        return mask
+
     def forward(self, *args, **kwargs):
         o = self.bert(*args, **kwargs)
         mem = torch.transpose(o["last_hidden_state"], 0, 1)  # -> (S, B, D)
@@ -105,6 +123,8 @@ class BertClassifier(Classifier):
         trg = torch.matmul(t, W)  # -> (B, S', D)
         tgt = torch.transpose(trg, 0, 1)  # -> (S', B, D)
         self.context["trg"] = trg  # -> (B, S', D)
+        tokenizer = self.context["tokenizer"]
+        msk_tgt = self.create_mask(tgt.shape[0], tokenizer.pad_token_id)
 
         # # NOTE: mem に揺らぎを与える
         # #   - onehot を UNKnown に変える / self.tokenizer.unk_token_id
@@ -120,7 +140,7 @@ class BertClassifier(Classifier):
             mem = mem + N
 
         tgt = self.create_right_shift_target(tgt)  # -> (S', B, D)
-        dec = self.decoder(tgt, mem)
+        dec = self.decoder(tgt, mem, tgt_mask=msk_tgt)
         dec = torch.transpose(dec, 0, 1)  # -> (B, S', D)
         h = torch.matmul(dec, W.T)  # (B, S', V)
         B, S, V = h.shape
