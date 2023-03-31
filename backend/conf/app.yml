@@ -19,3 +19,7 @@ model:
             nhead: 8
             num_layers: 3
             add_noise: True
+
+eval:
+    seed: 123456
+    trained_file: "data/trainer.gz"

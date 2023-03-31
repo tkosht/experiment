@@ -96,9 +96,13 @@ class BertClassifier(Classifier):
         mem = torch.transpose(o["last_hidden_state"], 0, 1)  # -> (S, B, D)
         # po = o["pooler_output"]
 
-        targets = self.context["targets"]
-        to = self.bert(**targets)
-        trg = to["last_hidden_state"]
+        W = self.bert.embeddings.word_embeddings.weight  # (V, D)
+
+        # targets = self.context["targets"]
+        # to = self.bert(**targets)
+        # trg = to["last_hidden_state"]
+        t = self.context["targets.t"]  # (B, S', V) / onehot
+        trg = torch.matmul(t, W)  # -> (B, S', D)
         tgt = torch.transpose(trg, 0, 1)  # -> (S', B, D)
         self.context["trg"] = trg  # -> (B, S', D)
 
@@ -115,12 +119,10 @@ class BertClassifier(Classifier):
             N = torch.normal(0, 1e-6 / D, mem.shape).to(mem.device)
             mem = mem + N
 
-        W = self.bert.embeddings.word_embeddings.weight  # (V, D)
-
-        tgt = self.create_right_shift_target(tgt)  # -> (S'+1, B, D)
+        tgt = self.create_right_shift_target(tgt)  # -> (S', B, D)
         dec = self.decoder(tgt, mem)
         dec = torch.transpose(dec, 0, 1)  # -> (B, S', D)
-        h = torch.matmul(dec, W.T)  # (B, S'+1, V)
+        h = torch.matmul(dec, W.T)  # (B, S', V)
         B, S, V = h.shape
         h = h.reshape(-1, V)  # -> (B*S, V)
         y = self.clf(h).reshape(B, S, V)
@@ -132,6 +134,38 @@ class BertClassifier(Classifier):
         # B, S, D = dec.shape
         # y = self.clf(dec).reshape(B, S, -1)
         return y
+
+    def predict(self, *args, **kwargs):
+        o = self.bert(*args, **kwargs)
+        mem = torch.transpose(o["last_hidden_state"], 0, 1)  # -> (S, B, D)
+        # po = o["pooler_output"]
+        assert mem.shape[1] == 1  # assume batch size == 1
+
+        W = self.bert.embeddings.word_embeddings.weight  # (V, D)
+        tokenizer = self.context["tokenizer"]
+
+        tgt = torch.zeros((1, *mem.shape[1:])).to(W.device)
+        preds = []
+        max_seqlen = 13
+        for sdx in range(max_seqlen):
+            dec = self.decoder(tgt, mem)
+            dec = torch.transpose(dec, 0, 1)  # -> (B, S, D)
+            h = torch.matmul(dec, W.T)  # (B, S, V)
+            B, S, V = h.shape
+            h = h.reshape(-1, V)  # -> (B*S, V)
+            y = self.clf(h).reshape(B, S, V)
+            y_ids = y.argmax(dim=-1).squeeze(0)
+            p = tokenizer.decode(y_ids)
+            preds.append(y_ids.item())
+
+            # setup tgt tensor
+            y_onehot = F.one_hot(y_ids.unsqueeze(0), num_classes=tokenizer.vocab_size)
+            tgt = torch.matmul(y_onehot.to(torch.float32), W)
+            tgt = torch.transpose(tgt, 0, 1)  # -> (S, B, D)
+            if p == "[SEP]":
+                break
+        pred_text = tokenizer.decode(preds)
+        return pred_text
 
     def to_text(self, y_rec: torch.Tensor, do_argmax=True) -> torch.Tensor:
         tokenizer = self.context["tokenizer"]

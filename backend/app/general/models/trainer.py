@@ -68,6 +68,7 @@ class TrainerBertClassifier(TrainerBase):
         t = t.to(torch.float32)
 
         self.model.context["targets"] = targets
+        self.model.context["targets.t"] = t
         # self.model.context["targets"] = inputs
 
         return inputs, t
