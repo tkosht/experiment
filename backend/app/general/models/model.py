@@ -99,19 +99,15 @@ class BertClassifier(Classifier):
         return tgt
 
     def create_mask(self, seq_len, PAD_IDX):
-        mask = (
-            torch.triu(torch.ones((seq_len, seq_len), device=self.device)) == 1
-        ).transpose(0, 1)
-        mask = (
-            mask.float()
-            .masked_fill(mask == 0, float("-inf"))
-            .masked_fill(mask == PAD_IDX, float(0.0))
+        mask = nn.Transformer.generate_square_subsequent_mask(
+            seq_len, device=self.device
         )
         return mask
 
     def embed(self, onehot: torch.Tensor, context_key=None):
         # onehot : (B, S', V)
         _emb = torch.matmul(onehot, self.W)  # (B, S', D)
+        # TODO: add positional encoding
         emb = torch.transpose(_emb, 0, 1)  # -> (S', B, D)
         if context_key:
             self.context[context_key] = _emb
@@ -216,7 +212,7 @@ class BertClassifier(Classifier):
         # )  # dbg
 
         # setup tgt
-        for sdx in range(max_seqlen):
+        for sdx in range(max_seqlen - 1):
             y = self._infer(tgt_ids, mem)  # -> (B, S, V)
             y = y.argmax(dim=-1)  # -> (B, S)
             y = torch.transpose(y, 0, 1)  # -> (S, B)
