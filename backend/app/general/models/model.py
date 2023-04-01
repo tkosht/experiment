@@ -163,13 +163,15 @@ class BertClassifier(Classifier):
     #     # TODO: predict のように、正解tgt を1トークンずつ追加して推定 / trainer で制御？
     #     return y
 
-    def _infer(self, tgt_ids: torch.LongTensor, mem: torch.Tensor):
+    def _infer(
+        self, tgt_ids: torch.LongTensor, mem: torch.Tensor, add_noise: bool = False
+    ):
         tokenizer = self.context["tokenizer"]
         tgt = F.one_hot(tgt_ids, tokenizer.vocab_size)  # (B, S) -> (B, S, V)
         tgt = self.embed(tgt.to(torch.float32).to(self.device))  # -> (S, B, V)
         tgt_msk = self.create_mask(tgt.shape[0], tokenizer.pad_token_id)
 
-        if self.add_noise:
+        if add_noise:
             # add unk tensor (more exactly, replace unk vectors)
             U = self.create_unk_for(mem)
             mem = mem + U
@@ -191,7 +193,7 @@ class BertClassifier(Classifier):
         mem = torch.transpose(o["last_hidden_state"], 0, 1)  # -> (S, B, D)
 
         tgt_ids = self.context["tgt_ids"]  # (B, S')
-        y = self._infer(tgt_ids=tgt_ids, mem=mem)
+        y = self._infer(tgt_ids=tgt_ids, mem=mem, add_noise=self.add_noise)
         return y
 
     def predict(self, *args, **kwargs):
@@ -207,29 +209,23 @@ class BertClassifier(Classifier):
             torch.LongTensor([tokenizer.cls_token_id]).unsqueeze(0).to(self.device)
         )
 
-        tgt_ids = tokenizer.encode(
-            "positive", return_tensors="pt", max_length=8, padding="max_length"
-        ).to(
-            self.device
-        )  # dbg
+        # tgt_ids = tokenizer.encode(
+        #     "positive", return_tensors="pt", max_length=8, padding="max_length"
+        # ).to(
+        #     self.device
+        # )  # dbg
 
         # setup tgt
         for sdx in range(max_seqlen):
-            # tgt = F.one_hot(tgt_ids, tokenizer.vocab_size)  # (B, S) -> (B, S, V)
-            # tgt = self.embed(tgt.to(torch.float32).to(self.device))  # -> (S, B, V)
-            # tgt_msk = self.create_mask(tgt.shape[0], tokenizer.pad_token_id)
+            y = self._infer(tgt_ids, mem)  # -> (B, S, V)
+            y = y.argmax(dim=-1)  # -> (B, S)
+            y = torch.transpose(y, 0, 1)  # -> (S, B)
+            # tgt_ids = torch.cat([tgt_ids.flatten(), y[-1]]).unsqueeze(0)  # -> (B, S+1)
+            tgt_ids = torch.cat([tgt_ids[:, 0], y.flatten()]).unsqueeze(
+                0
+            )  # -> (B, S+1)
 
-            # dec = self.decoder(tgt, mem, tgt_mask=tgt_msk)  # -> (S, B, V)
-            # h = self.deembed(dec)  # -> (B, S, V)
-            # B, S, V = h.shape
-            # h = h.reshape(-1, V)  # -> (B*S, V)
-            # y = self.clf(h).reshape(B, S, V)
-            y = self._infer(tgt_ids, mem)
-            y = y.argmax(dim=-1)  # -> (S, B)
-            tgt_ids = torch.cat([tgt_ids, y[-1].unsqueeze(0)])  # -> (S+1, B)
-            tgt_ids = torch.transpose(tgt_ids, 0, 1)  # -> (B, S+1)
-
-        pred_text = tokenizer.decode(tgt_ids.flatten())
+        pred_text = tokenizer.decode(tgt_ids.flatten()[1:-1])
         return pred_text
 
     def to_text(self, y_rec: torch.Tensor, do_argmax=True) -> torch.Tensor:

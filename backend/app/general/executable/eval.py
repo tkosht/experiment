@@ -64,8 +64,11 @@ def do_eval(trainer: TrainerBertClassifier):
                 p.append(_p)
         pred_texts.extend(p)
         labl_texts.extend(_to_texts(trainer, t))
-        if bch_idx >= 10:
+        if bch_idx >= 5:
             break
+
+    for prd, lbl in zip(pred_texts, labl_texts):
+        g_logger.info(f"{prd=} / {lbl=}")
 
     scores = dict(
         acc=accuracy_score(pred_texts, labl_texts),
