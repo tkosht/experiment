@@ -53,6 +53,7 @@ class BertClassifier(Classifier):
         self.device = torch.device("cpu")
 
         self._initialize()
+        self.W = self.bert.embeddings.word_embeddings.weight  # (V, D)
 
     def to(self, obj):
         super().to(obj)
@@ -71,8 +72,7 @@ class BertClassifier(Classifier):
 
     def create_unk_for(self, mem: torch.Tensor):
         # mem : (S, B, D)
-        W = self.bert.embeddings.word_embeddings.weight  # (V, D)
-        V, D = W.shape
+        V, D = self.W.shape
 
         # overwrite by unk vector
         S, B, D = mem.shape
@@ -83,9 +83,9 @@ class BertClassifier(Classifier):
             .to(torch.float32)
             .reshape(1, 1, -1)
             .repeat(1, B, 1)
-            .to(W.device)
+            .to(self.device)
         )
-        unk_vector = torch.matmul(unk, W)
+        unk_vector = torch.matmul(unk, self.W)
         U = torch.zeros_like(mem)
         noise_idx = torch.randint(0, S, (1,)).item()
         U[noise_idx] = unk_vector - mem.detach()[noise_idx]
@@ -109,26 +109,66 @@ class BertClassifier(Classifier):
         )
         return mask
 
-    def forward(self, *args, **kwargs):
-        o = self.bert(*args, **kwargs)
-        mem = torch.transpose(o["last_hidden_state"], 0, 1)  # -> (S, B, D)
-        # po = o["pooler_output"]
+    def embed(self, onehot: torch.Tensor, context_key=None):
+        # onehot : (B, S', V)
+        _emb = torch.matmul(onehot, self.W)  # (B, S', D)
+        emb = torch.transpose(_emb, 0, 1)  # -> (S', B, D)
+        if context_key:
+            self.context[context_key] = _emb
+        return emb  # (S', B, D)
 
-        W = self.bert.embeddings.word_embeddings.weight  # (V, D)
+    def deembed(self, emb_seq: torch.Tensor, context_key=None):
+        # emb_seq : (S', B, D)
+        _emb = torch.transpose(emb_seq, 0, 1)  # -> (B, S', D)
+        pre_probs = torch.matmul(_emb, self.W.T)  # (B, S', V)
+        if context_key:
+            self.context[context_key] = _emb
+        return pre_probs  # (B, S', V)
 
-        # targets = self.context["targets"]
-        # to = self.bert(**targets)
-        # trg = to["last_hidden_state"]
-        t = self.context["targets.t"]  # (B, S', V) / onehot
-        trg = torch.matmul(t, W)  # -> (B, S', D)
-        tgt = torch.transpose(trg, 0, 1)  # -> (S', B, D)
-        self.context["trg"] = trg  # -> (B, S', D)
+    # def forward0(self, *args, **kwargs):
+    #     o = self.bert(*args, **kwargs)
+    #     mem = torch.transpose(o["last_hidden_state"], 0, 1)  # -> (S, B, D)
+    #     # po = o["pooler_output"]
+
+    #     t = self.context["targets.t"]  # (B, S', V) / onehot
+    #     tgt = self.embed(t, context_key="trg")  # -> (B, S', D)
+    #     tokenizer = self.context["tokenizer"]
+    #     tgt_msk = self.create_mask(tgt.shape[0], tokenizer.pad_token_id)
+
+    #     # # NOTE: mem に揺らぎを与える (入力の揺らぎに対する頑健性を上げるため)
+    #     # #   - onehot を UNKnown に変える / self.tokenizer.unk_token_id
+    #     # #   - decoder の入力(bert の出力ベクトル)にノイズ (torch.normal(0, 0.1, lh.shape))
+    #     if self.add_noise:
+    #         # add unk tensor (more exactly, replace unk vectors)
+    #         U = self.create_unk_for(mem)
+    #         mem = mem + U
+
+    #         # add noise
+    #         D = mem.shape[-1]
+    #         N = torch.normal(0, 1e-6 / D, mem.shape).to(mem.device)
+    #         mem = mem + N
+
+    #     dec = self.decoder(tgt, mem, tgt_mask=tgt_msk)
+    #     h = self.deembed(dec, context_key="dec")
+    #     B, S, V = h.shape
+    #     h = h.reshape(-1, V)  # -> (B*S, V)
+    #     y = self.clf(h).reshape(B, S, V)
+
+    #     # dec = dec[: tgt.shape[0] - 1]  # -> (S', B, D)
+    #     # dec = self.decoder(tgt, mem)
+    #     # dec = torch.transpose(dec, 0, 1)  # -> (B, S', D)
+    #     # self.context["dec"] = dec
+    #     # B, S, D = dec.shape
+    #     # y = self.clf(dec).reshape(B, S, -1)
+    #     # TODO: predict のように、正解tgt を1トークンずつ追加して推定 / trainer で制御？
+    #     return y
+
+    def _infer(self, tgt_ids: torch.LongTensor, mem: torch.Tensor):
         tokenizer = self.context["tokenizer"]
-        msk_tgt = self.create_mask(tgt.shape[0], tokenizer.pad_token_id)
+        tgt = F.one_hot(tgt_ids, tokenizer.vocab_size)  # (B, S) -> (B, S, V)
+        tgt = self.embed(tgt.to(torch.float32).to(self.device))  # -> (S, B, V)
+        tgt_msk = self.create_mask(tgt.shape[0], tokenizer.pad_token_id)
 
-        # # NOTE: mem に揺らぎを与える
-        # #   - onehot を UNKnown に変える / self.tokenizer.unk_token_id
-        # #   - decoder の入力(bert の出力ベクトル)にノイズ (torch.normal(0, 0.1, lh.shape))
         if self.add_noise:
             # add unk tensor (more exactly, replace unk vectors)
             U = self.create_unk_for(mem)
@@ -139,20 +179,19 @@ class BertClassifier(Classifier):
             N = torch.normal(0, 1e-6 / D, mem.shape).to(mem.device)
             mem = mem + N
 
-        tgt = self.create_right_shift_target(tgt)  # -> (S', B, D)
-        dec = self.decoder(tgt, mem, tgt_mask=msk_tgt)
-        dec = torch.transpose(dec, 0, 1)  # -> (B, S', D)
-        h = torch.matmul(dec, W.T)  # (B, S', V)
+        dec = self.decoder(tgt, mem, tgt_mask=tgt_msk)  # -> (S, B, V)
+        h = self.deembed(dec)  # -> (B, S, V)
         B, S, V = h.shape
         h = h.reshape(-1, V)  # -> (B*S, V)
         y = self.clf(h).reshape(B, S, V)
+        return y
 
-        # dec = dec[: tgt.shape[0] - 1]  # -> (S', B, D)
-        # dec = self.decoder(tgt, mem)
-        # dec = torch.transpose(dec, 0, 1)  # -> (B, S', D)
-        # self.context["dec"] = dec
-        # B, S, D = dec.shape
-        # y = self.clf(dec).reshape(B, S, -1)
+    def forward(self, *args, **kwargs):
+        o = self.bert(*args, **kwargs)
+        mem = torch.transpose(o["last_hidden_state"], 0, 1)  # -> (S, B, D)
+
+        tgt_ids = self.context["tgt_ids"]  # (B, S')
+        y = self._infer(tgt_ids=tgt_ids, mem=mem)
         return y
 
     def predict(self, *args, **kwargs):
@@ -161,30 +200,36 @@ class BertClassifier(Classifier):
         # po = o["pooler_output"]
         assert mem.shape[1] == 1  # assume batch size == 1
 
-        W = self.bert.embeddings.word_embeddings.weight  # (V, D)
         tokenizer = self.context["tokenizer"]
 
-        tgt = torch.zeros((1, *mem.shape[1:])).to(W.device)
-        preds = []
-        max_seqlen = 13
-        for sdx in range(max_seqlen):
-            dec = self.decoder(tgt, mem)
-            dec = torch.transpose(dec, 0, 1)  # -> (B, S, D)
-            h = torch.matmul(dec, W.T)  # (B, S, V)
-            B, S, V = h.shape
-            h = h.reshape(-1, V)  # -> (B*S, V)
-            y = self.clf(h).reshape(B, S, V)
-            y_ids = y.argmax(dim=-1).squeeze(0)
-            p = tokenizer.decode(y_ids)
-            preds.append(y_ids.item())
+        max_seqlen = 8
+        tgt_ids = (
+            torch.LongTensor([tokenizer.cls_token_id]).unsqueeze(0).to(self.device)
+        )
 
-            # setup tgt tensor
-            y_onehot = F.one_hot(y_ids.unsqueeze(0), num_classes=tokenizer.vocab_size)
-            tgt = torch.matmul(y_onehot.to(torch.float32), W)
-            tgt = torch.transpose(tgt, 0, 1)  # -> (S, B, D)
-            if p == "[SEP]":
-                break
-        pred_text = tokenizer.decode(preds)
+        tgt_ids = tokenizer.encode(
+            "positive", return_tensors="pt", max_length=8, padding="max_length"
+        ).to(
+            self.device
+        )  # dbg
+
+        # setup tgt
+        for sdx in range(max_seqlen):
+            # tgt = F.one_hot(tgt_ids, tokenizer.vocab_size)  # (B, S) -> (B, S, V)
+            # tgt = self.embed(tgt.to(torch.float32).to(self.device))  # -> (S, B, V)
+            # tgt_msk = self.create_mask(tgt.shape[0], tokenizer.pad_token_id)
+
+            # dec = self.decoder(tgt, mem, tgt_mask=tgt_msk)  # -> (S, B, V)
+            # h = self.deembed(dec)  # -> (B, S, V)
+            # B, S, V = h.shape
+            # h = h.reshape(-1, V)  # -> (B*S, V)
+            # y = self.clf(h).reshape(B, S, V)
+            y = self._infer(tgt_ids, mem)
+            y = y.argmax(dim=-1)  # -> (S, B)
+            tgt_ids = torch.cat([tgt_ids, y[-1].unsqueeze(0)])  # -> (S+1, B)
+            tgt_ids = torch.transpose(tgt_ids, 0, 1)  # -> (B, S+1)
+
+        pred_text = tokenizer.decode(tgt_ids.flatten())
         return pred_text
 
     def to_text(self, y_rec: torch.Tensor, do_argmax=True) -> torch.Tensor:

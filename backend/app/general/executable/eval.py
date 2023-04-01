@@ -48,6 +48,7 @@ def do_eval(trainer: TrainerBertClassifier):
     # for bch_idx, bch in enumerate(tqdm(trainer.validloader, desc="evaluating")):
     for bch_idx, bch in enumerate(tqdm(trainer.trainloader, desc="evaluating")):
         inputs, t = trainer._t(bch)
+        # y = trainer.model._forward(**inputs)  # for debugging
 
         with torch.no_grad():
             X = inputs["input_ids"]
