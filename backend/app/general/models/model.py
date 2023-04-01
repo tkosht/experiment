@@ -121,44 +121,6 @@ class BertClassifier(Classifier):
             self.context[context_key] = _emb
         return pre_probs  # (B, S', V)
 
-    # def forward0(self, *args, **kwargs):
-    #     o = self.bert(*args, **kwargs)
-    #     mem = torch.transpose(o["last_hidden_state"], 0, 1)  # -> (S, B, D)
-    #     # po = o["pooler_output"]
-
-    #     t = self.context["targets.t"]  # (B, S', V) / onehot
-    #     tgt = self.embed(t, context_key="trg")  # -> (B, S', D)
-    #     tokenizer = self.context["tokenizer"]
-    #     tgt_msk = self.create_mask(tgt.shape[0], tokenizer.pad_token_id)
-
-    #     # # NOTE: mem に揺らぎを与える (入力の揺らぎに対する頑健性を上げるため)
-    #     # #   - onehot を UNKnown に変える / self.tokenizer.unk_token_id
-    #     # #   - decoder の入力(bert の出力ベクトル)にノイズ (torch.normal(0, 0.1, lh.shape))
-    #     if self.add_noise:
-    #         # add unk tensor (more exactly, replace unk vectors)
-    #         U = self.create_unk_for(mem)
-    #         mem = mem + U
-
-    #         # add noise
-    #         D = mem.shape[-1]
-    #         N = torch.normal(0, 1e-6 / D, mem.shape).to(mem.device)
-    #         mem = mem + N
-
-    #     dec = self.decoder(tgt, mem, tgt_mask=tgt_msk)
-    #     h = self.deembed(dec, context_key="dec")
-    #     B, S, V = h.shape
-    #     h = h.reshape(-1, V)  # -> (B*S, V)
-    #     y = self.clf(h).reshape(B, S, V)
-
-    #     # dec = dec[: tgt.shape[0] - 1]  # -> (S', B, D)
-    #     # dec = self.decoder(tgt, mem)
-    #     # dec = torch.transpose(dec, 0, 1)  # -> (B, S', D)
-    #     # self.context["dec"] = dec
-    #     # B, S, D = dec.shape
-    #     # y = self.clf(dec).reshape(B, S, -1)
-    #     # TODO: predict のように、正解tgt を1トークンずつ追加して推定 / trainer で制御？
-    #     return y
-
     def _infer(
         self, tgt_ids: torch.LongTensor, mem: torch.Tensor, add_noise: bool = False
     ):
@@ -205,12 +167,6 @@ class BertClassifier(Classifier):
             torch.LongTensor([tokenizer.cls_token_id]).unsqueeze(0).to(self.device)
         )
 
-        # tgt_ids = tokenizer.encode(
-        #     "positive", return_tensors="pt", max_length=8, padding="max_length"
-        # ).to(
-        #     self.device
-        # )  # dbg
-
         # setup tgt
         for sdx in range(max_seqlen - 1):
             y = self._infer(tgt_ids, mem)  # -> (B, S, V)
@@ -221,8 +177,10 @@ class BertClassifier(Classifier):
                 0
             )  # -> (B, S+1)
 
-        pred_text = tokenizer.decode(tgt_ids.flatten()[1:-1])
-        return pred_text
+        return tgt_ids.flatten()[1:]
+        # # pred_text = tokenizer.decode(tgt_ids.flatten()[1:])
+        # pred_text = [tokenizer.decode(idx) for idx in tgt_ids.flatten()[1:]]
+        # return pred_text
 
     def to_text(self, y_rec: torch.Tensor, do_argmax=True) -> torch.Tensor:
         tokenizer = self.context["tokenizer"]

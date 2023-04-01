@@ -6,7 +6,7 @@ from inspect import signature
 import numpy
 import torch
 from omegaconf import DictConfig
-from sklearn.metrics import accuracy_score  # , precision_score, recall_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score
 from tqdm import tqdm
 
 from app.base.component.params import from_config
@@ -30,11 +30,11 @@ def load_trainer(params: DictConfig) -> TrainerBertClassifier:
     return trainer
 
 
-def _to_texts(trainer: TrainerBertClassifier, y: torch.Tensor):
+def _to_texts(trainer: TrainerBertClassifier, y: torch.Tensor, do_argmax=True):
     texts = []
     model = trainer.model
     for _y in y:
-        text = model.to_text(_y)
+        text = model.to_text(_y, do_argmax)
         texts.append(text)
     return texts
 
@@ -60,25 +60,29 @@ def do_eval(trainer: TrainerBertClassifier):
                 _types = _types.unsqueeze(0)
                 _attn = _attn.unsqueeze(0)
                 ins = dict(input_ids=_X, token_type_ids=_types, attention_mask=_attn)
-                _p = trainer.model.predict(**ins)
-                p.append(_p)
-        pred_texts.extend(p)
+                ids = trainer.model.predict(**ins)
+                # _p = trainer.tokenizer.decode(ids.flatten())
+                p.append(ids.tolist())
+        pred_texts.extend(_to_texts(trainer, p, do_argmax=False))
         labl_texts.extend(_to_texts(trainer, t))
-        if bch_idx >= 5:
-            break
+        # if bch_idx >= 5:
+        #     break
 
     for prd, lbl in zip(pred_texts, labl_texts):
         g_logger.info(f"{prd=} / {lbl=}")
 
+    d = {"positive [SEP] [PAD] [PAD]": 1, "negative [SEP] [PAD] [PAD]": 0}
+    preds = [d[txt] if txt in d else 2 for txt in pred_texts]
+    labls = [d[txt] if txt in d else 2 for txt in labl_texts]
     scores = dict(
-        acc=accuracy_score(pred_texts, labl_texts),
-        # precision=precision_score(pred_texts, labl_texts),
-        # recall=recall_score(pred_texts, labl_texts),
+        acc=accuracy_score(preds, labls),
+        precision=precision_score(preds, labls, average=None),
+        recall=recall_score(preds, labls, average=None),
     )
 
     g_logger.info("=" * 80)
     for k, v in scores.items():
-        g_logger.info(f"{k}: {v:0.3f}")
+        g_logger.info(f"{k}: {v}")
     g_logger.info("=" * 80)
 
     return
