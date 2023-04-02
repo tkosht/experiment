@@ -57,10 +57,10 @@ def _main(params: DictConfig):
 
         g_logger.info("End", "train")
 
-        mlprovider.log_metric_from_dict(trainer.metrics)
-        mlprovider.log_artifact("log/app.log", "log")
         if trainer is not None:
+            mlprovider.log_metric_from_dict(trainer.metrics)
             mlprovider.log_artifacts(trainer.log_dir, "tb")
+        mlprovider.log_artifact("log/app.log", "log")
         mlprovider.end_run()
 
 
