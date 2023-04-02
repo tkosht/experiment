@@ -48,5 +48,10 @@ nvidia nvidia-smi:
 	  -l 1
 
 
+clean-result:
+	rm -rf result/*
+
 clean-experiment:
-	rm -rf mlruns result/*
+	rm -rf mlruns
+
+clean: clean-result clean-experiment
