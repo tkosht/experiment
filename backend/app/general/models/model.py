@@ -6,6 +6,35 @@ from typing_extensions import Self
 from app.base.component.params import add_args
 from app.base.models.model import Classifier  # , Reshaper
 
+import math
+from torch.autograd import Variable
+
+
+class PositionalEncoding(nn.Module):
+    "Implement the PE function."
+    # cf. https://nlp.seas.harvard.edu/2018/04/03/attention.html#decoder
+
+    def __init__(self, d_model, dropout, max_len=5000):
+        super(PositionalEncoding, self).__init__()
+        self.dropout = nn.Dropout(p=dropout)
+
+        # Compute the positional encodings once in log space.
+        pe = torch.zeros(max_len, d_model)
+        position = torch.arange(0, max_len).unsqueeze(1)
+        div_term = torch.exp(
+            torch.arange(0, d_model, 2) * -(math.log(10000.0) / d_model)
+        )
+        # pe: (max_S, D) / position: (max_S, 1)
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
+        pe = pe.unsqueeze(0)  # -> (1, max_S, D)
+        self.register_buffer("pe", pe)
+
+    def forward(self, x):
+        # x: (B, S, D)
+        x = x + Variable(self.pe[:, : x.size(1)], requires_grad=False)
+        return self.dropout(x)
+
 
 class BertClassifier(Classifier):
     @add_args(params_file="conf/app.yml", root_key="/model/transformer/decoder")
@@ -33,7 +62,13 @@ class BertClassifier(Classifier):
         self.nhead = nhead
         self.num_layers = num_layers
         self.add_noise = add_noise
+        self.pe_max_len = 1000
 
+        self.W = self.bert.embeddings.word_embeddings.weight  # (V, D)
+        self.pe = PositionalEncoding(
+            self.n_dim, dropout=droprate, max_len=self.pe_max_len
+        )
+        # TODO: use Encoder
         decoder_layer = nn.TransformerDecoderLayer(d_model=n_dim, nhead=nhead)
         self.decoder = nn.TransformerDecoder(decoder_layer, num_layers=num_layers)
 
@@ -53,7 +88,6 @@ class BertClassifier(Classifier):
         self.device = torch.device("cpu")
 
         self._initialize()
-        self.W = self.bert.embeddings.word_embeddings.weight  # (V, D)
 
     def to(self, obj):
         super().to(obj)
@@ -107,7 +141,7 @@ class BertClassifier(Classifier):
     def embed(self, onehot: torch.Tensor, context_key=None):
         # onehot : (B, S', V)
         _emb = torch.matmul(onehot, self.W)  # (B, S', D)
-        # TODO: add positional encoding
+        _emb = self.pe(_emb)
         emb = torch.transpose(_emb, 0, 1)  # -> (S', B, D)
         if context_key:
             self.context[context_key] = _emb
@@ -146,7 +180,7 @@ class BertClassifier(Classifier):
         y = self.clf(h).reshape(B, S, V)
         return y
 
-    def forward(self, *args, **kwargs):
+    def forward(self, *args, **kwargs) -> torch.Tensor:
         o = self.bert(*args, **kwargs)
         mem = torch.transpose(o["last_hidden_state"], 0, 1)  # -> (S, B, D)
 
@@ -154,7 +188,7 @@ class BertClassifier(Classifier):
         y = self._infer(tgt_ids=tgt_ids, mem=mem, add_noise=self.add_noise)
         return y
 
-    def predict(self, *args, **kwargs):
+    def predict(self, *args, **kwargs) -> torch.Tensor:
         o = self.bert(*args, **kwargs)
         mem = torch.transpose(o["last_hidden_state"], 0, 1)  # -> (S, B, D)
         # po = o["pooler_output"]
