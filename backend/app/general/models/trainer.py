@@ -68,15 +68,16 @@ class TrainerBertClassifier(TrainerBase):
         targets = labels
         # targets = inputs
 
+        # NOTE: exclude [CLS]
         teachers = targets.input_ids[:, 1:]
         t = F.one_hot(teachers, num_classes=self.tokenizer.vocab_size)
         t = t.to(torch.float32)
 
-        self.model.context["tgt_ids"] = targets.input_ids[
-            :, :-1
-        ]  # from [CLS], except end
+        # NOTE: to avoid cheeting
+        tgt_ids = targets.input_ids[:, :-1]  # from [CLS], except end
+        self.model.context["tgt_ids"] = tgt_ids
 
-        return inputs, t  # exclude [CLS]
+        return inputs, t
 
     def do_train(self, params: DictConfig) -> Self:
         log("Start training")
