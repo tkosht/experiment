@@ -12,8 +12,8 @@ webapi:
 test-unit ut:
 	python -m pytest test
 
-log:
-	tail -0f log/app.log
+tail-log:
+	@tail -0f log/app.log
 
 hello-request:
 	@sh bin/request_hello.sh
@@ -53,7 +53,10 @@ nvidia nvidia-smi:
 clean-result:
 	rm -rf result/*
 
-clean-experiment:
-	rm -rf mlruns
+clean-mlruns:
+	sh bin/clean_mlruns.sh
 
-clean: clean-result clean-experiment
+_clean-experiment:	# if use, be carefull !!
+	rm -rf mlruns data/mlflow.db
+
+clean: clean-result clean-mlruns

@@ -4,7 +4,7 @@ all: up
 
 # ==========
 # interaction tasks
-bash: up
+bash:
 	docker compose exec app bash
 
 python: up
