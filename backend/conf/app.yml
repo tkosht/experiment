@@ -26,3 +26,4 @@ model:
 eval:
     seed: 123456
     trained_file: "data/trainer.gz"
+    save_in_last: False

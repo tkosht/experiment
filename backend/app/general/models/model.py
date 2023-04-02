@@ -177,10 +177,7 @@ class BertClassifier(Classifier):
 
         mem = self.encoder(h)  # (S, B, D)
 
-        _tgt_ids = self.context["tgt_ids"]  # (B, S')
-        tdx = self.context["tdx"]
-        tgt_ids = _tgt_ids[:, :tdx].clone()
-
+        tgt_ids = self.context["tgt_ids"]  # (B, S')
         y = self._infer_decoding(
             tgt_ids=tgt_ids, mem=mem, add_noise=self.params_decoder.add_noise
         )

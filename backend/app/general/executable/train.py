@@ -27,26 +27,20 @@ def _main(params: DictConfig):
     g_logger.info("Start", "train")
     g_logger.info("params", f"{params}")
 
-    seed_everything()
-
+    seed_everything(params.seed)
     mlprovider = MLFlowProvider(
         experiment_name="general_trainer",
         run_name="train",
     )
 
+    trainer = None
     try:
-        torch.manual_seed(params.seed)
-
-        trainer = buildup_trainer(params)
-        trainer.model.context["tokenizer"] = trainer.tokenizer
-
         mlprovider.log_params(params)
         mlprovider.log_artifact("conf/app.yml", "conf")
-
+        trainer = buildup_trainer(params)
         trainer.do_train(params)
-
     except KeyboardInterrupt:
-        g_logger.info("Captured KeyboardInterruption")
+        g_logger.info("Captured Interruption")
     except Exception as e:
         g_logger.error("Error Occured", str(e))
         tb.print_exc()
@@ -62,8 +56,9 @@ def _main(params: DictConfig):
         g_logger.info("End", "train")
 
         mlprovider.log_metric_from_dict(trainer.metrics)
-        mlprovider.log_artifacts(trainer.log_dir, "tb")
         mlprovider.log_artifact("log/app.log", "log")
+        if trainer is not None:
+            mlprovider.log_artifacts(trainer.log_dir, "tb")
         mlprovider.end_run()
 
 
