@@ -93,8 +93,8 @@ def do_eval(trainer: TrainerBertClassifier):
 
 def _main(params: DictConfig):
     g_logger.info("Start", "eval")
-    g_logger.info("git-rev", get_revision())
     g_logger.info("params", f"{params}")
+    g_logger.info("git-rev", get_revision())
 
     seed_everything(params.seed)
     mlprovider = MLFlowProvider(
