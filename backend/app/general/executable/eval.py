@@ -45,10 +45,8 @@ def do_eval(trainer: TrainerBertClassifier):
 
     pred_texts = []
     labl_texts = []
-    # for bch_idx, bch in enumerate(tqdm(trainer.trainloader, desc="evaluating")):
     for bch_idx, bch in enumerate(tqdm(trainer.validloader, desc="evaluating")):
         inputs, t = trainer._t(bch)
-        # y = trainer.model._forward(**inputs)  # for debugging
 
         with torch.no_grad():
             X = inputs["input_ids"]
@@ -65,8 +63,6 @@ def do_eval(trainer: TrainerBertClassifier):
                 p.append(ids.tolist())
         pred_texts.extend(_to_texts(trainer, p, do_argmax=False))
         labl_texts.extend(_to_texts(trainer, t))
-        # if bch_idx >= 5:
-        #     break
 
     for prd, lbl in zip(pred_texts, labl_texts):
         g_logger.info(f"{prd=} / {lbl=}")
