@@ -136,7 +136,7 @@ class BertClassifier(Classifier):
 
             # add noise
             D = mem.shape[-1]
-            N = torch.normal(0, 1e-6 / D, mem.shape).to(mem.device)
+            N = torch.normal(0, 1e-3 / D, mem.shape).to(mem.device)
             mem = mem + N
 
         dec = self.decoder(tgt, mem, tgt_mask=tgt_msk)  # -> (S, B, V)
