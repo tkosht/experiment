@@ -1,43 +1,16 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from omegaconf import DictConfig
 from typing_extensions import Self
 
 from app.base.component.params import add_args
-from app.base.models.model import Classifier  # , Reshaper
-
-import math
-from torch.autograd import Variable
-
-
-class PositionalEncoding(nn.Module):
-    "Implement the PE function."
-    # cf. https://nlp.seas.harvard.edu/2018/04/03/attention.html#decoder
-
-    def __init__(self, d_model, dropout, max_len=5000):
-        super(PositionalEncoding, self).__init__()
-        self.dropout = nn.Dropout(p=dropout)
-
-        # Compute the positional encodings once in log space.
-        pe = torch.zeros(max_len, d_model)
-        position = torch.arange(0, max_len).unsqueeze(1)
-        div_term = torch.exp(
-            torch.arange(0, d_model, 2) * -(math.log(10000.0) / d_model)
-        )
-        # pe: (max_S, D) / position: (max_S, 1)
-        pe[:, 0::2] = torch.sin(position * div_term)
-        pe[:, 1::2] = torch.cos(position * div_term)
-        pe = pe.unsqueeze(0)  # -> (1, max_S, D)
-        self.register_buffer("pe", pe)
-
-    def forward(self, x):
-        # x: (B, S, D)
-        x = x + Variable(self.pe[:, : x.size(1)], requires_grad=False)
-        return self.dropout(x)
+from app.base.models.model import Classifier
+from app.general.models.positional_encoding import PositionalEncoding
 
 
 class BertClassifier(Classifier):
-    @add_args(params_file="conf/app.yml", root_key="/model/transformer/decoder")
+    @add_args(params_file="conf/app.yml", root_key="/model/transformer")
     def __init__(
         self,
         bert,
@@ -47,9 +20,8 @@ class BertClassifier(Classifier):
         n_out=None,
         droprate=0.5,
         weight=None,
-        nhead=8,
-        num_layers=2,
-        add_noise=True,
+        params_encoder: DictConfig = None,
+        params_decoder: DictConfig = None,
     ) -> None:
         super().__init__(class_names)
 
@@ -59,9 +31,8 @@ class BertClassifier(Classifier):
         self.n_out = len(class_names) if n_out is None else n_out
         self.droprate = droprate
         self.weight = weight
-        self.nhead = nhead
-        self.num_layers = num_layers
-        self.add_noise = add_noise
+        self.params_encoder = params_encoder
+        self.params_decoder = params_decoder
         self.pe_max_len = 1000
 
         self.W = self.bert.embeddings.word_embeddings.weight  # (V, D)
@@ -69,15 +40,23 @@ class BertClassifier(Classifier):
             self.n_dim, dropout=droprate, max_len=self.pe_max_len
         )
         # TODO: use Encoder
-        decoder_layer = nn.TransformerDecoderLayer(d_model=n_dim, nhead=nhead)
-        self.decoder = nn.TransformerDecoder(decoder_layer, num_layers=num_layers)
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=n_dim, nhead=params_encoder.nhead
+        )
+        self.encoder = nn.TransformerEncoder(
+            encoder_layer, num_layers=params_encoder.num_layers
+        )
+
+        decoder_layer = nn.TransformerDecoderLayer(
+            d_model=n_dim, nhead=params_decoder.nhead
+        )
+        self.decoder = nn.TransformerDecoder(
+            decoder_layer, num_layers=params_decoder.num_layers
+        )
 
         self.clf = nn.Sequential(
-            # nn.Linear(self.n_dim, self.n_out),
-            # Reshaper(shp=(-1, self.n_out)),
             nn.BatchNorm1d(self.n_out),
             nn.LogSoftmax(dim=-1),
-            # nn.Softmax(dim=-1),
         )
 
         # loss
@@ -155,7 +134,7 @@ class BertClassifier(Classifier):
             self.context[context_key] = _emb
         return pre_probs  # (B, S', V)
 
-    def _infer(
+    def _infer_decoding(
         self, tgt_ids: torch.LongTensor, mem: torch.Tensor, add_noise: bool = False
     ):
         tokenizer = self.context["tokenizer"]
@@ -182,15 +161,20 @@ class BertClassifier(Classifier):
 
     def forward(self, *args, **kwargs) -> torch.Tensor:
         o = self.bert(*args, **kwargs)
-        mem = torch.transpose(o["last_hidden_state"], 0, 1)  # -> (S, B, D)
+        h = torch.transpose(o["last_hidden_state"], 0, 1)  # -> (S, B, D)
+
+        mem = self.encoder(h)  # (S, B, D)
 
         tgt_ids = self.context["tgt_ids"]  # (B, S')
-        y = self._infer(tgt_ids=tgt_ids, mem=mem, add_noise=self.add_noise)
+        y = self._infer_decoding(
+            tgt_ids=tgt_ids, mem=mem, add_noise=self.params_decoder.add_noise
+        )
         return y
 
     def predict(self, *args, **kwargs) -> torch.Tensor:
         o = self.bert(*args, **kwargs)
-        mem = torch.transpose(o["last_hidden_state"], 0, 1)  # -> (S, B, D)
+        h = torch.transpose(o["last_hidden_state"], 0, 1)  # -> (S, B, D)
+        mem = self.encoder(h)  # (S, B, D)
         # po = o["pooler_output"]
         assert mem.shape[1] == 1  # assume batch size == 1
 
@@ -203,7 +187,7 @@ class BertClassifier(Classifier):
 
         # setup tgt
         for sdx in range(max_seqlen - 1):
-            y = self._infer(tgt_ids, mem)  # -> (B, S, V)
+            y = self._infer_decoding(tgt_ids, mem)  # -> (B, S, V)
             y = y.argmax(dim=-1)  # -> (B, S)
             y = torch.transpose(y, 0, 1)  # -> (S, B)
             # tgt_ids = torch.cat([tgt_ids.flatten(), y[-1]]).unsqueeze(0)  # -> (B, S+1)

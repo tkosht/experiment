@@ -23,6 +23,10 @@ post-request:
 
 test-request:
 	@sh bin/test_request.sh
+# ==========
+# # docker task
+bash:
+	docker exec -it experiment.app bash
 
 # ==========
 # # mlflow tasks

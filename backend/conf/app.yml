@@ -15,7 +15,10 @@ train:
 
 model:
     transformer:
-        decoder:
+        params_encoder:
+            nhead: 8
+            num_layers: 3
+        params_decoder:
             nhead: 8
             num_layers: 3
             add_noise: True
