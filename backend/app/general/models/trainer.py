@@ -218,13 +218,13 @@ class TrainerBertClassifier(TrainerBase):
                 step,
             )
             self.write_text(
-                f"{key}/{idx:03d}/02.input",
-                self.model.to_text(_X, do_argmax=False),
+                f"{key}/{idx:03d}/02.label",
+                self.model.to_text(_t.detach()),
                 step,
             )
             self.write_text(
-                f"{key}/{idx:03d}/03.label",
-                self.model.to_text(_t.detach()),
+                f"{key}/{idx:03d}/03.input",
+                self.model.to_text(_X, do_argmax=False),
                 step,
             )
             if n_logs > 0 and idx + 1 >= n_logs:
