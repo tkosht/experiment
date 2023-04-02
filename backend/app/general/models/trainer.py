@@ -77,6 +77,12 @@ class TrainerBertClassifier(TrainerBase):
         tgt_ids = targets.input_ids[:, :-1]  # from [CLS], except end
         self.model.context["tgt_ids"] = tgt_ids
 
+        # NOTE: choose training seqlen, randomly
+        tgt_seqlen = tgt_ids.shape[1]
+        tdx = torch.randint(1, tgt_seqlen + 1, (1,))
+        self.model.context["tdx"] = tdx
+        t = t[:, :tdx]
+
         return inputs, t
 
     def do_train(self, params: DictConfig) -> Self:

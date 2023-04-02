@@ -6,13 +6,14 @@ from inspect import signature
 import numpy
 import torch
 from omegaconf import DictConfig
+
 from app.base.component.mlflow_provider import MLFlowProvider
 from app.base.component.params import from_config
 from app.general.models.trainer import g_logger
 from app.general.models.trainer_builder import buildup_trainer
 
 
-def seed_everything(seed=42):
+def seed_everything(seed=1357):
     random.seed(seed)
     os.environ["PYTHONHASHSEED"] = str(seed)
     numpy.random.seed(seed)

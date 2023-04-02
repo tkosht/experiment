@@ -159,7 +159,7 @@ class BertClassifier(Classifier):
         y = self.clf(h).reshape(B, S, V)
         return y
 
-    def forward(self, *args, **kwargs) -> torch.Tensor:
+    def __forward(self, *args, **kwargs) -> torch.Tensor:
         o = self.bert(*args, **kwargs)
         h = torch.transpose(o["last_hidden_state"], 0, 1)  # -> (S, B, D)
 
@@ -169,6 +169,22 @@ class BertClassifier(Classifier):
         y = self._infer_decoding(
             tgt_ids=tgt_ids, mem=mem, add_noise=self.params_decoder.add_noise
         )
+        return y
+
+    def forward(self, *args, **kwargs) -> torch.Tensor:
+        o = self.bert(*args, **kwargs)
+        h = torch.transpose(o["last_hidden_state"], 0, 1)  # -> (S, B, D)
+
+        mem = self.encoder(h)  # (S, B, D)
+
+        _tgt_ids = self.context["tgt_ids"]  # (B, S')
+        tdx = self.context["tdx"]
+        tgt_ids = _tgt_ids[:, :tdx].clone()
+
+        y = self._infer_decoding(
+            tgt_ids=tgt_ids, mem=mem, add_noise=self.params_decoder.add_noise
+        )
+
         return y
 
     def predict(self, *args, **kwargs) -> torch.Tensor:
@@ -196,9 +212,6 @@ class BertClassifier(Classifier):
             )  # -> (B, S+1)
 
         return tgt_ids.flatten()[1:]
-        # # pred_text = tokenizer.decode(tgt_ids.flatten()[1:])
-        # pred_text = [tokenizer.decode(idx) for idx in tgt_ids.flatten()[1:]]
-        # return pred_text
 
     def to_text(self, y_rec: torch.Tensor, do_argmax=True) -> torch.Tensor:
         tokenizer = self.context["tokenizer"]
@@ -263,6 +276,7 @@ class BertClassifier(Classifier):
             bleus.append(b)
 
             # ROUGE
+            # # cf. https://aclanthology.org/W04-1013.pdf
             pred_text = self.to_text(_y)
             labl_text = self.to_text(_t)
             r = rouge_score(pred_text, labl_text)
