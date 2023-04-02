@@ -9,6 +9,7 @@ from omegaconf import DictConfig
 from sklearn.metrics import accuracy_score, precision_score, recall_score
 from tqdm import tqdm
 
+from app.base.component.gitinfo import get_revision
 from app.base.component.mlflow_provider import MLFlowProvider
 from app.base.component.params import from_config
 from app.general.models.trainer import TrainerBertClassifier, g_logger
@@ -92,6 +93,7 @@ def do_eval(trainer: TrainerBertClassifier):
 
 def _main(params: DictConfig):
     g_logger.info("Start", "eval")
+    g_logger.info("git-rev", get_revision())
     g_logger.info("params", f"{params}")
 
     seed_everything(params.seed)

@@ -7,6 +7,7 @@ import numpy
 import torch
 from omegaconf import DictConfig
 
+from app.base.component.gitinfo import get_revision
 from app.base.component.mlflow_provider import MLFlowProvider
 from app.base.component.params import from_config
 from app.general.models.trainer import g_logger
@@ -25,6 +26,7 @@ def seed_everything(seed=1357):
 
 def _main(params: DictConfig):
     g_logger.info("Start", "train")
+    g_logger.info("git-rev", get_revision())
     g_logger.info("params", f"{params}")
 
     seed_everything(params.seed)
