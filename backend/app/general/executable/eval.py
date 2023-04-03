@@ -70,7 +70,7 @@ def do_eval(trainer: TrainerBertClassifier):
         g_logger.info(f"{prd=} / {lbl=}")
 
     # setup scores
-    d = {"positive [SEP] [PAD] [PAD]": 1, "negative [SEP] [PAD] [PAD]": 0}
+    d = {"positive [SEP] [PAD] [PAD]": 0, "negative [SEP] [PAD] [PAD]": 1}
     preds = [d[txt] if txt in d else 2 for txt in pred_texts]
     labls = [d[txt] if txt in d else 2 for txt in labl_texts]
     scores = dict(
