@@ -22,7 +22,7 @@ model:
             nhead: 8
             num_layers: 3
             add_noise: True
-            warmup_steps: 1000
+            warmup_steps: 5000
             # warmup_steps: 1   # for debugging
 
 eval:
