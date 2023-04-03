@@ -1,5 +1,5 @@
 train:
-    max_epoch: 100
+    max_epoch: 50
     max_batches: 100
     batch_size: 16
     seed: 123456
@@ -22,7 +22,7 @@ model:
             nhead: 8
             num_layers: 3
             add_noise: True
-            warmup_steps: 5000
+            warmup_steps: 2000
             # warmup_steps: 1   # for debugging
 
 eval:
