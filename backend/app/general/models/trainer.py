@@ -73,21 +73,10 @@ class TrainerBertClassifier(TrainerBase):
         t = F.one_hot(teachers, num_classes=self.tokenizer.vocab_size)
         t = t.to(torch.float32)
 
+        # # NOTE: to avoid cheeting
         tgt_ids = targets.input_ids[:, :-1]  # from [CLS], except end
         self.model.context["tgt_ids"] = tgt_ids
         assert t.shape[1] == tgt_ids.shape[1]
-
-        # # NOTE: to avoid cheeting
-        # _tgt_ids = targets.input_ids[:, :-1]  # from [CLS], except end
-
-        # # NOTE: choose training seqlen, randomly
-        # tgt_seqlen = _tgt_ids.shape[1]
-        # tdx = torch.randint(1, tgt_seqlen + 1, (1,))
-        # self.model.context["tdx"] = tdx
-        # t = t[:, :tdx]
-        # tgt_ids = _tgt_ids[:, :tdx]
-        # self.model.context["tgt_ids"] = tgt_ids
-        # assert t.shape[1] == tgt_ids.shape[1]
 
         return inputs, t
 
@@ -151,6 +140,7 @@ class TrainerBertClassifier(TrainerBase):
         return self
 
     def do_eval(self, epoch=None, step=None) -> Self:
+        self.model.eval()
         total_loss = []
         for bch_idx, bch in enumerate(tqdm(self.validloader, desc="validloader")):
             inputs, t = self._t(bch)

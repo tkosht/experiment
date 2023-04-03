@@ -34,6 +34,7 @@ class BertClassifier(Classifier):
         self.params_encoder = params_encoder
         self.params_decoder = params_decoder
         self.pe_max_len = 1000
+        self.step = 0
 
         self.W = self.bert.embeddings.word_embeddings.weight  # (V, D)
         self.pe = PositionalEncoding(
@@ -159,19 +160,20 @@ class BertClassifier(Classifier):
         y = self.clf(h).reshape(B, S, V)
         return y
 
-    def __forward(self, *args, **kwargs) -> torch.Tensor:
-        o = self.bert(*args, **kwargs)
-        h = torch.transpose(o["last_hidden_state"], 0, 1)  # -> (S, B, D)
-
-        mem = self.encoder(h)  # (S, B, D)
-
-        tgt_ids = self.context["tgt_ids"]  # (B, S')
-        y = self._infer_decoding(
-            tgt_ids=tgt_ids, mem=mem, add_noise=self.params_decoder.add_noise
-        )
+    def forward(self, *args, **kwargs) -> torch.Tensor:
+        if self.training:
+            self.step += 1
+        if (
+            self.step <= self.params_decoder.warmup_steps
+            and torch.rand((1,)).item() < 0.5
+        ):
+            y = self._forward0(*args, **kwargs)
+        else:
+            # NOTE: warmup_steps 以降、0.5 の確率で eval と同じforward ステップをふむ
+            y = self._forward1(*args, **kwargs)
         return y
 
-    def forward(self, *args, **kwargs) -> torch.Tensor:
+    def _forward0(self, *args, **kwargs) -> torch.Tensor:
         o = self.bert(*args, **kwargs)
         h = torch.transpose(o["last_hidden_state"], 0, 1)  # -> (S, B, D)
 
@@ -182,6 +184,32 @@ class BertClassifier(Classifier):
             tgt_ids=tgt_ids, mem=mem, add_noise=self.params_decoder.add_noise
         )
 
+        return y
+
+    def _forward1(self, *args, **kwargs) -> torch.Tensor:
+        o = self.bert(*args, **kwargs)
+        h = torch.transpose(o["last_hidden_state"], 0, 1)  # -> (S, B, D)
+
+        mem = self.encoder(h)  # (S, B, D)
+
+        tokenizer = self.context["tokenizer"]
+
+        tgt_ids = self.context["tgt_ids"]  # (B, S')
+        B, tgt_seqlen = tgt_ids.shape[:2]
+        tgt_ids = (
+            torch.LongTensor([tokenizer.cls_token_id])
+            .unsqueeze(0)
+            .repeat(B, 1)
+            .to(self.device)
+        )
+
+        # setup tgt
+        for sdx in range(tgt_seqlen):
+            y = self._infer_decoding(tgt_ids, mem)  # -> (B, S, V)
+            _y = y.argmax(dim=-1)  # -> (B, S)
+            tgt_ids = torch.cat([tgt_ids[:, :1], _y], dim=1)  # -> (B, S+1)
+
+        assert y.shape[1] == tgt_seqlen
         return y
 
     def predict(self, *args, **kwargs) -> torch.Tensor:
@@ -201,12 +229,8 @@ class BertClassifier(Classifier):
         # setup tgt
         for sdx in range(max_seqlen - 1):
             y = self._infer_decoding(tgt_ids, mem)  # -> (B, S, V)
-            y = y.argmax(dim=-1)  # -> (B, S)
-            y = torch.transpose(y, 0, 1)  # -> (S, B)
-            # tgt_ids = torch.cat([tgt_ids.flatten(), y[-1]]).unsqueeze(0)  # -> (B, S+1)
-            tgt_ids = torch.cat([tgt_ids[:, 0], y.flatten()]).unsqueeze(
-                0
-            )  # -> (B, S+1)
+            _y = y.argmax(dim=-1)  # -> (B, S)
+            tgt_ids = torch.cat([tgt_ids[:, :1], _y], dim=1)  # -> (B, S+1)
 
         return tgt_ids.flatten()[1:]
 
