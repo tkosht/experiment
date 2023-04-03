@@ -165,7 +165,7 @@ class BertClassifier(Classifier):
             self.step += 1
         if (
             self.step <= self.params_decoder.warmup_steps
-            and torch.rand((1,)).item() < 0.5
+            or torch.rand((1,)).item() < 0.5
         ):
             y = self._forward0(*args, **kwargs)
         else:
