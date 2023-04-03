@@ -136,11 +136,12 @@ class BertClassifier(Classifier):
         return pre_probs  # (B, S', V)
 
     def _infer_decoding(
-        self, tgt_ids: torch.LongTensor, mem: torch.Tensor, add_noise: bool = False
+        self, tgt: torch.Tensor, mem: torch.Tensor, add_noise: bool = False
     ):
         tokenizer = self.context["tokenizer"]
-        tgt = F.one_hot(tgt_ids, tokenizer.vocab_size)  # (B, S) -> (B, S, V)
-        tgt = self.embed(tgt.to(torch.float32).to(self.device))  # -> (S, B, V)
+        # TODO: 直接y の結果をtgt_ids の代わりに渡すことで、学習できるようにする
+        # tgt = F.one_hot(tgt_ids, tokenizer.vocab_size)  # (B, S) -> (B, S, V)
+        # tgt = self.embed(tgt.to(torch.float32).to(self.device))  # -> (S, B, V)
         tgt_msk = self.create_mask(tgt.shape[0], tokenizer.pad_token_id)
 
         if add_noise:
@@ -180,9 +181,13 @@ class BertClassifier(Classifier):
         mem = self.encoder(h)  # (S, B, D)
 
         tgt_ids = self.context["tgt_ids"]  # (B, S')
-        y = self._infer_decoding(
-            tgt_ids=tgt_ids, mem=mem, add_noise=self.params_decoder.add_noise
-        )
+        # y = self._infer_decoding(
+        #     tgt_ids=tgt_ids, mem=mem, add_noise=self.params_decoder.add_noise
+        # )
+        tokenizer = self.context["tokenizer"]
+        tgt = F.one_hot(tgt_ids, tokenizer.vocab_size)  # (B, S) -> (B, S, V)
+        tgt = self.embed(tgt.to(torch.float32).to(self.device))  # -> (S, B, V)
+        y = self._infer_decoding(tgt, mem, add_noise=self.params_decoder.add_noise)
 
         return y
 
@@ -202,12 +207,18 @@ class BertClassifier(Classifier):
             .repeat(B, 1)
             .to(self.device)
         )
+        tgt_onehot = F.one_hot(tgt_ids, tokenizer.vocab_size)  # (B, S) -> (B, S, V)
+        tgt_onehot = tgt_onehot.to(torch.float32).to(self.device)
+        _tgt = tgt_onehot  # (B, S, V)
 
         # setup tgt
         for sdx in range(tgt_seqlen):
-            y = self._infer_decoding(tgt_ids, mem)  # -> (B, S, V)
-            _y = y.argmax(dim=-1)  # -> (B, S)
-            tgt_ids = torch.cat([tgt_ids[:, :1], _y], dim=1)  # -> (B, S+1)
+            # y = self._infer_decoding(tgt_ids, mem)  # -> (B, S, V)
+            # _y = y.argmax(dim=-1)  # -> (B, S)
+            # tgt_ids = torch.cat([tgt_ids[:, :1], _y], dim=1)  # -> (B, S+1)
+            tgt = self.embed(_tgt)  # -> (S, B, D)
+            y = self._infer_decoding(tgt, mem)  # -> (B, S, V)
+            _tgt = torch.cat([tgt_onehot[:, :1], y], dim=1)  # -> (B, S+1, V)
 
         assert y.shape[1] == tgt_seqlen
         return y

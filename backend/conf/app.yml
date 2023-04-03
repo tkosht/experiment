@@ -23,6 +23,7 @@ model:
             num_layers: 3
             add_noise: True
             warmup_steps: 2000
+            # warmup_steps: 1   # for debugging
 
 eval:
     seed: 123456
