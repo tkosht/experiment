@@ -181,9 +181,6 @@ class BertClassifier(Classifier):
         mem = self.encoder(h)  # (S, B, D)
 
         tgt_ids = self.context["tgt_ids"]  # (B, S')
-        # y = self._infer_decoding(
-        #     tgt_ids=tgt_ids, mem=mem, add_noise=self.params_decoder.add_noise
-        # )
         tokenizer = self.context["tokenizer"]
         tgt = F.one_hot(tgt_ids, tokenizer.vocab_size)  # (B, S) -> (B, S, V)
         tgt = self.embed(tgt.to(torch.float32).to(self.device))  # -> (S, B, V)
@@ -199,6 +196,7 @@ class BertClassifier(Classifier):
 
         tokenizer = self.context["tokenizer"]
 
+        # setup tgt
         tgt_ids = self.context["tgt_ids"]  # (B, S')
         B, tgt_seqlen = tgt_ids.shape[:2]
         tgt_ids = (
@@ -211,11 +209,7 @@ class BertClassifier(Classifier):
         tgt_onehot = tgt_onehot.to(torch.float32).to(self.device)
         _tgt = tgt_onehot  # (B, S, V)
 
-        # setup tgt
         for sdx in range(tgt_seqlen):
-            # y = self._infer_decoding(tgt_ids, mem)  # -> (B, S, V)
-            # _y = y.argmax(dim=-1)  # -> (B, S)
-            # tgt_ids = torch.cat([tgt_ids[:, :1], _y], dim=1)  # -> (B, S+1)
             tgt = self.embed(_tgt)  # -> (S, B, D)
             y = self._infer_decoding(tgt, mem)  # -> (B, S, V)
             _tgt = torch.cat([tgt_onehot[:, :1], y], dim=1)  # -> (B, S+1, V)
@@ -228,22 +222,29 @@ class BertClassifier(Classifier):
         h = torch.transpose(o["last_hidden_state"], 0, 1)  # -> (S, B, D)
         mem = self.encoder(h)  # (S, B, D)
         # po = o["pooler_output"]
-        assert mem.shape[1] == 1  # assume batch size == 1
 
         tokenizer = self.context["tokenizer"]
 
+        # setup tgt
+        B = mem.shape[1]
         max_seqlen = 8
         tgt_ids = (
-            torch.LongTensor([tokenizer.cls_token_id]).unsqueeze(0).to(self.device)
+            torch.LongTensor([tokenizer.cls_token_id])
+            .unsqueeze(0)
+            .repeat(B, 1)
+            .to(self.device)
         )
+        tgt_onehot = F.one_hot(tgt_ids, tokenizer.vocab_size)  # (B, S) -> (B, S, V)
+        tgt_onehot = tgt_onehot.to(torch.float32).to(self.device)
+        _tgt = tgt_onehot  # (B, S, V)
 
-        # setup tgt
         for sdx in range(max_seqlen - 1):
-            y = self._infer_decoding(tgt_ids, mem)  # -> (B, S, V)
-            _y = y.argmax(dim=-1)  # -> (B, S)
-            tgt_ids = torch.cat([tgt_ids[:, :1], _y], dim=1)  # -> (B, S+1)
+            tgt = self.embed(_tgt)  # -> (S, B, D)
+            y = self._infer_decoding(tgt, mem)  # -> (B, S, V)
+            y = F.one_hot(y.argmax(dim=-1).long(), tokenizer.vocab_size)
+            _tgt = torch.cat([tgt_onehot[:, :1], y], dim=1)  # -> (B, S+1, V)
 
-        return tgt_ids.flatten()[1:]
+        return y
 
     def to_text(self, y_rec: torch.Tensor, do_argmax=True) -> torch.Tensor:
         tokenizer = self.context["tokenizer"]

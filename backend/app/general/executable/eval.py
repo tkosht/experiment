@@ -51,19 +51,8 @@ def do_eval(trainer: TrainerBertClassifier):
         inputs, t = trainer._t(bch)
 
         with torch.no_grad():
-            X = inputs["input_ids"]
-            types = inputs["token_type_ids"]
-            attn = inputs["attention_mask"]
-            p = []
-            for _X, _types, _attn in zip(X, types, attn):
-                _X = _X.unsqueeze(0)
-                _types = _types.unsqueeze(0)
-                _attn = _attn.unsqueeze(0)
-                ins = dict(input_ids=_X, token_type_ids=_types, attention_mask=_attn)
-                ids = trainer.model.predict(**ins)
-                # _p = trainer.tokenizer.decode(ids.flatten())
-                p.append(ids.tolist())
-        pred_texts.extend(_to_texts(trainer, p, do_argmax=False))
+            y = trainer.model.predict(**inputs)
+        pred_texts.extend(_to_texts(trainer, y))
         labl_texts.extend(_to_texts(trainer, t))
 
     for prd, lbl in zip(pred_texts, labl_texts):
