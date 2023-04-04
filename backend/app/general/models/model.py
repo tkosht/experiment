@@ -162,17 +162,18 @@ class BertClassifier(Classifier):
         return y
 
     def forward(self, *args, **kwargs) -> torch.Tensor:
-        if self.training:
-            self.step += 1
-        if (
-            self.step
-            <= self.params_decoder.warmup_steps
-            # or torch.rand((1,)).item() < 0.5
-        ):
-            y = self._forward0(*args, **kwargs)
-        else:
-            # NOTE: warmup_steps 以降、0.5 の確率で eval と同じforward ステップをふむ
-            y = self._forward1(*args, **kwargs)
+        # if self.training:
+        #     self.step += 1
+        # if (
+        #     self.step
+        #     <= self.params_decoder.warmup_steps
+        #     # or torch.rand((1,)).item() < 0.5
+        # ):
+        #     y = self._forward0(*args, **kwargs)
+        # else:
+        #     # NOTE: warmup_steps 以降、0.5 の確率で eval と同じforward ステップをふむ
+        #     y = self._forward1(*args, **kwargs)
+        y = self._forward0(*args, **kwargs)
         return y
 
     def _forward0(self, *args, **kwargs) -> torch.Tensor:
@@ -237,13 +238,18 @@ class BertClassifier(Classifier):
         )
         tgt_onehot = F.one_hot(tgt_ids, tokenizer.vocab_size)  # (B, S) -> (B, S, V)
         tgt_onehot = tgt_onehot.to(torch.float32).to(self.device)
-        _tgt = tgt_onehot  # (B, S, V)
+        _tgt = tgt_onehot
+        zeros = torch.zeros_like(tgt_onehot).repeat(1, max_seqlen - 2, 1)
+        _tgt = torch.cat([tgt_onehot, zeros], dim=1)  # (B, S, V)
 
+        # TODO: 長さをmax_seqlen -1 に合わせる
+        #       パディングonehotの代わりに、zero ベクトルを使う
         for sdx in range(max_seqlen - 1):
             tgt = self.embed(_tgt)  # -> (S, B, D)
+            # zero ベクトルをcat で追加
             y = self._infer_decoding(tgt, mem)  # -> (B, S, V)
-            y = F.one_hot(y.argmax(dim=-1).long(), tokenizer.vocab_size)
-            _tgt = torch.cat([tgt_onehot[:, :1], y], dim=1)  # -> (B, S+1, V)
+            # y = F.one_hot(y.argmax(dim=-1).long(), tokenizer.vocab_size)
+            # _tgt = torch.cat([tgt_onehot[:, :1], y], dim=1)  # -> (B, S+1, V)
 
         return y
 
