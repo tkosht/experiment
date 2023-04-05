@@ -140,7 +140,7 @@ class TrainerBertClassifier(TrainerBase):
         return self
 
     def do_eval(self, epoch=None, step=None) -> Self:
-        # self.model.eval()
+        self.model.eval()
         total_loss = []
         for bch_idx, bch in enumerate(tqdm(self.validloader, desc="validloader")):
             inputs, t = self._t(bch)
@@ -163,6 +163,7 @@ class TrainerBertClassifier(TrainerBase):
             step,
         )
         self.metrics["valid.loss"] = loss_valid
+        self.model.train()
         return self
 
     def write_graph(self, inputs) -> Self:
