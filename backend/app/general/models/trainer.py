@@ -145,7 +145,8 @@ class TrainerBertClassifier(TrainerBase):
         for bch_idx, bch in enumerate(tqdm(self.validloader, desc="validloader")):
             inputs, t = self._t(bch)
 
-            with torch.no_grad():
+            # with torch.no_grad():
+            with torch.inference_mode():
                 y = self.model(**inputs)
                 loss = self.model.loss(y, t)
 
