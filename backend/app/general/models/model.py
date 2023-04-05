@@ -154,7 +154,7 @@ class BertClassifier(Classifier):
 
         tgt_msk = self.create_mask(tgt.shape[0])
         dec = self.decoder(tgt, mem, tgt_mask=tgt_msk)  # -> (S, B, V)
-        h = self.deembed(dec)  # -> (B, S, V)
+        h = self.deembed(dec, "dec")  # -> (B, S, V)
         B, S, V = h.shape
         h = h.reshape(-1, V)  # -> (B*S, V)
         y = self.clf(h).reshape(B, S, V)
@@ -183,7 +183,9 @@ class BertClassifier(Classifier):
         tokenizer = self.context["tokenizer"]
         tgt_ids = self.context["tgt_ids"]  # (B, S')
         tgt_onehot = F.one_hot(tgt_ids, tokenizer.vocab_size)  # (B, S) -> (B, S, V)
-        tgt = self.embed(tgt_onehot.to(torch.float32).to(self.device))  # -> (S, B, V)
+        tgt = self.embed(
+            tgt_onehot.to(torch.float32).to(self.device), "trg"
+        )  # -> (S, B, V)
         y = self._infer_decoding(tgt, mem, add_noise=self.params_decoder.add_noise)
 
         return y
@@ -278,7 +280,7 @@ class BertClassifier(Classifier):
 
     def _loss_middle(self):
         dec: torch.Tensor = self.context["dec"]  # -> (B, S', D)
-        trg: torch.Tensor = self.context["trg"]  # -> (B, S', D)
+        trg: torch.Tensor = self.context["tgt"]  # -> (B, S', D)
         B = dec.shape[0]
         _dec = dec.reshape((B, -1))  # -> (B, *)
         _trg = trg.reshape((B, -1))  # -> (B, *)
