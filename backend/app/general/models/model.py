@@ -280,7 +280,7 @@ class BertClassifier(Classifier):
 
     def _loss_middle(self):
         dec: torch.Tensor = self.context["dec"]  # -> (B, S', D)
-        trg: torch.Tensor = self.context["tgt"]  # -> (B, S', D)
+        trg: torch.Tensor = self.context["trg"]  # -> (B, S', D)
         B = dec.shape[0]
         _dec = dec.reshape((B, -1))  # -> (B, *)
         _trg = trg.reshape((B, -1))  # -> (B, *)
