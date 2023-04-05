@@ -262,9 +262,9 @@ class BertClassifier(Classifier):
         return tokenizer.convert_ids_to_tokens(y)
 
     def loss(self, y: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
-        # loss = self._loss_end(y, t) + self._loss_middle()
+        loss = self._loss_end(y, t) + self._loss_middle()
         # loss = self._loss_end(y, t)
-        loss = super().loss(y, t)
+        # loss = super().loss(y, t)
         return loss
 
     def _loss_end(self, y: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
