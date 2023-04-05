@@ -112,7 +112,7 @@ class BertClassifier(Classifier):
         tgt[1:] = T[:-1]
         return tgt
 
-    def create_mask(self, seq_len):
+    def create_mask(self, seq_len: int):
         mask = nn.Transformer.generate_square_subsequent_mask(
             seq_len, device=self.device
         )
@@ -130,10 +130,10 @@ class BertClassifier(Classifier):
     def deembed(self, emb_seq: torch.Tensor, context_key=None):
         # emb_seq : (S', B, D)
         _emb = torch.transpose(emb_seq, 0, 1)  # -> (B, S', D)
-        pre_probs = torch.matmul(_emb, self.W.T)  # (B, S', V)
+        dembed = torch.matmul(_emb, self.W.T)  # (B, S', V)
         if context_key:
             self.context[context_key] = _emb
-        return pre_probs  # (B, S', V)
+        return dembed  # (B, S', V)
 
     def _infer_decoding(
         self, tgt: torch.Tensor, mem: torch.Tensor, add_noise: bool = False
