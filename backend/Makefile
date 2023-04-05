@@ -54,6 +54,9 @@ nvidia nvidia-smi:
 
 # ==========
 # clean tasks
+clean-pycache:
+	find . -name '__pycache__' | xargs rm -rf
+
 clean-result:
 	rm -rf result/*
 

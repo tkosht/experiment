@@ -112,7 +112,7 @@ class BertClassifier(Classifier):
         tgt[1:] = T[:-1]
         return tgt
 
-    def create_mask(self, seq_len, PAD_IDX):
+    def create_mask(self, seq_len):
         mask = nn.Transformer.generate_square_subsequent_mask(
             seq_len, device=self.device
         )
@@ -138,11 +138,9 @@ class BertClassifier(Classifier):
     def _infer_decoding(
         self, tgt: torch.Tensor, mem: torch.Tensor, add_noise: bool = False
     ):
-        tokenizer = self.context["tokenizer"]
         # TODO: 直接y の結果をtgt_ids の代わりに渡すことで、学習できるようにする
         # tgt = F.one_hot(tgt_ids, tokenizer.vocab_size)  # (B, S) -> (B, S, V)
         # tgt = self.embed(tgt.to(torch.float32).to(self.device))  # -> (S, B, V)
-        tgt_msk = self.create_mask(tgt.shape[0], tokenizer.pad_token_id)
 
         if add_noise:
             # add unk tensor (more exactly, replace unk vectors)
@@ -154,6 +152,7 @@ class BertClassifier(Classifier):
             N = torch.normal(0, 1e-3 / D, mem.shape).to(mem.device)
             mem = mem + N
 
+        tgt_msk = self.create_mask(tgt.shape[0])
         dec = self.decoder(tgt, mem, tgt_mask=tgt_msk)  # -> (S, B, V)
         h = self.deembed(dec)  # -> (B, S, V)
         B, S, V = h.shape
@@ -161,31 +160,31 @@ class BertClassifier(Classifier):
         y = self.clf(h).reshape(B, S, V)
         return y
 
-    def forward(self, *args, **kwargs) -> torch.Tensor:
-        # if self.training:
-        #     self.step += 1
-        # if (
-        #     self.step
-        #     <= self.params_decoder.warmup_steps
-        #     # or torch.rand((1,)).item() < 0.5
-        # ):
-        #     y = self._forward0(*args, **kwargs)
-        # else:
-        #     # NOTE: warmup_steps 以降、0.5 の確率で eval と同じforward ステップをふむ
-        #     y = self._forward1(*args, **kwargs)
-        y = self._forward0(*args, **kwargs)
-        return y
+    # def forward(self, *args, **kwargs) -> torch.Tensor:
+    #     # if self.training:
+    #     #     self.step += 1
+    #     # if (
+    #     #     self.step
+    #     #     <= self.params_decoder.warmup_steps
+    #     #     # or torch.rand((1,)).item() < 0.5
+    #     # ):
+    #     #     y = self._forward0(*args, **kwargs)
+    #     # else:
+    #     #     # NOTE: warmup_steps 以降、0.5 の確率で eval と同じforward ステップをふむ
+    #     #     y = self._forward1(*args, **kwargs)
+    #     y = self._forward0(*args, **kwargs)
+    #     return y
 
-    def _forward0(self, *args, **kwargs) -> torch.Tensor:
+    def forward(self, *args, **kwargs) -> torch.Tensor:
         o = self.bert(*args, **kwargs)
         h = torch.transpose(o["last_hidden_state"], 0, 1)  # -> (S, B, D)
 
         mem = self.encoder(h)  # (S, B, D)
 
-        tgt_ids = self.context["tgt_ids"]  # (B, S')
         tokenizer = self.context["tokenizer"]
-        tgt = F.one_hot(tgt_ids, tokenizer.vocab_size)  # (B, S) -> (B, S, V)
-        tgt = self.embed(tgt.to(torch.float32).to(self.device))  # -> (S, B, V)
+        tgt_ids = self.context["tgt_ids"]  # (B, S')
+        tgt_onehot = F.one_hot(tgt_ids, tokenizer.vocab_size)  # (B, S) -> (B, S, V)
+        tgt = self.embed(tgt_onehot.to(torch.float32).to(self.device))  # -> (S, B, V)
         y = self._infer_decoding(tgt, mem, add_noise=self.params_decoder.add_noise)
 
         return y
