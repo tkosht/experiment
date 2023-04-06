@@ -222,8 +222,9 @@ class BertClassifier(Classifier):
     def predict(self, *args, **kwargs) -> torch.Tensor:
         o = self.bert(*args, **kwargs)
         h = torch.transpose(o["last_hidden_state"], 0, 1)  # -> (S, B, D)
-        mem = self.encoder(h)  # (S, B, D)
+        # mem = self.encoder(h)  # (S, B, D)
         # po = o["pooler_output"]
+        mem = h  # (S, B, D)
 
         tokenizer = self.context["tokenizer"]
 
@@ -266,8 +267,8 @@ class BertClassifier(Classifier):
     def loss(self, y: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
         # loss = self._loss_end(y, t) + self._loss_middle()
         # loss = self._loss_end(y, t)
-        # loss = self._loss_seq(y, t)
-        loss = super().loss(y, t)
+        # loss = super().loss(y, t)
+        loss = self._loss_seq(y, t)
         return loss
 
     def _loss_seq(self, y: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
