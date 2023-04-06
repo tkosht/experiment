@@ -47,6 +47,7 @@ def do_eval(trainer: TrainerBertClassifier):
 
     pred_texts = []
     labl_texts = []
+    # for bch_idx, bch in enumerate(tqdm(trainer.trainloader, desc="evaluating")):
     for bch_idx, bch in enumerate(tqdm(trainer.validloader, desc="evaluating")):
         inputs, t = trainer._t(bch)
 
