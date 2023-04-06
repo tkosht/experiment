@@ -5,7 +5,7 @@ train:
     seed: 123456
     write_graph: False
     log_interval: 10
-    eval_interval: 10000
+    eval_interval: 100000
     resume_file: null  # like "data/trainer.gz"
     # resume_file: "data/trainer.gz"
     trained_file: "data/trainer.gz"
