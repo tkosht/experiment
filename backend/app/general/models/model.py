@@ -266,8 +266,17 @@ class BertClassifier(Classifier):
     def loss(self, y: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
         # loss = self._loss_end(y, t) + self._loss_middle()
         # loss = self._loss_end(y, t)
-        loss = super().loss(y, t)
+        # loss = super().loss(y, t)
+        loss = self._loss_seq(y, t)
         return loss
+
+    def _loss_seq(self, y: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
+        B = y.shape[0]
+        _y = y.reshape((B, -1))  # -> (B, *)
+        _t = t.reshape((B, -1))  # -> (B, *)
+        # loss_seq = super().loss(_y, _t) + self._loss_difference(_y, _t)
+        loss_seq = super().loss(_y, _t)
+        return loss_seq
 
     def _loss_end(self, y: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
         B = y.shape[0]
