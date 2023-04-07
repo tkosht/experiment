@@ -57,13 +57,15 @@ class BertClassifier(Classifier):
 
         self.clf = nn.Sequential(
             nn.BatchNorm1d(self.n_out),
-            nn.LogSoftmax(dim=-1),
+            # nn.LogSoftmax(dim=-1),
+            nn.Softmax(dim=-1),
         )
 
         # loss
         self.cel = nn.CrossEntropyLoss(weight=weight)
         self.cos = nn.CosineSimilarity(dim=-1, eps=1e-6)
         self.mse = nn.MSELoss()
+        # self.kld = nn.KLDivLoss(reduction="batchmean")
 
         self.device = torch.device("cpu")
 
@@ -267,8 +269,9 @@ class BertClassifier(Classifier):
     def loss(self, y: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
         # loss = self._loss_end(y, t) + self._loss_middle()
         # loss = self._loss_end(y, t)
-        # loss = super().loss(y, t)
-        loss = self._loss_seq(y, t)
+        # loss = self.kld(y, t)
+        # loss = self._loss_seq(y, t)
+        loss = super().loss(y, t)
         return loss
 
     def _loss_seq(self, y: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
