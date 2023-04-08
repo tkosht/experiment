@@ -216,6 +216,8 @@ class BertClassifier(Classifier):
         for sdx in range(tgt_seqlen):
             tgt = self.embed(_tgt)  # -> (S, B, D)
             y = self._infer_decoding(tgt, mem)  # -> (B, S, V)
+            y = torch.exp(y)  # LogSoftmax -> Softmax   # NOTE: argmax とるなら、なくてもよい
+            # y = F.one_hot(y.argmax(dim=-1).long(), tokenizer.vocab_size)
             _tgt = torch.cat([tgt_onehot[:, :1], y], dim=1)  # -> (B, S+1, V)
 
         assert y.shape[1] == tgt_seqlen
