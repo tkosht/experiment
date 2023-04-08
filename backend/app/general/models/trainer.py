@@ -141,6 +141,10 @@ class TrainerBertClassifier(TrainerBase):
 
     def do_eval(self, epoch=None, step=None) -> Self:
         self.model.eval()
+        for m in self.model.modules():
+            if isinstance(m, torch.nn.modules.batchnorm._BatchNorm):
+                m.track_running_stats = False
+
         total_loss = []
         for bch_idx, bch in enumerate(tqdm(self.validloader, desc="validloader")):
             inputs, t = self._t(bch)
