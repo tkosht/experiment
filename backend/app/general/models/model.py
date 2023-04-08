@@ -242,8 +242,8 @@ class BertClassifier(Classifier):
         tgt_onehot = F.one_hot(tgt_ids, tokenizer.vocab_size)  # (B, S) -> (B, S, V)
         tgt_onehot = tgt_onehot.to(torch.float32).to(self.device)
         _tgt = tgt_onehot
-        zeros = torch.zeros_like(tgt_onehot).repeat(1, max_seqlen - 2, 1)
-        _tgt = torch.cat([tgt_onehot, zeros], dim=1)  # (B, S, V)
+        # zeros = torch.zeros_like(tgt_onehot).repeat(1, max_seqlen - 2, 1)
+        # _tgt = torch.cat([tgt_onehot, zeros], dim=1)  # (B, S, V)
 
         # TODO: 長さをmax_seqlen -1 に合わせる
         #       パディングonehotの代わりに、zero ベクトルを使う
@@ -251,9 +251,9 @@ class BertClassifier(Classifier):
             tgt = self.embed(_tgt)  # -> (S, B, D)
             # zero ベクトルをcat で追加
             y = self._infer_decoding(tgt, mem)  # -> (B, S, V)
-            _tgt = torch.exp(y)
-            # y = F.one_hot(y.argmax(dim=-1).long(), tokenizer.vocab_size)
-            # _tgt = torch.cat([tgt_onehot[:, :1], y], dim=1)  # -> (B, S+1, V)
+            y = torch.exp(y)  # LogSoftmax -> Softmax   # NOTE: argmax とるなら、なくてもよい
+            y = F.one_hot(y.argmax(dim=-1).long(), tokenizer.vocab_size)
+            _tgt = torch.cat([tgt_onehot[:, :1], y], dim=1)  # -> (B, S+1, V)
 
         return y
 
