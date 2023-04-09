@@ -56,7 +56,7 @@ class BertClassifier(Classifier):
         )
 
         self.clf = nn.Sequential(
-            nn.Linear(self.n_dim, self.n_out),
+            # nn.Linear(self.n_dim, self.n_out),
             nn.BatchNorm1d(self.n_out),
             nn.LogSoftmax(dim=-1),
         )
@@ -159,12 +159,12 @@ class BertClassifier(Classifier):
         tgt_msk = self.create_mask_for(tgt)
         assert tgt_msk.shape[0] == tgt.shape[0]
         dec = self.decoder(tgt, mem, tgt_mask=tgt_msk)  # -> (S, B, D)
-        # h = self.deembed(dec, "dec")  # -> (B, S, V)
-        # B, S, V = h.shape
-        # h = h.reshape(-1, V)  # -> (B*S, V)
-        h = torch.transpose(dec, 0, 1)  # -> (B, S, D)
-        B, S, D = h.shape
-        h = h.reshape(-1, D)  # -> (B*S, D)
+        h = self.deembed(dec, "dec")  # -> (B, S, V)
+        B, S, V = h.shape
+        h = h.reshape(-1, V)  # -> (B*S, V)
+        # h = torch.transpose(dec, 0, 1)  # -> (B, S, D)
+        # B, S, D = h.shape
+        # h = h.reshape(-1, D)  # -> (B*S, D)
         y = self.clf(h).reshape(B, S, -1)
         return y
 
