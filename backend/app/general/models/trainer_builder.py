@@ -21,6 +21,8 @@ def load_trainer(params: DictConfig) -> TrainerBertClassifier:
 
 
 def buildup_trainer(params: DictConfig) -> TrainerBertClassifier:
+    import numpy
+
     if params.resume_file is not None:
         return load_trainer(params)
 
@@ -32,13 +34,21 @@ def buildup_trainer(params: DictConfig) -> TrainerBertClassifier:
 
     dataset: Dataset = load_dataset("shunk031/JGLUE", name="MARC-ja")
 
+    # NOTE: ballance labels
+    _positives = numpy.array(dataset["train"]["label"]) == 0
+    positives = numpy.arange(len(dataset["train"]))[_positives]
+    _negatives = numpy.array(dataset["train"]["label"]) == 1
+    negatives = numpy.arange(len(dataset["train"]))[_negatives]
+
     # setup loader
     n_train = (
         params.max_batches * params.batch_size
         if params.max_batches > 0
         else len(dataset["train"])
     )
-    trainset = dataset["train"].select(range(n_train))
+    ballanced = list(positives[: n_train // 2]) + list(negatives[: n_train // 2])
+    trainset = torch.utils.data.Subset(dataset["train"], ballanced)
+    # trainset = dataset["train"].select(range(n_train))
     trainloader = DataLoader(
         trainset, batch_size=params.batch_size, num_workers=2, pin_memory=True
     )
