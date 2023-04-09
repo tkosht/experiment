@@ -78,11 +78,11 @@ class TrainerBertClassifier(TrainerBase):
 
         # # NOTE: randomly choose seq length in train mode
         tgt_seqlen = tgt_ids.shape[1]
-        if self.model.training:
-            tgt_seqlen = torch.randint(1, max_seqlen, (1,)).item()
-            assert tgt_seqlen > 0
-            tgt_ids = tgt_ids[:, :tgt_seqlen]
-            t = t[:, :tgt_seqlen]
+        # if self.model.training:
+        #     tgt_seqlen = torch.randint(1, max_seqlen, (1,)).item()
+        #     assert tgt_seqlen > 0
+        #     tgt_ids = tgt_ids[:, :tgt_seqlen]
+        #     t = t[:, :tgt_seqlen]
 
         # set context
         self.model.context["tgt_ids"] = tgt_ids
