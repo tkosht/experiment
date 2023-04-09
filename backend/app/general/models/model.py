@@ -58,8 +58,6 @@ class BertClassifier(Classifier):
         self.clf = nn.Sequential(
             nn.BatchNorm1d(self.n_out),
             nn.LogSoftmax(dim=-1),
-            nn.BatchNorm1d(self.n_out),
-            nn.LogSoftmax(dim=-1),
         )
 
         # loss
@@ -278,7 +276,7 @@ class BertClassifier(Classifier):
         # loss = self._loss_end(y, t)
         # loss = self._loss_seq(y, t)
         # loss = self.kld(y, t)
-        loss = super().loss(y, t)
+        loss = super().loss(y, t) + self._loss_middle()
         return loss
 
     def _loss_seq(self, y: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
