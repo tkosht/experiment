@@ -56,8 +56,8 @@ class BertClassifier(Classifier):
         )
 
         self.clf = nn.Sequential(
-            nn.Identity(),
-            # nn.BatchNorm1d(self.n_out),
+            # nn.Identity(),
+            nn.BatchNorm1d(self.n_out),
             # nn.LogSoftmax(dim=-1),
         )
 
