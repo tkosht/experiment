@@ -114,7 +114,9 @@ class BertClassifier(Classifier):
         tgt[1:] = T[:-1]
         return tgt
 
-    def create_mask(self, seq_len: int):
+    def create_mask_for(self, tgt: torch.Tensor):
+        # tgt: (S, B, *)
+        seq_len = tgt.shape[0]
         mask = nn.Transformer.generate_square_subsequent_mask(
             seq_len, device=self.device
         )
@@ -154,7 +156,8 @@ class BertClassifier(Classifier):
             N = torch.normal(0, 1e-3 / D, mem.shape).to(mem.device)
             mem = mem + N
 
-        tgt_msk = self.create_mask(tgt.shape[0])
+        tgt_msk = self.create_mask_for(tgt)
+        assert tgt_msk.shape[0] == tgt.shape[0]
         dec = self.decoder(tgt, mem, tgt_mask=tgt_msk)  # -> (S, B, V)
         h = self.deembed(dec, "dec")  # -> (B, S, V)
         B, S, V = h.shape
