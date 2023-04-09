@@ -1,5 +1,5 @@
 train:
-    max_epoch: 50
+    max_epoch: 10
     max_batches: 500
     batch_size: 16
     seed: 123456
