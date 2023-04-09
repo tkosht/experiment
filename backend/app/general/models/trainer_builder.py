@@ -47,6 +47,7 @@ def buildup_trainer(params: DictConfig) -> TrainerBertClassifier:
         else len(dataset["train"])
     )
     ballanced = list(positives[: n_train // 2]) + list(negatives[: n_train // 2])
+    ballanced = [int(b) for b in ballanced]
     trainset = torch.utils.data.Subset(dataset["train"], ballanced)
     # trainset = dataset["train"].select(range(n_train))
     trainloader = DataLoader(
