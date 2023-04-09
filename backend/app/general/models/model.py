@@ -64,7 +64,7 @@ class BertClassifier(Classifier):
         self.cel = nn.CrossEntropyLoss(weight=weight)
         self.cos = nn.CosineSimilarity(dim=-1, eps=1e-6)
         self.mse = nn.MSELoss()
-        # self.kld = nn.KLDivLoss(reduction="batchmean")
+        self.kld = nn.KLDivLoss(reduction="batchmean")
 
         self.device = torch.device("cpu")
 
