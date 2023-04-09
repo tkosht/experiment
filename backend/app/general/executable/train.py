@@ -49,7 +49,7 @@ def _main(params: DictConfig):
         raise e
     finally:
         try:
-            if params.save_in_last:
+            if params.save_on_exit:
                 trainer.save(save_file=params.trained_file)
                 mlprovider.log_artifact(params.trained_file, "data")
         except Exception as ee:
@@ -79,7 +79,7 @@ def main(
     eval_interval: int = None,
     resume_file: str = None,  # like "data/trainer.gz"
     trained_file: str = None,  # like "data/trainer.gz"
-    save_in_last: bool = None,
+    save_on_exit: bool = None,
 ):
     s = signature(main)
     kwargs = {}

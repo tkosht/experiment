@@ -10,7 +10,7 @@ train:
     resume_file: null  # like "data/trainer.gz"
     # resume_file: "data/trainer.gz"
     trained_file: "data/trainer.gz"
-    save_in_last: True
+    save_on_exit: True
     eval:
         max_batches: 50
 

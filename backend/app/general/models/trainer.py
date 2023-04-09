@@ -75,7 +75,16 @@ class TrainerBertClassifier(TrainerBase):
 
         # # NOTE: to avoid cheeting
         tgt_ids = targets.input_ids[:, :-1]  # from [CLS], except end
+
+        # NOTE: randomly choose seq length
+        tgt_seqlen = torch.randint(0, max_seqlen, (1,)).item()
+        tgt_ids = tgt_ids[:, :tgt_seqlen]
+        t = t[:, :tgt_seqlen]
+
+        # set context
         self.model.context["tgt_ids"] = tgt_ids
+        self.model.context["tgt_seqlen"] = tgt_seqlen
+
         assert t.shape[1] == tgt_ids.shape[1]
 
         return inputs, t
