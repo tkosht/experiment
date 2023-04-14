@@ -142,9 +142,7 @@ class BertClassifier(Classifier):
     def _infer_decoding(
         self, tgt: torch.Tensor, mem: torch.Tensor, add_noise: bool = False
     ):
-        # TODO: 直接y の結果をtgt_ids の代わりに渡すことで、学習できるようにする
-        # tgt = F.one_hot(tgt_ids, tokenizer.vocab_size)  # (B, S) -> (B, S, V)
-        # tgt = self.embed(tgt.to(torch.float32).to(self.device))  # -> (S, B, V)
+        # NOTE: 直接y の結果をtgt_ids の代わりに渡すことで、学習できるようにする
 
         if add_noise:
             # add unk tensor (more exactly, replace unk vectors)
