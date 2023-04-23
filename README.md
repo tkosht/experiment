@@ -1,5 +1,8 @@
-# webapi repository
-template repository for frontend(vue) and backend(fastapi)
+# auto topic repository
+this repository is for making auto topic model from wikipedia data
+
+
+---
 
 # build container
 
@@ -7,102 +10,49 @@ template repository for frontend(vue) and backend(fastapi)
 make
 ```
 
-# setup frontend
+you may be waiting for around 10 mins.
 
-## build vue environment
 
-### restore vue ci environment
+---
 
-you should use this task after `git clone` this repository
-
-```
-make frontend-ci
-```
-### create project if you want
+# work in container's bash
 
 ```
-make frontend-init
+make bash
+cd backend/
 ```
 
-### install libraries for project after init
+
+---
+
+# works in the container
+
+in this part, what you can do in the container:
+
+- make wiki datasets in sqlite3
+- train word2vec vectors with thease wiki datasets
+- train topic model with trained word2vec vectors
+
+
+## make wiki data
+
+you can be in container, make wiki 
+from tensorflow datasets, to sqlite3 database which data record is consist of a paragraph
 
 ```
-make frontend-install
+make wikidata
 ```
 
-# use
 
-## dev environment
-
-```
-make frontend-dev
-```
-
-## prod environment
+## train wiki data vectors
 
 ```
-make frontend-build
+make wordvector
 ```
 
-# setup backend
 
-## startup webapi
-
-```
-make backend-webapi
-```
-
-## test for api
+## train topicmodel
 
 ```
-make backend-hello backend-post backend-test-request
-```
-
-```
-{                                                                                                                       
-  "type": "aaa",                                                                                                        
-  "name": null,                                                                                                         
-  "body": {                                                                                                             
-    "mode": "pretrain",                                                                                                 
-    "color": "red"                                                                                                      
-  }                                                                                                                     
-}                                                                                                                       
-===== [http://localhost:8000/] =====                                                                                    
-<!DOCTYPE html><html><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1,shrink-to
--fit=no"><title>frontend</title><link href=/static/css/app.32cf90d21871ce14420020bdae23d491.css rel=stylesheet></head><b
-ody><div id=app></div><script type=text/javascript src=/static/js/manifest.2ae2e69a05c33dfc65f8.js></script><script type
-=text/javascript src=/static/js/vendor.673449851c94779368e7.js></script><script type=text/javascript src=/static/js/app.
-062c2f2e6e54dcb19147.js></script></body></html>                                                                         
-===== [http://localhost:8000/hello] =====                                                                               
-{"Hello":"World!!!"}
-===== [http://localhost:8000/front/static/a.html] =====
-<html>
-  <head>
-    <title>たいとる✨</title>
-  </head>
-  <body>
-    <form class="simple-form">
-      <h2>ファイルアップロード</h2>
-      <label for="title">タイトル</label>
-      <input type="text" name="title">
-      <button>投稿する</button>
-    </form>
-  </body>
-</html>
-
-===== [http://localhost:8000/static/a.html] =====
-<html>
-  <head>
-    <title>たいとる✨</title>
-  </head>
-  <body>
-    <form class="simple-form">
-      <h2>ファイルアップロード</h2>
-      <label for="title">タイトル</label>
-      <input type="text" name="title">
-      <button>投稿する</button>
-    </form>
-  </body>
-</html>
-
+make topicmodel
 ```

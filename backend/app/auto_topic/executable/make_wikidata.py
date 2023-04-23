@@ -55,6 +55,7 @@ class WikiDbMaker(object):
         return self
 
     def parse(self, lines: list[str]) -> WikiDbMaker:
+        """parse to each paragraph"""
         parsed = []
         status = "none"
         record: dict[str, str] = dict(

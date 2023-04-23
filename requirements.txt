@@ -57,9 +57,10 @@ slackeventsapi
 torch
 torchvision
 torchtext
+
+tensorflow
 tensorflow-datasets
 # pytorch-forecasting
-# tensorflow
 # apache-beam
 # apache-beam[gcp]
 

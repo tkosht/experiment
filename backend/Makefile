@@ -1,6 +1,24 @@
 
 # ==========
 # backend tasks
+# # train models
+
+wikidata:
+	@echo "$$(date +'%Y/%m/%d %T') - Start $@"
+	python -m app.auto_topic.executable.make_wikidata
+	@echo "$$(date +'%Y/%m/%d %T') - End $@"
+
+wordvector:
+	@echo "$$(date +'%Y/%m/%d %T') - Start $@"
+	python -m app.auto_topic.executable.train_wordvector
+	@echo "$$(date +'%Y/%m/%d %T') - End $@"
+
+topicmodel:
+	@echo "$$(date +'%Y/%m/%d %T') - Start $@"
+	python app.auto_topic.executable.train_topicmodel
+	@echo "$$(date +'%Y/%m/%d %T') - End $@"
+
+# # webapi
 flask:
 	FLASK_APP=flask_app.py flask run --host=0.0.0.0 --port=8000
 
@@ -13,11 +31,6 @@ webapi:
 #         --log-config=conf/logging.ini \
 #         --app-dir=. \
 #         webapi:app
-
-wikidata:
-	@echo "$$(date +'%Y/%m/%d %T') - Start $@"
-	python -m app.executable.make_wikidata
-	@echo "$$(date +'%Y/%m/%d %T') - End $@"
 
 test-unit: 
 	python -m pytest test
