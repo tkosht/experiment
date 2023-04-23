@@ -1,6 +1,6 @@
 import sqlite3
 
-from app.domain.db_interface import DbIf
+from app.auto_topic.domain.db_interface import DbIf
 
 g_log = print
 

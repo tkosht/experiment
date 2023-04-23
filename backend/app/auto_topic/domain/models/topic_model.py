@@ -2,7 +2,7 @@ import numpy
 from gensim.models import LdaModel
 from typing_extensions import Self
 
-from app.component.models.model import Model, Tensor
+from app.auto_topic.component.models.model import Model, Tensor
 
 
 class TopicModel(Model):

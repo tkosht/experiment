@@ -2,12 +2,12 @@ import joblib
 import typer
 from tqdm import tqdm
 
-from app.component.logger import Logger
-from app.component.models.model import TextSequences
-from app.component.models.pipeline import Pipeline
-from app.component.models.vectorizer import VectorizerWord2vec
-from app.domain.models.tokenizer import TokenizerWord
-from app.infra.wikidb import WikiDb, WikiRecord
+from app.auto_topic.component.logger import Logger
+from app.auto_topic.component.models.model import TextSequences
+from app.auto_topic.component.models.pipeline import Pipeline
+from app.auto_topic.component.models.vectorizer import VectorizerWord2vec
+from app.auto_topic.domain.models.tokenizer import TokenizerWord
+from app.auto_topic.infra.wikidb import WikiDb, WikiRecord
 
 g_logger = Logger(logger_name="train_wordvector")
 

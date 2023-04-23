@@ -1,6 +1,6 @@
 import torch.nn.functional as F
 
-from app.component.models.model import (
+from app.auto_topic.component.models.model import (
     Numericalizer,
     TensorNumeric,
     TensorOneHot,

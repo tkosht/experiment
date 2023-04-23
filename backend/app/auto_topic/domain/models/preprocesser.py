@@ -1,4 +1,4 @@
-from app.component.models.model import Preprocesser, TextSequences
+from app.auto_topic.component.models.model import Preprocesser, TextSequences
 
 
 class Splitter(Preprocesser):

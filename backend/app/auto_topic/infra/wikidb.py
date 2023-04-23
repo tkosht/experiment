@@ -3,8 +3,8 @@ from __future__ import annotations
 import sqlite3
 from dataclasses import dataclass
 
-from app.component.ulid import build_ulid
-from app.domain.db_interface import DbIf
+from app.auto_topic.component.ulid import build_ulid
+from app.auto_topic.domain.db_interface import DbIf
 
 g_log = print
 

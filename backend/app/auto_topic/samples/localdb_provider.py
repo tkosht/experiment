@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from app.component.slack_event_data import SlackEventData
-from app.domain.db_interface import DbIf
-from app.infra.localdb import LocalDb
+from app.auto_topic.component.slack_event_data import SlackEventData
+from app.auto_topic.domain.db_interface import DbIf
+from app.auto_topic.infra.localdb import LocalDb
 
 
 class LocalDbProvider(object):

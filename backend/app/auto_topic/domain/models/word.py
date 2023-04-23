@@ -1,4 +1,4 @@
-from app.component.models.model import Model, Tensor
+from app.auto_topic.component.models.model import Model, Tensor
 
 
 class EncoderWord(Model):

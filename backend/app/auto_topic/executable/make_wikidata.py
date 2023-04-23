@@ -5,8 +5,8 @@ import traceback as tb
 
 import tensorflow_datasets as tfds
 
-from app.component.ulid import build_ulid
-from app.infra.wikidb import WikiDb, WikiRecord
+from app.auto_topic.component.ulid import build_ulid
+from app.auto_topic.infra.wikidb import WikiDb, WikiRecord
 
 
 def now() -> str:
