@@ -1,7 +1,7 @@
 # for data science
 numpy
 pandas
-sklearn
+scikit-learn
 scipy
 sympy
 tqdm
@@ -45,7 +45,8 @@ python-dotenv
 # python-multipart
 # uvicorn
 
-torch
+# torch
+torch==1.13.1
 torchvision
 torchmetrics
 nltk
