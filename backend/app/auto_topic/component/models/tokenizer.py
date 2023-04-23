@@ -12,7 +12,7 @@ import sudachipy.dictionary
 import sudachipy.tokenizer
 from typing_extensions import Self
 
-from app.component.models.model import Texts, TextSequences, Tokenizer
+from app.auto_topic.component.models.model import Texts, TextSequences, Tokenizer
 
 g_stoppoes = ["BOS/EOS", "助詞", "助動詞", "接続詞", "記号", "補助記号", "未知語"]
 

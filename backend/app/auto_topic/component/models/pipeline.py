@@ -1,6 +1,6 @@
 from typing_extensions import Self
 
-from app.component.simple_logger import log_info
+from app.auto_topic.component.simple_logger import log_info
 
 from .model import Labeller, Model, Tensor
 
