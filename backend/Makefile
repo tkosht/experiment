@@ -18,6 +18,15 @@ topicmodel:
 	python -m app.auto_topic.executable.train_topicmodel
 	@echo "$$(date +'%Y/%m/%d %T') - End $@"
 
+
+# -----
+# # crawling tasks
+news:
+	@echo "$$(date +'%Y/%m/%d %T') - Start $@"
+	sh app/scrapy/bin/crawl.sh
+	@echo "$$(date +'%Y/%m/%d %T') - End $@"
+
+
 # # webapi
 flask:
 	FLASK_APP=flask_app.py flask run --host=0.0.0.0 --port=8000
