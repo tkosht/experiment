@@ -15,7 +15,7 @@ wordvector:
 
 topicmodel:
 	@echo "$$(date +'%Y/%m/%d %T') - Start $@"
-	python app.auto_topic.executable.train_topicmodel
+	python -m app.auto_topic.executable.train_topicmodel
 	@echo "$$(date +'%Y/%m/%d %T') - End $@"
 
 # # webapi

@@ -5,7 +5,8 @@ cmd=${*:-'free -h'}
 
 while :
 do
-    # free -h
+    echo "----------"
+    date
     $cmd
     sleep 1
 done
