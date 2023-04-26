@@ -32,6 +32,7 @@ in this part, what you can do in the container:
 - make wiki datasets in sqlite3
 - train word2vec vectors with thease wiki datasets
 - train topic model with trained word2vec vectors
+- crawl news on the internet
 
 
 ## make wiki data
@@ -66,3 +67,12 @@ Used Mem: around 6.3GiB, so you possibly run on the PC has 7GiB available CPU Me
 around 0h 5 mins
 
 
+
+## crawl news
+
+
+```
+make news
+```
+
+around 22h
