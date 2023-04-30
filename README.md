@@ -50,11 +50,21 @@ around 1h 10 mins
 ## train wiki data vectors
 
 ```
-make wordvector
+make train-wordvector
 ```
 
 Used Mem: around 11.0GiB, so you possibly run on the PC has 12GiB available CPU Memory.
 around 2h 30 mins
+
+
+## retrain wiki data vectors
+
+```
+make retrain-wordvector
+```
+
+Used Mem: around 16.0GiB, so you possibly run on the PC has 17GiB available CPU Memory.
+around 1h 40 mins
 
 
 ## train topicmodel

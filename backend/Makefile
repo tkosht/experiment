@@ -13,6 +13,11 @@ wordvector:
 	python -m app.auto_topic.executable.train_wordvector
 	@echo "$$(date +'%Y/%m/%d %T') - End $@"
 
+tuned-wordvector:
+	@echo "$$(date +'%Y/%m/%d %T') - Start $@"
+	python -m app.auto_topic.executable.tune_wordvector
+	@echo "$$(date +'%Y/%m/%d %T') - End $@"
+
 topicmodel:
 	@echo "$$(date +'%Y/%m/%d %T') - Start $@"
 	python -m app.auto_topic.executable.train_topicmodel
