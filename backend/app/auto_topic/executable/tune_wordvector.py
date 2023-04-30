@@ -88,7 +88,6 @@ def main(
         pipe_wikivec.fit([X])
     log_info("End", "tune model")
 
-    # NOTE: around 2m = 1m55.0s
     log_info("Start", "dumping retrained model")
     joblib.dump(pipe_wikivec, "data/pipe_wikivec.tuned.gz", compress=("gzip", 3))
     log_info("End", "dumping retrained model")
