@@ -1,5 +1,5 @@
-FROM nvidia/cuda:11.7.0-devel-ubuntu22.04
-# FROM nvidia/cuda:11.8.0-devel-ubuntu22.04
+FROM nvidia/cuda:11.8.0-devel-ubuntu22.04
+# FROM nvidia/cuda:11.7.0-devel-ubuntu22.04
 
 
 LABEL maintainer="tkosht <takehito.oshita.business@gmail.com>"
@@ -7,42 +7,29 @@ LABEL maintainer="tkosht <takehito.oshita.business@gmail.com>"
 ENV TZ Asia/Tokyo
 ENV DEBIAN_FRONTEND=noninteractive
 
+RUN apt-get update -y \
+    && apt install -y apt-transport-https ca-certificates curl software-properties-common \
+	&& curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - \
+	&& add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu jammy stable"
+
 RUN apt-get update -y && apt-get upgrade -y \
     && apt-get install --fix-missing -y sudo build-essential autoconf \
         vim tmux tzdata locales dialog git openssh-server bash-completion \
         jq sqlite3 curl nodejs npm default-jre \
         libgeos-dev libsnappy-dev fontconfig fonts-ipaexfont fonts-ipafont \
-        libmecab-dev mecab mecab-ipadic-utf8 mecab-utils file \
+        libmecab-dev mecab mecab-ipadic-utf8 mecab-utils file zip \
+        zlib1g-dev libffi-dev libbz2-dev libreadline-dev libssl-dev libsqlite3-dev liblzma-dev tk-dev docker-ce-cli \
     && localedef -f UTF-8 -i ja_JP ja_JP.UTF-8
 
-### RUN mkdir /var/run/sshd
-### RUN echo "PubkeyAuthentication yes" >> /etc/ssh/sshd_config
-### RUN echo "AuthorizedKeysFile workspace/.ssh/authorized_keys" >> /etc/ssh/sshd_config
-
-# RUN npm update -g npm \
-#     && npm install -g webpack-dev-server \
-#     && npm install -g @vue/cli || true      # ignore error exitted
-# 
-# # retry to install @vue/cli
-# RUN npm install -g @vue/cli || true
-# RUN npm install -g @vue/cli-init || true 
-# RUN npm install -g vue || true 
-# RUN npm install -g vue-router
-# RUN npm install -g bootstrap-vue || true
-# RUN npm install -g bootstrap
-# RUN npm install -g vue-axios axios
-
 RUN apt-get install -y --fix-missing --no-install-recommends \
-        python3.10 \
-        python3.10-dev \
-        python3-pip \
-        python3-setuptools \
-        python3-wheel
+    python3.10 \
+    python3.10-dev \
+    python3-pip \
+    python3-setuptools \
+    python3-wheel
 
 RUN ln -s /usr/bin/python3.10 /usr/bin/python \
-     && ln -s /usr/bin/pdb3 /usr/bin/pdb 
-
-#     && ln -s /usr/bin/pip3 /usr/bin/pip \
+    && ln -s /usr/bin/pdb3 /usr/bin/pdb 
 
 ENV LANG="ja_JP.UTF-8" \
     LANGUAGE="ja_JP:ja" \
@@ -60,23 +47,35 @@ RUN git config --global http.postBuffer 1048576000 \
     && cd mecab-ipadic-neologd && bin/install-mecab-ipadic-neologd -n -a -y \
     && pip install unidic-lite
 
+# upgrade pip
+RUN python -m pip install --upgrade pip
+
 # Sudachi
 RUN python -m pip install sudachidict_core sudachidict_small sudachidict_full
 
 # matplotlib
 RUN python -m pip install matplotlib
 
+# awscli v2
+RUN cd /tmp \
+    && curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+    && unzip awscliv2.zip \
+    && sudo ./aws/install \
+    && rm -fr aws/ awscliv2.zip \
+    && pip install awscli-local \
+    && pip install aws-sam-cli \
+    && pip install aws-sam-cli-local
+
 # requirements
 COPY ./requirements.txt /requirements.txt
-RUN python -m pip install --upgrade pip \
-    && python -m pip install -r /requirements.txt \
+RUN python -m pip install -r /requirements.txt \
     && rm -f /requirements.txt
 
 # - upgrade system
 RUN apt-get upgrade -y \
     && apt-get autoremove -y \
     && apt-get clean -y
-    # && rm -rf /var/lib/apt/lists/*
+# && rm -rf /var/lib/apt/lists/*
 
 # setup matplotlib for japanese
 # ARG matplotlibrc=/usr/local/lib/python3.8/dist-packages/matplotlib/mpl-data/matplotlibrc
@@ -101,6 +100,29 @@ RUN echo $user_name ALL=\(root\) NOPASSWD:ALL \
 
 RUN chown -R $user_name:$group_name $home_dir 
 USER $user_name
+WORKDIR ${home_dir}
+
+# ==========
+# for aws cli
+SHELL [ "/bin/bash", "-c" ]
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
+
+RUN . ${home_dir}/.nvm/nvm.sh \
+    && nvm install --lts \
+    && nvm use --lts \
+	&& nvm cache clear \
+    && node -v && npm -v \
+    && npm i -g yarn wscat
+
+RUN echo -e "\
+export NVM_DIR=\"\$HOME/.nvm\"\n \
+[ -s \"\$NVM_DIR/nvm.sh\" ] && \. \"\$NVM_DIR/nvm.sh\"\n \
+" >> ${home_dir}/.bashrc \
+	&& source ${home_dir}/.bashrc
+
+RUN echo -e "complete -C '/usr/local/bin/aws_completer' aws" >> ${home_dir}/.bashrc \
+	&& echo -e "complete -C '/usr/local/bin/aws_completer' awslocal" >> ${home_dir}/.bashrc \
+	&& source ${home_dir}/.bashrc
 
 # Switch back to dialog for any ad-hoc use of apt-get
 ENV DEBIAN_FRONTEND=dialog

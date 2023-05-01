@@ -21,6 +21,9 @@ services:
               capabilities: [gpu, utility, compute, video]
     volumes:
       - .:/home/$user_name/workspace
+      - "./.aws:/home/dev-lambda-user/.aws"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+
     working_dir: /home/$user_name/workspace
     sysctls:
       - net.core.somaxconn=$somaxconn
@@ -32,4 +35,26 @@ services:
       - "8000:8000" # webapi
       - "8080:8080" # vue
       - "9229:9229" # node debugger
+    networks:
+      - container-link
 
+
+  localstack:
+    container_name: "${LOCALSTACK_DOCKER_NAME-localstack.main}"
+    image: localstack/localstack
+    ports:
+      - "127.0.0.1:4566:4566"            # LocalStack Gateway
+      - "127.0.0.1:4510-4559:4510-4559"  # external services port range
+    environment:
+      - DEBUG=${DEBUG-}
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - LAMBDA_DOCKER_NETWORK=localstack.internal
+    volumes:
+      - "${LOCALSTACK_VOLUME_DIR:-./data/localstack}:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - container-link
+
+networks:
+  container-link:
+    name: localstack.internal

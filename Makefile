@@ -10,6 +10,9 @@ bash:
 python: up
 	docker compose exec app python
 
+localstack:
+	docker compose exec -it localstack bash
+
 # switch mode
 cpu gpu:
 	@rm -f compose.yml
@@ -43,13 +46,10 @@ load:
 
 # ==========
 # docker compose aliases
-up: _up ssh
+up: _up
 
 _up:
-	docker compose up -d app
-
-ssh:
-	docker compose exec app sudo service ssh start
+	docker compose up -d
 
 active:
 	docker compose up
