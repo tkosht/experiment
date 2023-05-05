@@ -27,10 +27,14 @@ def _bot(history: list[tuple],
             answer = agent_executor.run(input=query, intermediate_steps=intermediate_steps)
             break
         except Exception as e:
-            query = f"Observation: \nERROR: {str(e)}\n\nwith fix ERROR, \n\nHUMAN: {query_org}\nThougt:"
+            query = f"Observation: \nERROR: {str(e)}\n\nwith fix ERROR in other way, \n\nHUMAN: {query_org}\nThougt:"
             answer = f"Error Occured: {e} / couldn't be fixed."
             if "This model's maximum context length is" in str(e):
-                agent_executor.intermediate_steps = agent_executor.intermediate_steps[-1:]
+                if len(agent_executor.intermediate_steps) <= 1:
+                    # already 1 intermediate_steps, but context length error
+                    agent_executor.intermediate_steps = []
+                else:
+                    agent_executor.intermediate_steps = agent_executor.intermediate_steps[-1:]
         finally:
             intermediate_steps = agent_executor.intermediate_steps
 

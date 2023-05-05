@@ -3,7 +3,7 @@ from typing import Union
 
 from dotenv import load_dotenv
 from langchain.agents import AgentOutputParser, AgentType, Tool, load_tools
-from langchain.agents.chat.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
+# from langchain.agents.chat.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.chains import ConversationChain
 from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
@@ -15,6 +15,8 @@ from langchain.utilities import PythonREPL
 
 from app.langchain.component.agent_executor import CustomAgentExecutor
 from app.langchain.component.agents.initialize import initialize_agent
+from app.langchain.component.agents.prompt import (FORMAT_INSTRUCTIONS, PREFIX,
+                                                   SUFFIX)
 
 FINAL_ANSWER_ACTION = "Final Answer:"
 
@@ -41,7 +43,9 @@ class CustomOutputParser(AgentOutputParser):
 
 def build_agent():
     load_dotenv()
-    llm = ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo")
+    # llm = ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo")
+    # llm = ChatOpenAI(temperature=0, model_name="gpt-4-0314")
+    llm = ChatOpenAI(temperature=0, model_name="gpt-4")
 
     python_repl = PythonREPL()
 
@@ -77,24 +81,28 @@ def build_agent():
     trans_tool = Tool(
         name="trans_tool",
         description="A translation LLM. Use this to translate in japanese, "
-                    "Input should be a short string or summary which you have to know exactly.",
+                    "Input should be a short string or summary which you have to know exactly "
+                    "and which with `Question` content and your `Thought` content in a sentence/statement.",
         func=exec_llm
     )
     summary_tool = Tool(
         name="summary_tool",
         description="A summarization LLM. Use this to summarize the result of tools like 'wikipedia' or 'serpapi', "
-                    # "or to parse result of using tools like 'requests'. "
-                    "Input should be the short string or summary which you have to know exactly.",
+                    "or to parse result of using tools like 'requests'. "
+                    "Input should be a short string or summary which you have to know exactly "
+                    "and which with `Question` content and your `Thought` content in a sentence/statement.",
         func=exec_llm
     )
     no_tools = Tool(
         name="no_tools",
         description="Use this to respond your answer which you THOUGHT"
-                    "Input should be the string which you would like to answer exactly.",
-        func=exec_llm
+                    "Input should be a short string or summary which you have to know exactly "
+                    "and which with `Question` content and your `Thought` content in a sentence/statement.",
+        func=fake
     )
     # tools = load_tools(["serpapi", "llm-math", "wikipedia", "requests"], llm=llm)   # , "terminal"
-    tools = load_tools(["serpapi", "llm-math", "wikipedia"], llm=llm)   # , "terminal"
+    # tools = load_tools(["serpapi", "llm-math", "wikipedia"], llm=llm)   # , "terminal"
+    tools = load_tools(["google-search", "llm-math", "wikipedia", "requests"], llm=llm)   # , "terminal"
     tools += [python_tool, trans_tool, summary_tool, no_tools]
 
     kwargs = dict(memory=memory, return_intermediate_steps=True)
@@ -106,12 +114,8 @@ def build_agent():
         verbose=True,
         agent_kwargs=dict(
             prefix=PREFIX,
-            suffix=SUFFIX.replace("Reminder to", "but remember! MUST")
-            # .replace("responding", "responding with no empty")
-            + "thease phrase Thought/Action/Observation/Final Answer are "
-            + " MUST NOT be translated in Japanese.",
-            format_instructions=(FORMAT_INSTRUCTIONS
-                                 + " if you found error, MUST fix error to success with step-by-step 'Thought:'"),
+            suffix=SUFFIX,
+            format_instructions=FORMAT_INSTRUCTIONS,
             output_parser=CustomOutputParser(),
         ),
         **kwargs,

@@ -2,7 +2,7 @@
 # ==========
 # # for app
 demo:
-	sh bin/run_demo.sh
+	@sh bin/run_demo.sh
 
 # ==========
 # # webapi tasks

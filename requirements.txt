@@ -93,4 +93,5 @@ pycryptodome
 pypdf
 
 wikipedia
+google-api-python-client
 
