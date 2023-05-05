@@ -80,3 +80,17 @@ janome
 wordcloud
 
 pandas_datareader
+
+
+# for langchain
+langchain>=0.0.154
+openai
+google-search-results
+chromadb
+tiktoken
+gradio
+pycryptodome
+pypdf
+
+wikipedia
+

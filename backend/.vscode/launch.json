@@ -15,7 +15,7 @@
                 "PYTHONPATH": ".",
             },
             "args": [
-                "--no-save-on-exit",
+                // "--no-save-on-exit",
                 // "--config-dir=${workspaceFolder}/conf",
                 // "--max-batches=1",
                 // "--max-epoch=1",
