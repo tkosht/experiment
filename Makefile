@@ -88,7 +88,7 @@ frontend-restore: frontend-ci
 
 # ==========
 # backend tasks
-backend-webapi backend-test-unit backend-log-access backend-hello backend-post backend-test-request backend-mlflow-server backend-tensorboard: up
+backend-demo: up
 	$(eval task_name=$(shell echo "$@" | perl -pe 's/backend-//'))
 	@echo "runnning task @ backend: $(task_name)"
 	docker compose exec app bash -c "cd backend && make $(task_name)"

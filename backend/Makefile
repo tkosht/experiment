@@ -1,4 +1,8 @@
 # backend tasks
+# ==========
+# # for app
+demo:
+	sh bin/run_demo.sh
 
 # ==========
 # # webapi tasks
