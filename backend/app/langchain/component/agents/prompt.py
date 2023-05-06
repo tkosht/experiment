@@ -65,3 +65,7 @@ SUFFIX = ("Begin! but remember! MUST always use the exact characters `Final Answ
 # Thought: I now know the final answer
 # Final Answer: the final answer to the original input question"""
 # SUFFIX = """Begin! Reminder to always use the exact characters `Final Answer` when responding."""
+
+# NOTE: cf. https://github.com/hwchase17/langchain/blob/master/langchain/agents/chat/prompt.py
+# Copyright (c) Harrison Chase
+# Copyright (c) 2023 Takehito Oshita

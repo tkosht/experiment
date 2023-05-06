@@ -21,7 +21,9 @@ from app.langchain.component.agents.prompt import (FORMAT_INSTRUCTIONS, PREFIX,
 FINAL_ANSWER_ACTION = "Final Answer:"
 
 
-# NOTE: cf. /usr/local/lib/python3.10/dist-packages/langchain/agents/chat/output_parser.py
+# NOTE: cf. https://github.com/hwchase17/langchain/blob/master/langchain/agents/chat/output_parser.py
+# Copyright (c) Harrison Chase
+# Copyright (c) 2023 Takehito Oshita
 class CustomOutputParser(AgentOutputParser):
     def get_format_instructions(self) -> str:
         return FORMAT_INSTRUCTIONS
@@ -82,7 +84,7 @@ def build_agent():
         name="trans_tool",
         description="A translation LLM. Use this to translate in japanese, "
                     "Input should be a short string or summary which you have to know exactly "
-                    "and which with `Question` content and your `Thought` content in a sentence/statement.",
+                    "and which with `Question` content and your `Thought` content in an Input sentence/statement.",
         func=exec_llm
     )
     summary_tool = Tool(
@@ -90,14 +92,14 @@ def build_agent():
         description="A summarization LLM. Use this to summarize the result of tools like 'wikipedia' or 'serpapi', "
                     "or to parse result of using tools like 'requests'. "
                     "Input should be a short string or summary which you have to know exactly "
-                    "and which with `Question` content and your `Thought` content in a sentence/statement.",
+                    "and which with `Question` content and your `Thought` content in an Input sentence/statement.",
         func=exec_llm
     )
     no_tools = Tool(
         name="no_tools",
         description="Use this to respond your answer which you THOUGHT"
                     "Input should be a short string or summary which you have to know exactly "
-                    "and which with `Question` content and your `Thought` content in a sentence/statement.",
+                    "and which with `Question` content and your `Thought` content in an Input sentence/statement.",
         func=fake
     )
     # tools = load_tools(["serpapi", "llm-math", "wikipedia", "requests"], llm=llm)   # , "terminal"

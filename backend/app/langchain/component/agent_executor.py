@@ -7,7 +7,6 @@ from langchain.input import get_color_mapping
 from langchain.schema import AgentAction, AgentFinish
 
 
-# NOTE: cf. /usr/local/lib/python3.10/dist-packages/langchain/agents/agent.py AgentExecutor
 class CustomAgentExecutor(AgentExecutor):
     intermediate_steps: list = []
 
@@ -85,3 +84,8 @@ class CustomAgentExecutor(AgentExecutor):
             if self.intermediate_steps:
                 print(self.intermediate_steps[-1])
             raise e
+
+# NOTE: cf. part of https://github.com/hwchase17/langchain/blob/master/langchain/agents/agent.py AgentExecutor
+# add member variable: intermediate_steps
+# Copyright (c) Harrison Chase
+# Copyright (c) 2023 Takehito Oshita
