@@ -11,6 +11,7 @@ from langchain.prompts import (ChatPromptTemplate, HumanMessagePromptTemplate,
                                MessagesPlaceholder,
                                SystemMessagePromptTemplate)
 from langchain.schema import AgentAction, AgentFinish
+from langchain.tools import ShellTool
 from langchain.utilities import PythonREPL
 
 from app.langchain.component.agent_executor import CustomAgentExecutor
@@ -28,35 +29,58 @@ class CustomOutputParser(AgentOutputParser):
     def get_format_instructions(self) -> str:
         return FORMAT_INSTRUCTIONS
 
-    def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
+    def parse(self, text: str) -> Union[list[AgentAction], AgentFinish]:
         if FINAL_ANSWER_ACTION in text or "最終回答:" in text:
             return AgentFinish(
                 {"output": text.split(FINAL_ANSWER_ACTION)[-1].strip()}, text
             )
         try:
-            action = text.split("```")[1]
-            response = json.loads(action.strip())
-            return AgentAction(response["action"], response["action_input"], text)
+            parsed = text.split("```")
+            if len(parsed) < 3:
+                if len(parsed) == 1:
+                    # NOTE: posibly finished
+                    return AgentFinish({"output": text.strip()}, text)
+                else:
+                    raise Exception("Parse Error: you MUST follow the format of the 'Action:' and $JSON_BLOB, "
+                                    f"or need starting with '{FINAL_ANSWER_ACTION}'.")
+            actions = []
+            for idx in range(1, len(parsed), 2):
+                action = parsed[idx]
+                response = json.loads(action.strip())
+                agent_action = AgentAction(response["action"], response["action_input"], text)
+                actions.append(agent_action)
+            # if len(action) > 3:
+            #     raise Exception("Multiple Actions Error: please generate just 1 action `$JSON_BLOB`")
+            # response = json.loads(action.strip())
+            # return AgentAction(response["action"], response["action_input"], text)
+            return actions
 
         except Exception as e:
             print(f"{e=} / {text=}")
-            return AgentFinish({"output": text.strip()}, text)
+            # return AgentFinish({"output": text.strip()}, text)
+            return AgentAction("summary_tool",
+                               f"Think About this parse error for Action ({e}) step-by-step with input: " + text, text)
 
 
-def build_agent():
+def build_agent(model_name="gpt-4", temperature: float = 0) -> CustomAgentExecutor:
     load_dotenv()
-    # llm = ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo")
-    # llm = ChatOpenAI(temperature=0, model_name="gpt-4-0314")
-    llm = ChatOpenAI(temperature=0, model_name="gpt-4")
+    llm = ChatOpenAI(temperature=temperature, model_name=model_name)
+
+    shell_tool = ShellTool()
+    shell_tool.description += f"args {shell_tool.args}".replace("{", "{{").replace("}", "}}")
 
     python_repl = PythonREPL()
-
     python_tool = Tool(
         name="python_repl",
-        description="A Python shell. Use this to execute python commands. "
+        description="A Python shell. "
+                    "Use this to execute python commands for requesting raw HTML, "
+                    "or parsing any texts, "
+                    "for also executing shell commands, and so on. "
                     "Input should be a valid python command. "
                     "If you want to see the output of a value, "
-                    "you should print it out with `print(...)`.",
+                    "you should print it out with `print(...)`. "
+                    "NOTICE that this python shell is not notebook"
+                    ,
         func=python_repl.run
     )
 
@@ -77,9 +101,6 @@ def build_agent():
         guess = conversation.predict(input=msg)
         return guess
 
-    def fake(msg: str):
-        return msg
-
     trans_tool = Tool(
         name="trans_tool",
         description="A translation LLM. Use this to translate in japanese, "
@@ -89,23 +110,26 @@ def build_agent():
     )
     summary_tool = Tool(
         name="summary_tool",
-        description="A summarization LLM. Use this to summarize the result of tools like 'wikipedia' or 'serpapi', "
-                    "or to parse result of using tools like 'requests'. "
+        description="A summarization LLM. Use this to summarize the result of tools "
+                    "like 'wikipedia' or 'serpapi', 'google-search', "
+                    "but NEVER use this tool for parsing contents like HTML or XML"
                     "Input should be a short string or summary which you have to know exactly "
                     "and which with `Question` content and your `Thought` content in an Input sentence/statement.",
         func=exec_llm
     )
-    no_tools = Tool(
-        name="no_tools",
-        description="Use this to respond your answer which you THOUGHT"
-                    "Input should be a short string or summary which you have to know exactly "
-                    "and which with `Question` content and your `Thought` content in an Input sentence/statement.",
-        func=fake
-    )
+    # def fake(msg: str):
+    #     return msg
+    #
+    # no_tools = Tool(
+    #     name="no_tools",
+    #     description="Use this to respond your answer which you THOUGHT"
+    #                 "Input should be a short string or summary which you have to know exactly "
+    #                 "and which with `Question` content and your `Thought` content in an Input sentence/statement.",
+    #     func=fake
+    # )
     # tools = load_tools(["serpapi", "llm-math", "wikipedia", "requests"], llm=llm)   # , "terminal"
-    # tools = load_tools(["serpapi", "llm-math", "wikipedia"], llm=llm)   # , "terminal"
-    tools = load_tools(["google-search", "llm-math", "wikipedia", "requests"], llm=llm)   # , "terminal"
-    tools += [python_tool, trans_tool, summary_tool, no_tools]
+    tools = load_tools(["google-search", "llm-math", "wikipedia"], llm=llm)   # , "terminal"
+    tools += [python_tool, shell_tool, trans_tool, summary_tool]
 
     kwargs = dict(memory=memory, return_intermediate_steps=True)
 

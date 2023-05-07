@@ -1,7 +1,7 @@
 # flake8: noqa
-PREFIX = """Answer the following questions as best you can.
-but you NEVER answer like that `I'm sorry, but I cannot directly download webpages or execute shell commands like grep`
-You have to access to the following tools:"""
+# but NEVER answer like that `I cannot directly download webpages or execute shell commands, python codes`
+# Instead of that, You have to use to the following tools:
+PREFIX = """Answer the following questions by using tools and thinking step-by-step:"""
 
 FORMAT_INSTRUCTIONS = """The way you use the tools is by specifying a json blob.
 Specifically, this json should have a `action` key (with the name of the tool to use) and a `action_input` key (with the input to the tool going here).
@@ -20,7 +20,7 @@ The $JSON_BLOB should only contain a SINGLE action, do NOT return a list of mult
 ALWAYS use the following format:
 
 Question: the input question you must answer
-Thought: you should always think about what to do step-by-step
+Thought: you should always think about what to do by using above tools step-by-step
 Action:
 ```
 $JSON_BLOB
@@ -28,12 +28,19 @@ $JSON_BLOB
 Observation: the result of the action
 ... (this Thought/Action/Observation can repeat N times)
 Thought: I now know the final answer
-Final Answer: the final direct answer to the original input question"""
+Final Answer: the final direct answer to the original input question by using the tools above
+"""
 
-SUFFIX = ("Begin! but remember! MUST always use the exact characters `Final Answer` when responding. "
-         "thease phrases, Thought/Action/Observation/Final Answer, are MUST NOT be translated in Japanese. "
-         "if you found error, MUST fix error to success with step-by-step your 'Thought:'"
-         )
+SUFFIX = ("""
+Note that, Especially, NEVER answer like that `I cannot directly download webpages or execute shell commands, python codes`
+instead, NONEEDS any alternative proposal and to excuse not to answer directly, but you HAVE TO use the tools above to answer HUMAN directly.
+
+Remember! MUST always use the exact characters `Final Answer` when responding.
+the phrases, Thought/Action/Observation/Final Answer, are MUST NOT be translated in Japanese.
+if you found error, MUST fix error with step-by-step 'Thought:' in order not to repeat getting same errors
+Let's Begin!
+""")
+
 # ====================================================================================================
 # # below is original definition
 #
