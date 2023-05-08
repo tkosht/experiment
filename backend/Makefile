@@ -2,7 +2,8 @@
 # ==========
 # # for app
 demo:
-	@sh bin/run_demo.sh --do-share
+	@sh bin/run_demo.sh
+
 
 # ==========
 # # webapi tasks

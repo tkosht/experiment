@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  lowcode_llm:
+    build:
+      context: ./
+      dockerfile: docker/Dockerfile.lowcode_llm
+      args:
+        user_name: $user_name
+        group_name: $group_name
+    image: $pj_name.lowcode
+    container_name: $pj_name.lowcode
+    init: true
+    volumes:
+      - ./backend/app/lowcode_llm:/app/src
+    working_dir: /app/src
+    sysctls:
+      - net.core.somaxconn=$somaxconn
+      - net.ipv4.tcp_syncookies=0
+    ports:
+      - "8888:8888"     # gunicorn
+

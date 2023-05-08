@@ -43,10 +43,12 @@ load:
 
 # ==========
 # docker compose aliases
-up: _up ssh
-
-_up:
-	docker compose up -d app
+# up: _up ssh
+# 
+# _up:
+# 	docker compose up -d app
+up:
+	docker compose up -d
 
 ssh:
 	docker compose exec app sudo service ssh start
