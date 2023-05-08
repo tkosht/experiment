@@ -8,7 +8,7 @@ Specifically, this json should have a `action` key (with the name of the tool to
 
 The only values that MUST be in the "action" field are: {tool_names}
 
-The $JSON_BLOB should only contain a SINGLE action, do NOT return a list of multiple actions. Here is an example of a valid $JSON_BLOB:
+The $JSON_BLOB should only contain a SINGLE action, do NOT return a list of multiple comments. Here is an example of a valid $JSON_BLOB:
 
 ```
 {{{{

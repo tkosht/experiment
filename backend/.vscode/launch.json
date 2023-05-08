@@ -15,6 +15,7 @@
                 "PYTHONPATH": ".",
             },
             "args": [
+                "--do-share"
                 // "--no-save-on-exit",
                 // "--config-dir=${workspaceFolder}/conf",
                 // "--max-batches=1",

@@ -38,7 +38,9 @@ class CustomOutputParser(AgentOutputParser):
             parsed = text.split("```")
             if len(parsed) < 3:
                 if len(parsed) == 1:
-                    # NOTE: posibly finished
+                    # NOTE: posibly, might be finished
+                    if "error occured" in text.lower():
+                        raise Exception(text)
                     return AgentFinish({"output": text.strip()}, text)
                 else:
                     raise Exception("Parse Error: you MUST follow the format of the 'Action:' and $JSON_BLOB, "

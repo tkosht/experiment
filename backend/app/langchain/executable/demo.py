@@ -58,10 +58,13 @@ def _main(params: DictConfig):
     # _prompt_default = _prompt_example
     # _prompt_default = ("徳川家康とは？")
     # _prompt_default = ("AIの最新ニュースを教えてちょ")
-    _prompt_default = """titanic dataset をダウンロードして、
-scikit-learn の LightGBM を使ってクラス分類する python コードを作成して実行して成功したら、
-そのコードを ‘result/titanic.py’ というローカルファイルに保存して。
-これらは、それぞれ または すべてを python_repl ツール または shell/terminal ツール を使って実現してください。"""
+    _prompt_default = """titanic dataset をダウンロードして(data/titanic.csv として保存し)、
+scikit-learn の LightGBM を使ってクラス分類する python コードを作成して実行し、精度指標値を出力し確認する。
+その後、‘result/titanic.py’ というローカルファイルに保存し、
+実際に ‘result/titanic.py’ を実行して成功するまで(エラーが出なくなるまで)改善すること。
+
+これらは、python_repl ツール または bash/terminal ツール のいずれかのツールのみを使って試行し実現してください。
+"""
 
     _callback = TextCallbackHandler(targets=["CustomAgentExecutor"])
 
@@ -99,19 +102,6 @@ scikit-learn の LightGBM を使ってクラス分類する python コードを�
                     ).style(container=False)
 
                 with gr.Column():
-                    ctx_area = gr.TextArea(
-                        lines=21,
-                        max_lines=21,
-                        show_label=False,
-                        label="context",
-                        placeholder="",
-                        value="",
-                    ).style(container=False)
-                    with gr.Row():
-                        btn = gr.Button(value="clear context")
-                        btn.click(clear_context, inputs=[ctx_area], outputs=[ctx_area])
-
-                with gr.Column():
                     log_area = gr.TextArea(
                         lines=21,
                         max_lines=21,
@@ -123,6 +113,21 @@ scikit-learn の LightGBM を使ってクラス分類する python コードを�
                     with gr.Row():
                         btn = gr.Button(value="update agent log")
                         btn.click(update_text, inputs=[log_area], outputs=[log_area])
+
+        with gr.Tab("Context"):
+            with gr.Row():
+                with gr.Column():
+                    ctx_area = gr.TextArea(
+                        lines=21,
+                        max_lines=21,
+                        show_label=False,
+                        label="context",
+                        placeholder="",
+                        value="",
+                    ).style(container=False)
+                    with gr.Row():
+                        btn = gr.Button(value="clear context")
+                        btn.click(clear_context, inputs=[ctx_area], outputs=[ctx_area])
 
         with gr.Tab("Setting"):
             with gr.Row():
