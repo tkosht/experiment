@@ -1,14 +1,16 @@
 # flake8: noqa
-# but NEVER answer like that `I cannot directly download webpages or execute shell commands, python codes`
-# Instead of that, You have to use to the following tools:
 PREFIX = """Answer the following questions by using tools and thinking step-by-step:"""
 
-FORMAT_INSTRUCTIONS = """The way you use the tools is by specifying a json blob.
+FORMAT_INSTRUCTIONS = """# Definition of using the tools
+In this conversation, the way you use the tools is by specifying a json blob of the 'Actions' which is defined as bellow, and also even if 'execution' in Japanese and so on.
 Specifically, this json should have a `action` key (with the name of the tool to use) and a `action_input` key (with the input to the tool going here).
+And also define the successful of 'using the tools', 'execution' is the meaning no error or successful of 'Observation' which is defined as below.
+
+# Definition of $JSON_BLOB of a 'Action'
 
 The only values that MUST be in the "action" field are: {tool_names}
 
-The $JSON_BLOB should only contain a SINGLE action, do NOT return a list of multiple comments. Here is an example of a valid $JSON_BLOB:
+The $JSON_BLOB should only contain a SINGLE action, do NOT return any comments. Here is an example of a valid $JSON_BLOB:
 
 ```
 {{{{
@@ -16,6 +18,11 @@ The $JSON_BLOB should only contain a SINGLE action, do NOT return a list of mult
   "action_input": $INPUT
 }}}}
 ```
+
+after you responding 'Action', you wait for the content of 'Observation' (the result of action(execution of tools))
+
+
+# Definition of the format
 
 ALWAYS use the following format:
 

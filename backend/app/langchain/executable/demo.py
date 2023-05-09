@@ -61,9 +61,10 @@ def _main(params: DictConfig):
     _prompt_default = """titanic dataset をダウンロードして(data/titanic.csv として保存し)、
 scikit-learn の LightGBM を使ってクラス分類する python コードを作成して実行し、精度指標値を出力し確認する。
 その後、‘result/titanic.py’ というローカルファイルに保存し、
-実際に ‘result/titanic.py’ を実行して成功するまで(エラーが出なくなるまで)改善すること。
+実際に ‘result/titanic.py’ を実行して精度指標値が80%以上になって成功するまで改善すること(エラーが出たら適宜修正すること)。
 
 これらは、python_repl ツール または bash/terminal ツール のいずれかのツールのみを使って試行し実現してください。
+なお、本依頼の実行開始直前と終了直後の時刻を忘れずに教えてください。
 """
 
     _callback = TextCallbackHandler(targets=["CustomAgentExecutor"])
@@ -133,7 +134,7 @@ scikit-learn の LightGBM を使ってクラス分類する python コードを�
             with gr.Row():
                 model_dd = gr.Dropdown(["gpt-3.5-turbo", "gpt-4-0314", "gpt-4"], value="gpt-3.5-turbo",
                                        label="chat model", info="you can choose the chat model.")
-                temperature_sl = gr.Slider(0, 100, 10, step=1, label="temperature (%)")
+                temperature_sl = gr.Slider(0, 100, 0, step=1, label="temperature (%)")
 
         txt.submit(
             _init, [chatbot, txt], [chatbot, txt]
