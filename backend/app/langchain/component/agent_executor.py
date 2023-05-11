@@ -80,9 +80,11 @@ class CustomAgentExecutor(AgentExecutor):
             result = self(kwargs, callbacks=callbacks)[self.output_keys[0]]
             return result
         except Exception as e:
-            print(str(e))
+            print("-" * 80)
+            print(f"# {e.__repr__()} at agent_executor.run()")
             if self.intermediate_steps:
-                print(self.intermediate_steps[-1])
+                print(f"{self.intermediate_steps[-1]}")
+            print("-" * 80)
             raise e
 
 # NOTE: cf. part of https://github.com/hwchase17/langchain/blob/master/langchain/agents/agent.py AgentExecutor

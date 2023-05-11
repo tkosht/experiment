@@ -1,3 +1,4 @@
+import time
 from inspect import signature
 
 import gradio as gr
@@ -28,22 +29,41 @@ def _bot(history: list[tuple],
     query = history[-1][0]
 
     query_org = query
-    max_retries = 5
+    max_retries = 10
     for _ in range(max_retries):
         try:
             answer = agent_executor.run(input=query, intermediate_steps=intermediate_steps, callbacks=callbacks)
             break
         except Exception as e:
-            query = f"Observation: \nERROR: {str(e)}\n\nwith fix ERROR in other way, \n\nHUMAN: {query_org}\nThougt:"
-            answer = f"Error Occured: {e} / couldn't be fixed."
+            print("-" * 80)
+            print(f"# {e.__repr__()} / in _bot()")
+            print("-" * 80)
+            query = f"Observation: \nERROR: {str(e)}\n\nwith fix this Error in other way, "
+            f"\n\nHUMAN: {query_org}\nThougt:"
             if "This model's maximum context length is" in str(e):
-                if len(agent_executor.intermediate_steps) <= 1:
-                    # already 1 intermediate_steps, but context length error
+                n_context = 1
+                if len(agent_executor.intermediate_steps) <= n_context:
+                    # NOTE: already 'n_context' intermediate_steps, but context length error. so, restart newly
+                    query = query_org
                     agent_executor.intermediate_steps = []
                 else:
-                    agent_executor.intermediate_steps = agent_executor.intermediate_steps[-1:]
+                    agent_executor.intermediate_steps = agent_executor.intermediate_steps[-n_context:]
+            else:
+                # NOTE: retry newly
+                query = query_org
+                agent_executor.intermediate_steps = []
+                answer = f"Error Occured: '{e}' / couldn't be fixed."
+
         finally:
             intermediate_steps = agent_executor.intermediate_steps
+            print("<" * 80)
+            print("Next:")
+            print(f"{query=}")
+            print("-" * 20)
+            print(f"{len(agent_executor.intermediate_steps)=}")
+            print(">" * 80)
+        print("waiting retrying ... (a little sleeping)")
+        time.sleep(1)
 
     assert answer
     history[-1][1] = answer       # may be changed url to href
@@ -60,17 +80,19 @@ def _main(params: DictConfig):
     # _prompt_default = ("AIの最新ニュースを教えてちょ")
     _prompt_default = """titanic dataset をダウンロードして(data/titanic.csv として保存し)、
 scikit-learn の LightGBM を使ってクラス分類する python コードを作成して実行し、精度指標値を出力し確認する。
-その後、‘result/titanic.py’ というローカルファイルに保存し、
-実際に ‘result/titanic.py’ を実行して精度指標値が80%以上になって成功するまで改善すること(エラーが出たら適宜修正すること)。
+そして、精度向上するために、https://qiita.com/jun40vn/items/d8a1f71fae680589e05c に記載されている特徴量エンジニアリング手法を参考にして精度改善し、
+検証用データの精度指標値が90%以上まで改善すること。
+その後、‘result/titanic.py’ というローカルファイルに上書き保存し、エラーがないことを確認する。
 
 これらは、python_repl ツール または bash/terminal ツール のいずれかのツールのみを使って試行し実現してください。
-なお、本依頼の実行開始直前と終了直後の時刻を忘れずに教えてください。
 """
+# 本依頼の実行開始時と終了時の時刻を忘れずに具体的に教えてください。
+# あなたが、Action/$JSON_BLOB フォーマットを忘れずに使うことで、利用可能なツールを実行できることを絶対に忘れないでください。
 
     _callback = TextCallbackHandler(targets=["CustomAgentExecutor"])
 
-    def bot(history: list[str], model_name: str, temperature_percent: int, context: str):
-        agent_executor = build_agent(model_name, temperature=temperature_percent / 100)
+    def bot(history: list[str], model_name: str, temperature_percent: int, max_iterations: int, context: str):
+        agent_executor = build_agent(model_name, temperature=temperature_percent / 100, max_iterations=max_iterations)
         # h = _bot(history, agent_executor, _intermediate_steps, callbacks=[_callback])
         h = _bot(history, agent_executor, intermediate_steps=[], callbacks=[_callback])
         ctx = "\n".join([str(step[0]) for step in _intermediate_steps])
@@ -135,12 +157,13 @@ scikit-learn の LightGBM を使ってクラス分類する python コードを�
                 model_dd = gr.Dropdown(["gpt-3.5-turbo", "gpt-4-0314", "gpt-4"], value="gpt-3.5-turbo",
                                        label="chat model", info="you can choose the chat model.")
                 temperature_sl = gr.Slider(0, 100, 0, step=1, label="temperature (%)")
+                max_iterations_sl = gr.Slider(0, 50, 10, step=1, label="max_iterations")
 
         txt.submit(
             _init, [chatbot, txt], [chatbot, txt]
         ).then(
             clear_text, [], [log_area]
-        ).then(bot, [chatbot, model_dd, temperature_sl, ctx_area], [chatbot, ctx_area])
+        ).then(bot, [chatbot, model_dd, temperature_sl, max_iterations_sl, ctx_area], [chatbot, ctx_area])
 
     if params.do_share:
         demo.launch(share=True, auth=("user", "user123"), server_name="0.0.0.0", server_port=7860)

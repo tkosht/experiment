@@ -35,36 +35,28 @@ class CustomOutputParser(AgentOutputParser):
                 {"output": text.split(FINAL_ANSWER_ACTION)[-1].strip()}, text
             )
         try:
-            parsed = text.split("```")
+            if "Action:" not in text:
+                raise Exception("Invalid Answer Format: Not Found 'Action:'")
+            parsed = text.split("-----")
             if len(parsed) < 3:
-                if len(parsed) == 1:
-                    # NOTE: posibly, might be finished
-                    if "error occured" in text.lower():
-                        raise Exception(text)
-                    return AgentFinish({"output": text.strip()}, text)
-                else:
-                    raise Exception("Parse Error: you MUST follow the format of the 'Action:' and $JSON_BLOB, "
-                                    f"or need starting with '{FINAL_ANSWER_ACTION}'.")
+                raise Exception("Invalid Answer Format: missing '-----'")
+
             actions = []
             for idx in range(1, len(parsed), 2):
                 action = parsed[idx]
                 response = json.loads(action.strip())
                 agent_action = AgentAction(response["action"], response["action_input"], text)
                 actions.append(agent_action)
-            # if len(action) > 3:
-            #     raise Exception("Multiple Actions Error: please generate just 1 action `$JSON_BLOB`")
-            # response = json.loads(action.strip())
-            # return AgentAction(response["action"], response["action_input"], text)
             return actions
 
         except Exception as e:
-            print(f"{e=} / {text=}")
-            # return AgentFinish({"output": text.strip()}, text)
-            return AgentAction("summary_tool",
-                               f"Think About this parse error for Action ({e}) step-by-step with input: " + text, text)
+            print("-" * 80, f"{e.__repr__()} / {str(text)=}", "-" * 80, "", sep="\n")
+            return AgentAction("error_analyzing_tool",
+                               f"Please analyze this parsing error ({e.__repr__()}) for your Answer (HINT: $JSON_BLOB) "
+                               f"step-by-step with this input: {text}", text)
 
 
-def build_agent(model_name="gpt-4", temperature: float = 0) -> CustomAgentExecutor:
+def build_agent(model_name="gpt-3.5-turbo", temperature: float = 0, max_iterations: int = 15) -> CustomAgentExecutor:
     load_dotenv()
     llm = ChatOpenAI(temperature=temperature, model_name=model_name)
 
@@ -107,16 +99,28 @@ def build_agent(model_name="gpt-4", temperature: float = 0) -> CustomAgentExecut
         name="trans_tool",
         description="A translation LLM. Use this to translate in japanese, "
                     "Input should be a short string or summary which you have to know exactly "
-                    "and which with `Question` content and your `Thought` content in an Input sentence/statement.",
+                    "and which with `Question` content and your `Thought` content in an Input sentence/statement. "
+                    "NEVER input the url only",
         func=exec_llm
     )
     summary_tool = Tool(
         name="summary_tool",
-        description="A summarization LLM. Use this to summarize the result of tools "
+        description="A summarization LLM. Use this to summarize the result of the tools "
                     "like 'wikipedia' or 'serpapi', 'google-search', "
                     "but NEVER use this tool for parsing contents like HTML or XML"
                     "Input should be a short string or summary which you have to know exactly "
-                    "and which with `Question` content and your `Thought` content in an Input sentence/statement.",
+                    "and which with `Question` content and your `Thought` content in an Input sentence/statement. "
+                    "NEVER input the url only",
+        func=exec_llm
+    )
+    error_analyzation_tool = Tool(
+        name="error_analyzing_tool",
+        description="An error analyzation LLM. Use this to analyze to fix the error results of the tools "
+                    "like 'wikipedia' or 'serpapi', 'google-search', "
+                    "but NEVER use this tool for parsing contents like HTML or XML"
+                    "Input should be a short string or summary which you have to know exactly "
+                    "and which with `Question` content and your `Thought` content in an Input sentence/statement. "
+                    "NEVER input the url only",
         func=exec_llm
     )
     # def fake(msg: str):
@@ -131,7 +135,7 @@ def build_agent(model_name="gpt-4", temperature: float = 0) -> CustomAgentExecut
     # )
     # tools = load_tools(["serpapi", "llm-math", "wikipedia", "requests"], llm=llm)   # , "terminal"
     tools = load_tools(["google-search", "llm-math", "wikipedia"], llm=llm)   # , "terminal"
-    tools += [python_tool, shell_tool, trans_tool, summary_tool]
+    tools += [python_tool, shell_tool, trans_tool, summary_tool, error_analyzation_tool]
 
     kwargs = dict(memory=memory, return_intermediate_steps=True)
 
@@ -145,6 +149,10 @@ def build_agent(model_name="gpt-4", temperature: float = 0) -> CustomAgentExecut
             suffix=SUFFIX,
             format_instructions=FORMAT_INSTRUCTIONS,
             output_parser=CustomOutputParser(),
+            max_iterations=max_iterations,
+            max_execution_time=None,
+            early_stopping_method="force",
+            handle_parsing_errors=False,
         ),
         **kwargs,
     )
