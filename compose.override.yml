@@ -10,6 +10,8 @@ services:
         group_name: $group_name
     image: $pj_name.lowcode
     container_name: $pj_name.lowcode
+    environment:
+        - OPENAIKEY=$OPENAI_API_KEY
     init: true
     volumes:
       - ./backend/app/lowcode_llm:/app/src

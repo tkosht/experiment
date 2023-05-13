@@ -37,9 +37,9 @@ class CustomOutputParser(AgentOutputParser):
         try:
             if "Action:" not in text:
                 raise Exception("Invalid Answer Format: Not Found 'Action:'")
-            parsed = text.split("-----")
+            parsed = text.split("```")
             if len(parsed) < 3:
-                raise Exception("Invalid Answer Format: missing '-----'")
+                raise Exception("Invalid Answer Format: missing '```'")
 
             actions = []
             for idx in range(1, len(parsed), 2):
@@ -50,10 +50,11 @@ class CustomOutputParser(AgentOutputParser):
             return actions
 
         except Exception as e:
+            # TODO: in this case, may clear the previous agent_executor.intermediate_steps
             print("-" * 80, f"{e.__repr__()} / {str(text)=}", "-" * 80, "", sep="\n")
             return AgentAction("error_analyzing_tool",
                                f"Please analyze this parsing error ({e.__repr__()}) for your Answer (HINT: $JSON_BLOB) "
-                               f"step-by-step with this input: {text}", text)
+                               f"step-by-step with this your answer: '{text}'", text)
 
 
 def build_agent(model_name="gpt-3.5-turbo", temperature: float = 0, max_iterations: int = 15) -> CustomAgentExecutor:

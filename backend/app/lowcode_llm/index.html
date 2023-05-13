@@ -316,7 +316,7 @@
               "step": item.getID()
             });
             console.log(data)
-            axios.post("http://192.168.1.11:8888/api/extend_workflow", data, {
+            axios.post("http://aurora:8888/api/extend_workflow", data, {
               headers: {"Content-Type": "application/json"}
             })
             .then(response => {
@@ -441,7 +441,7 @@
         // get data from API
         // let a = axios.post("url");
         let data = JSON.stringify({"task_prompt": prompt});
-        axios.post("http://192.168.1.11:8888/api/get_workflow", data, {
+        axios.post("http://aurora:8888/api/get_workflow", data, {
           headers: {"Content-Type": "application/json"}
         })
         .then(response => {
@@ -493,7 +493,7 @@
           "curr_input": message,
           "history": history
         });
-        axios.post("http://192.168.1.11:8888/api/execute", data, {
+        axios.post("http://aurora:8888/api/execute", data, {
           headers: {"Content-Type": "application/json"}
         })
         .then(response => {

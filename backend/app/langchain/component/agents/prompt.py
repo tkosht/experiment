@@ -12,22 +12,23 @@ The only values that MUST be in the "action" field are: {tool_names}
 
 The $JSON_BLOB MUST only contain a SINGLE action, do NOT return any comments. Here is a format of a valid $JSON_BLOB:
 
------
+```
 {{{{
   "action": $TOOL_NAME,
   "action_input": $INPUT
 }}}}
------
+```
 
 an example of valid $JSON_BLOB:
 
------
+```
 {{{{
   "action": "python_repl",
   "action_input": "import re"
 }}}}
------
+```
 
+Notice really carefully that the 'Action' includes '$JSON_BLOB' MUST consist of the keys of "action" and "action_input"
 After you responding 'Action', you wait for the content of 'Observation' (the result of action(execution of tools))
 
 
@@ -38,9 +39,9 @@ ALWAYS use the following format:
 Question: the input question you must answer
 Thought: you should always think about what to do by using above tools step-by-step
 Action:
------
+```
 $JSON_BLOB
------
+```
 Observation: the result of the action
 ... (this Thought/Action/Observation can repeat N times)
 Thought: I now know the final answer

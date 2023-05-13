@@ -10,6 +10,9 @@ bash:
 python: up
 	docker compose exec app python
 
+lowcode:
+	docker compose up lowcode_llm
+
 # switch mode
 cpu gpu:
 	@rm -f compose.yml
