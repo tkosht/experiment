@@ -10,7 +10,7 @@ from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.tools.base import BaseTool
 
-from app.langchain.component.agent_executor import CustomAgentExecutor
+from app.langchain.component.agent.agent_executor import CustomAgentExecutor
 
 
 def initialize_agent(

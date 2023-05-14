@@ -1,4 +1,5 @@
 import json
+import re
 from typing import Union
 
 from dotenv import load_dotenv
@@ -12,12 +13,15 @@ from langchain.prompts import (ChatPromptTemplate, HumanMessagePromptTemplate,
                                SystemMessagePromptTemplate)
 from langchain.schema import AgentAction, AgentFinish
 from langchain.tools import ShellTool
-from langchain.utilities import PythonREPL
 
-from app.langchain.component.agent_executor import CustomAgentExecutor
-from app.langchain.component.agents.initialize import initialize_agent
-from app.langchain.component.agents.prompt import (FORMAT_INSTRUCTIONS, PREFIX,
-                                                   SUFFIX)
+from app.langchain.component.agent.agent_executor import CustomAgentExecutor
+from app.langchain.component.agent.initialize import initialize_agent
+from app.langchain.component.agent.prompt import (FORMAT_INSTRUCTIONS, PREFIX,
+                                                  SUFFIX)
+from app.langchain.component.tools.custom_python import CustomPythonREPL
+
+# from langchain.utilities import PythonREPL
+
 
 FINAL_ANSWER_ACTION = "Final Answer:"
 
@@ -37,6 +41,7 @@ class CustomOutputParser(AgentOutputParser):
         try:
             if "Action:" not in text:
                 raise Exception("Invalid Answer Format: Not Found 'Action:'")
+            text = re.sub(r"```\w+\n", "```\n", text)
             parsed = text.split("```")
             if len(parsed) < 3:
                 raise Exception("Invalid Answer Format: missing '```'")
@@ -64,7 +69,7 @@ def build_agent(model_name="gpt-3.5-turbo", temperature: float = 0, max_iteratio
     shell_tool = ShellTool()
     shell_tool.description += f"args {shell_tool.args}".replace("{", "{{").replace("}", "}}")
 
-    python_repl = PythonREPL()
+    python_repl = CustomPythonREPL()
     python_tool = Tool(
         name="python_repl",
         description="A Python shell. "

@@ -2,8 +2,8 @@ import time
 
 from langchain.schema import AgentAction
 
-from app.langchain.component.agent_builder import build_agent
-from app.langchain.component.agent_executor import CustomAgentExecutor
+from app.langchain.component.agent.agent_builder import build_agent
+from app.langchain.component.agent.agent_executor import CustomAgentExecutor
 from app.langchain.component.callbacks.simple import TextCallbackHandler
 
 
@@ -33,14 +33,16 @@ class SimpleBot(object):
         return history, ctx
 
     def run(self, query: str, model_name: str, temperature_percent: int, max_iterations: int):
-        ae = self.agent_executor
+        agent_executer = self.agent_executor
         query_org = query
         intermediate_steps = []
 
         max_retries = 20
         for _ in range(max_retries):
             try:
-                answer = ae.run(input=query, intermediate_steps=intermediate_steps, callbacks=[self._callback])
+                answer = agent_executer.run(input=query,
+                                            intermediate_steps=intermediate_steps,
+                                            callbacks=[self._callback])
                 break
             except Exception as e:
                 print("-" * 80)
@@ -51,24 +53,26 @@ class SimpleBot(object):
                 f"\n\nHUMAN: {query_org}\nThougt:"
                 if "This model's maximum context length is" in str(e):
                     n_context = 1
-                    if len(ae.intermediate_steps) <= n_context:
+                    if len(agent_executer.intermediate_steps) <= n_context:
                         # NOTE: already 'n_context' intermediate_steps, but context length error. so, restart newly
                         query = query_org
-                        ae.intermediate_steps = []
+                        agent_executer.intermediate_steps = []
+                        agent_executer.memory.clear()
                     else:
-                        ae.intermediate_steps = ae.intermediate_steps[-n_context:]
+                        agent_executer.intermediate_steps = agent_executer.intermediate_steps[-n_context:]
+                        agent_executer.memory.chat_memory.messages = agent_executer.memory.chat_memory.messages[:1]
                 else:
                     # NOTE: retry newly
                     query = query_org
-                    ae.intermediate_steps = []
+                    agent_executer.intermediate_steps = []
 
             finally:
-                intermediate_steps = ae.intermediate_steps
+                intermediate_steps = agent_executer.intermediate_steps
                 print("<" * 80)
                 print("Next:")
                 print(f"{query=}")
                 print("-" * 20)
-                print(f"{len(ae.intermediate_steps)=}")
+                print(f"{len(agent_executer.intermediate_steps)=}")
                 print(">" * 80)
             print("waiting retrying ... (a little sleeping)")
             time.sleep(1)

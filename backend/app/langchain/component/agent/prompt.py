@@ -1,7 +1,7 @@
 # flake8: noqa
 PREFIX = """Answer the following questions by using tools and thinking step-by-step:"""
 
-FORMAT_INSTRUCTIONS = """# Definition of using the tools (like executing python codes)
+FORMAT_INSTRUCTIONS = """
 In this conversation, the way you use the tools is by specifying a json blob of the 'Action' which is defined as bellow, and also even if 'execution' in Japanese and so on, and also even if execution is on the local environment.
 Specifically, this json should have a `action` key (with the name of the tool to use) and a `action_input` key (with the input to the tool going here).
 And also define the successful of 'using the tools', 'execution' is the meaning no error or successful of 'Observation' which is defined as below.
@@ -24,15 +24,11 @@ an example of valid $JSON_BLOB:
 ```
 {{{{
   "action": "python_repl",
-  "action_input": "import re"
+  "action_input": "import re; print(re.sub(r\"W\", \"w\", \"Hello World!\"))"
 }}}}
 ```
 
-Notice really carefully that the 'Action' includes '$JSON_BLOB' MUST consist of the keys of "action" and "action_input"
 After you responding 'Action', you wait for the content of 'Observation' (the result of action(execution of tools))
-
-
-# Definition of the format
 
 ALWAYS use the following format:
 
@@ -48,15 +44,14 @@ Thought: I now know the final answer
 Final Answer: the final direct answer to the original input question by using the tools above
 """
 
-SUFFIX = ("""
-Note that, Especially, NEVER answer like that `I cannot directly download webpages or execute shell commands, python codes`
-you HAVE TO use the tools above to answer HUMAN directly.
-
-Remember! MUST always use the exact characters `Final Answer` when responding.
-the phrases, Thought/Action/Observation/Final Answer, are MUST NOT be translated in Japanese.
+SUFFIX = ("""the phrases, Thought/Action/Observation/Final Answer, are MUST NOT be translated in Japanese.
 if you found an error, MUST fix the error with step-by-step with 'Thought:' and 'Action:'. NEVER repeat same errors.
 Let's Begin!
 """)
+# Remember! you MUST always use the exact characters `Final Answer` when responding.
+# Note that, Especially, NEVER answer like that `I cannot directly download webpages or execute shell commands, python codes`
+# you HAVE TO use the tools above to answer HUMAN directly.
+
 
 # ====================================================================================================
 # below is original definition

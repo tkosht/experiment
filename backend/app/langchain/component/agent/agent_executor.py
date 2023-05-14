@@ -61,6 +61,8 @@ class CustomAgentExecutor(AgentExecutor):
                 )
 
             intermediate_steps.extend(next_step_output)
+            self.check_action_repeating()
+
             if len(next_step_output) == 1:
                 next_step_action = next_step_output[0]
                 # See if tool should return directly
@@ -73,6 +75,18 @@ class CustomAgentExecutor(AgentExecutor):
             self.early_stopping_method, intermediate_steps, **inputs
         )
         return self._return(output, intermediate_steps)
+
+    def check_action_repeating(self, repeating_threshold: int = 3) -> None:
+        if len(self.intermediate_steps) < repeating_threshold:
+            return
+        latest_action, _ = self.intermediate_steps[-1]
+        for idx in range(2, repeating_threshold, 1):
+            action, _outtext = self.intermediate_steps[-idx]
+            if action.tool != latest_action.tool:
+                return
+            if action.tool_input != latest_action.tool_input:
+                return
+        raise Exception("ActionError: The Same Action Repeating")
 
     def run(self, callbacks: Callbacks = None, **kwargs: Any) -> str:
         """Run the chain as text in, text out or multiple variables, text out."""
