@@ -44,11 +44,11 @@ Thought: I now know the final answer
 Final Answer: the final direct answer to the original input question by using the tools above
 """
 
-SUFFIX = ("""the phrases, Thought/Action/Observation/Final Answer, are MUST NOT be translated in Japanese.
+SUFFIX = ("""Remember! you MUST always use the exact characters `Final Answer` when responding.
+the phrases, Thought/Action/Observation/Final Answer, are MUST NOT be translated in Japanese.
 if you found an error, MUST fix the error with step-by-step with 'Thought:' and 'Action:'. NEVER repeat same errors.
 Let's Begin!
 """)
-# Remember! you MUST always use the exact characters `Final Answer` when responding.
 # Note that, Especially, NEVER answer like that `I cannot directly download webpages or execute shell commands, python codes`
 # you HAVE TO use the tools above to answer HUMAN directly.
 

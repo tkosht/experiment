@@ -17,13 +17,6 @@ class SimpleBot(object):
         self._callback = TextCallbackHandler(targets=["CustomAgentExecutor"])
 
     def gr_chat(self, history: list[str], model_name: str, temperature_percent: int, max_iterations: int, context: str):
-        # model_name: str, temperature_percent: int, max_iterations: int
-        self.model_name = model_name
-        self.temperature_percent = temperature_percent
-        self.max_iterations = max_iterations
-        self.agent_executor: CustomAgentExecutor = build_agent(model_name,
-                                                               temperature=temperature_percent / 100,
-                                                               max_iterations=max_iterations)
         query = history[-1][0]
         answer = self.run(query, model_name, temperature_percent, max_iterations)
         assert answer
@@ -33,14 +26,20 @@ class SimpleBot(object):
         return history, ctx
 
     def run(self, query: str, model_name: str, temperature_percent: int, max_iterations: int):
-        agent_executer = self.agent_executor
+        self.model_name = model_name
+        self.temperature_percent = temperature_percent
+        self.max_iterations = max_iterations
+
+        agent_executor: CustomAgentExecutor = build_agent(model_name,
+                                                          temperature=temperature_percent / 100,
+                                                          max_iterations=max_iterations)
         query_org = query
         intermediate_steps = []
 
         max_retries = 20
         for _ in range(max_retries):
             try:
-                answer = agent_executer.run(input=query,
+                answer = agent_executor.run(input=query,
                                             intermediate_steps=intermediate_steps,
                                             callbacks=[self._callback])
                 break
@@ -53,26 +52,26 @@ class SimpleBot(object):
                 f"\n\nHUMAN: {query_org}\nThougt:"
                 if "This model's maximum context length is" in str(e):
                     n_context = 1
-                    if len(agent_executer.intermediate_steps) <= n_context:
+                    if len(agent_executor.intermediate_steps) <= n_context:
                         # NOTE: already 'n_context' intermediate_steps, but context length error. so, restart newly
                         query = query_org
-                        agent_executer.intermediate_steps = []
-                        agent_executer.memory.clear()
+                        agent_executor.intermediate_steps = []
+                        agent_executor.memory.clear()
                     else:
-                        agent_executer.intermediate_steps = agent_executer.intermediate_steps[-n_context:]
-                        agent_executer.memory.chat_memory.messages = agent_executer.memory.chat_memory.messages[:1]
+                        agent_executor.intermediate_steps = agent_executor.intermediate_steps[-n_context:]
+                        agent_executor.memory.chat_memory.messages = agent_executor.memory.chat_memory.messages[:1]
                 else:
                     # NOTE: retry newly
                     query = query_org
-                    agent_executer.intermediate_steps = []
+                    agent_executor.intermediate_steps = []
 
             finally:
-                intermediate_steps = agent_executer.intermediate_steps
+                intermediate_steps = agent_executor.intermediate_steps
                 print("<" * 80)
                 print("Next:")
                 print(f"{query=}")
                 print("-" * 20)
-                print(f"{len(agent_executer.intermediate_steps)=}")
+                print(f"{len(agent_executor.intermediate_steps)=}")
                 print(">" * 80)
             print("waiting retrying ... (a little sleeping)")
             time.sleep(1)

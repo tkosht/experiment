@@ -1,9 +1,14 @@
 import logging
+import os
 
+from dotenv import load_dotenv
 from flask import Flask, request, send_from_directory
 from flask.logging import default_handler
 from flask_cors import cross_origin  # , CORS
 from lowCodeLLM import lowCodeLLM
+
+load_dotenv()
+os.environ["OPENAIKEY"] = os.environ["OPENAI_API_KEY"]
 
 app = Flask('lowcode-llm', static_folder='', template_folder='')
 app.debug = True
@@ -17,7 +22,9 @@ default_handler.setFormatter(logging_format)
 
 @app.route("/")
 def index():
-    return send_from_directory(".", "index.html")
+    # return send_from_directory(".", "index.html")
+    # return send_from_directory(".", "index_langchain.html")
+    return send_from_directory(".", "app/lowcode_llm/index_langchain.html")
 
 
 @app.route('/api/get_workflow', methods=['POST'])

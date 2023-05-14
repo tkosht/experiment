@@ -1,5 +1,7 @@
 from openAIWrapper import OpenAIWrapper
 
+from app.langchain.component.chatbot import SimpleBot
+
 EXECUTING_LLM_PREFIX = """Executing LLM is designed to provide outstanding responses.
 Executing LLM will be given a overall task as the background of the conversation between the Executing LLM and human.
 When providing response, Executing LLM MUST STICTLY follow the provided standard operating procedure (SOP).
@@ -31,12 +33,25 @@ class executingLLM:
         self.messages = [{"role": "system", "content": "You are a helpful assistant."},
                          {"role": "system", "content": self.prefix}]
 
+        self.model_name = "gpt-3.5-turbo"
+        self.temperature = temperature
+        self.bot = SimpleBot()
+
+    # def _make_query(self, messages: list):
+    #     query = ""
+    #     for msg in messages:
+    #         query += f"{msg['role'].upper()}: {msg['content']}\n"
+    #     return query
+
     def execute(self, current_prompt, history):
         ''' provide LLM the dialogue history and the current prompt to get response '''
-        messages = self.messages + history
+        # messages = self.messages + history
+        messages = list(history)
         messages.append({'role': 'user', "content": current_prompt + self.suffix})
-        response, status = self.LLM.run(messages)
-        if status:
-            return response
-        else:
+        messages.append({'role': 'user', "content": "just now, what do I simply do?"})
+        query, status = self.LLM.run(messages)
+        if not status:
             return "OpenAI API error."
+
+        answer = self.bot.run(query, self.model_name, temperature_percent=self.temperature*100, max_iterations=1)
+        return answer

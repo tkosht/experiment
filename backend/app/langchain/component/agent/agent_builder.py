@@ -40,11 +40,14 @@ class CustomOutputParser(AgentOutputParser):
             )
         try:
             if "Action:" not in text:
-                raise Exception("Invalid Answer Format: Not Found 'Action:'")
+                # raise Exception(f"Invalid Answer Format: Not Found 'Action:' or '{FINAL_ANSWER_ACTION}'")
+                return AgentFinish({"output": text}, text)
+
             text = re.sub(r"```\w+\n", "```\n", text)
             parsed = text.split("```")
             if len(parsed) < 3:
-                raise Exception("Invalid Answer Format: missing '```'")
+                # raise Exception("Invalid Answer Format: missing '```'")
+                return AgentFinish({"output": "Invalid Answer Format: missing '```'\n" + text}, text)
 
             actions = []
             for idx in range(1, len(parsed), 2):
@@ -129,19 +132,20 @@ def build_agent(model_name="gpt-3.5-turbo", temperature: float = 0, max_iteratio
                     "NEVER input the url only",
         func=exec_llm
     )
-    # def fake(msg: str):
-    #     return msg
-    #
-    # no_tools = Tool(
-    #     name="no_tools",
-    #     description="Use this to respond your answer which you THOUGHT"
-    #                 "Input should be a short string or summary which you have to know exactly "
-    #                 "and which with `Question` content and your `Thought` content in an Input sentence/statement.",
-    #     func=fake
-    # )
-    # tools = load_tools(["serpapi", "llm-math", "wikipedia", "requests"], llm=llm)   # , "terminal"
+
+    def fake(msg: str):
+        return msg
+
+    no_action = Tool(
+        name="no_tools",
+        description="No Action/No need to use any tools. Use this to respond your answer which you THOUGHT directly "
+                    "Input should be a string.",
+        func=fake
+    )
+
+    tools = load_tools(["serpapi", "llm-math", "wikipedia", "requests"], llm=llm)   # , "terminal"
     tools = load_tools(["google-search", "llm-math", "wikipedia"], llm=llm)   # , "terminal"
-    tools += [python_tool, shell_tool, trans_tool, summary_tool, error_analyzation_tool]
+    tools += [python_tool, shell_tool, trans_tool, summary_tool, error_analyzation_tool, no_action]
 
     kwargs = dict(memory=memory, return_intermediate_steps=True)
 
