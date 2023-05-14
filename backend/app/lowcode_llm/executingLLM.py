@@ -53,5 +53,9 @@ class executingLLM:
         if not status:
             return "OpenAI API error."
 
+        print("=" * 80)
+        print(f"{query=}")
+        print("=" * 80)
+
         answer = self.bot.run(query, self.model_name, temperature_percent=self.temperature*100, max_iterations=1)
         return answer
