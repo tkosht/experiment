@@ -9,10 +9,18 @@ class CustomPythonREPL(PythonREPL):
         """Run command with own globals/locals and returns anything printed."""
         old_stdout = sys.stdout
         sys.stdout = mystdout = StringIO()
+
+        # NOTE: support multiple commands
+        command_list: list[str] = [command]
+        if isinstance(command, list):
+            command_list: list[str] = command
+
+        output: str = ""
         try:
-            exec(command, self.globals, self.locals)
-            sys.stdout = old_stdout
-            output = mystdout.getvalue()
+            for cmd in command_list:
+                exec(cmd, self.globals, self.locals)
+                sys.stdout = old_stdout
+                output += mystdout.getvalue() + "\n"
         except Exception as e:
             sys.stdout = old_stdout
             output = str(e)
