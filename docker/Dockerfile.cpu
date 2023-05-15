@@ -1,40 +1,25 @@
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 LABEL maintainer="tkosht <takehito.oshita.business@gmail.com>"
 
 ENV TZ Asia/Tokyo
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update -y && apt-get upgrade -y \
-    && apt-get install -y sudo build-essential autoconf jq \
-        vim tmux tzdata locales dialog git openssh-server \
-        sqlite3 curl nodejs npm default-jre \
-        libsnappy-dev \
+    && apt-get install --fix-missing -y sudo build-essential autoconf \
+        vim tmux tzdata locales dialog git openssh-server bash-completion \
+        jq sqlite3 curl nodejs npm default-jre \
+        libgeos-dev libsnappy-dev fontconfig fonts-ipaexfont fonts-ipafont \
+        libmecab-dev mecab mecab-ipadic-utf8 mecab-utils file \
     && localedef -f UTF-8 -i ja_JP ja_JP.UTF-8
 
-# for e2e test for frontend
-ENV CHROME_BIN=/usr/bin/google-chrome
-RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-RUN dpkg -i google-chrome-stable_current_amd64.deb; apt-get -fy install
-
-RUN mkdir /var/run/sshd
-RUN echo "PubkeyAuthentication yes" >> /etc/ssh/sshd_config
-RUN echo "AuthorizedKeysFile workspace/.ssh/authorized_keys" >> /etc/ssh/sshd_config
-
-RUN npm update -g npm \
-    && npm install -g npm-check-updates \
-    && npm install -g @vue/cli || true      # ignore error exitted
-
-# retry to install @vue/cli
-RUN npm install -g @vue/cli || true
-RUN npm install -g @vue/cli-init || true 
-
-RUN apt-get install -y --no-install-recommends \
-        python3-dev \
+RUN apt-get install -y --fix-missing --no-install-recommends \
+        python3.10 \
+        python3.10-dev \
         python3-pip \
         python3-setuptools \
         python3-wheel
 
-RUN ln -s /usr/bin/python3.8 /usr/bin/python \
+RUN ln -s /usr/bin/python3.10 /usr/bin/python \
     && ln -s /usr/bin/pdb3 /usr/bin/pdb
 
 ENV LANG="ja_JP.UTF-8" \
@@ -43,19 +28,38 @@ ENV LANG="ja_JP.UTF-8" \
     TZ="Asia/Tokyo" \
     TERM="xterm"
 
-# - upgrade system
-RUN apt-get upgrade -y \
-    && apt-get autoremove -y \
-    && apt-get clean -y \
-    && rm -rf /var/lib/apt/lists/*
+# ======================== #
+# # Install for Tokenizers
+WORKDIR /tmp
 
+# MeCab
+RUN git config --global http.postBuffer 1048576000 \
+    && git clone https://github.com/neologd/mecab-ipadic-neologd.git \
+    && cd mecab-ipadic-neologd && bin/install-mecab-ipadic-neologd -n -a -y \
+    && pip install unidic-lite
+
+# Sudachi
+RUN python -m pip install sudachidict_core sudachidict_small sudachidict_full
+
+# matplotlib
+RUN python -m pip install matplotlib
+
+# requirements
 COPY ./requirements.txt /requirements.txt
 RUN python -m pip install --upgrade pip \
     && python -m pip install -r /requirements.txt \
     && rm -f /requirements.txt
 
-# RUN echo 'font.family : IPAexGothic' >> /設定置き場PATH/matplotlib/matplotlibrc
+# upgrade system
+RUN apt-get upgrade -y \
+    && apt-get autoremove -y \
+    && apt-get clean -y
+    # && rm -rf /var/lib/apt/lists/*
 
+# setup matplotlib for japanese
+RUN sed -i -e 's/^#font.family:\s*sans-serif/#font.family: IPAexGothic/' $(python -c 'import matplotlib as m; print(m.matplotlib_fname())')
+
+# setup general user
 ARG user_id=1000
 ARG group_id=1000
 ARG user_name
