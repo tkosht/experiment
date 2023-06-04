@@ -1,6 +1,7 @@
 from openAIWrapper import OpenAIWrapper
 
-from app.langchain.component.chatbot import SimpleBot
+from app.langchain.component.agent_bot import SimpleBot
+
 
 EXECUTING_LLM_PREFIX = """Executing LLM is designed to provide outstanding responses.
 Executing LLM will be given a overall task as the background of the conversation between the Executing LLM and human.

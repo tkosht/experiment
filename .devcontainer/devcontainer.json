@@ -4,7 +4,7 @@
 		"../compose.yml"
 	],
 	"service": "app",
-	"workspaceFolder": "/home/dsuser/workspace",
+	"workspaceFolder": "/home/devuser/workspace",
 	"settings": {
 		"terminal.integrated.profiles.linux": {
 			"zsh (login)": {

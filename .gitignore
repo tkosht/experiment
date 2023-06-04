@@ -14,6 +14,7 @@ temp/
 bk/
 bkup/
 .ssh/
+.chroma/
 .*.swp
 ?.sh
 .env

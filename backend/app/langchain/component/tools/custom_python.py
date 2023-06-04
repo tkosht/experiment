@@ -20,8 +20,17 @@ class CustomPythonREPL(PythonREPL):
             for cmd in command_list:
                 exec(cmd, self.globals, self.locals)
                 sys.stdout = old_stdout
-                output += mystdout.getvalue() + "\n"
+                o = mystdout.getvalue() + "\n"
+                output += o
         except Exception as e:
             sys.stdout = old_stdout
-            output = str(e)
+            output = f"{type(e).__name__} (python_repl): " + str(e.args)
+
+        n_cutoff = 5
+        logs = output.split("\n")
+        if len(logs) > n_cutoff*2 + 1:
+            # NOTE: 長すぎたら、最初と最後だけに省略する
+            _logs = logs[:n_cutoff] + ["...\n"] + logs[-n_cutoff:]
+            output = "\n".join(_logs)
+        output = output.strip()
         return output

@@ -95,3 +95,7 @@ pypdf
 wikipedia
 google-api-python-client
 Flask-Cors
+accelerate
+bitsandbytes
+
+guidance
