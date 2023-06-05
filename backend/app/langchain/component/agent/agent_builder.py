@@ -4,8 +4,6 @@ from typing import Union
 
 from dotenv import load_dotenv
 from langchain.agents import AgentOutputParser, AgentType, Tool, load_tools
-
-# from langchain.agents.chat.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from langchain.chains import ConversationChain
 from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
@@ -17,12 +15,13 @@ from langchain.prompts import (
 )
 from langchain.schema import AgentAction, AgentFinish
 
-# from app.langchain.component.llms.redpajama import LLMRedPajama
 from app.langchain.component.agent.agent_executor import CustomAgentExecutor
 from app.langchain.component.agent.initialize import initialize_agent
 from app.langchain.component.agent.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from app.langchain.component.tools.custom_python import CustomPythonREPL
 
+# from langchain.agents.chat.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
+# from app.langchain.component.llms.redpajama import RedPajamaLLM
 # from app.langchain.component.tools.custom_shell import CustomShellTool
 
 
@@ -90,7 +89,7 @@ def build_agent(
 ) -> CustomAgentExecutor:
     load_dotenv()
     llm = ChatOpenAI(temperature=temperature, model_name=model_name)
-    # llm = LLMRedPajama()
+    # llm = RedPajamaLLM()
 
     # shell_tool = CustomShellTool()
 
