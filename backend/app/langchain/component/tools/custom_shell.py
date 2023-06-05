@@ -1,8 +1,6 @@
-from typing import Optional, Union, Any
-from langchain.callbacks.manager import CallbackManagerForToolRun
+from typing import Any, Union
 
 from langchain.tools import ShellTool
-
 
 
 class CustomShellTool(ShellTool):
