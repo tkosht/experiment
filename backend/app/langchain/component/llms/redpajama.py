@@ -2,13 +2,9 @@ from typing import Any, List, Mapping, Optional
 
 import torch
 import transformers
-from langchain.callbacks.manager import (
-    CallbackManagerForLLMRun,
-)
-
-from transformers import AutoModelForCausalLM, AutoTokenizer
-
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 from langchain.llms.base import LLM
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 MIN_TRANSFORMERS_VERSION = "4.25.1"
 
@@ -23,6 +19,8 @@ tokenizer = AutoTokenizer.from_pretrained(model_ident)
 g_model = AutoModelForCausalLM.from_pretrained(model_ident, torch_dtype=torch.float16)
 
 
+# NOTE: just implement
+# TODO: to test
 class RedPajamaLLM(LLM):
     device: torch.device
     temperature: float
