@@ -99,3 +99,4 @@ accelerate
 bitsandbytes
 
 guidance
+lightgbm

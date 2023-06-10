@@ -19,11 +19,10 @@ from app.langchain.component.agent.agent_executor import CustomAgentExecutor
 from app.langchain.component.agent.initialize import initialize_agent
 from app.langchain.component.agent.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from app.langchain.component.tools.custom_python import CustomPythonREPL
+from app.langchain.component.tools.custom_shell import CustomShellTool
 
 # from langchain.agents.chat.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 # from app.langchain.component.llms.redpajama import RedPajamaLLM
-# from app.langchain.component.tools.custom_shell import CustomShellTool
-
 
 FINAL_ANSWER_ACTION = "Final Answer:"
 
@@ -55,7 +54,7 @@ class CustomOutputParser(AgentOutputParser):
                 text,
             )
 
-    def _parse_action(text: str):
+    def _parse_action(self, text: str):
         _text = re.sub(r"```\w+\n", "```\n", text)
         parsed = _text.split("```")
         if len(parsed) < 3:
@@ -63,8 +62,9 @@ class CustomOutputParser(AgentOutputParser):
             print("[DEBUG]")
             print(f"{text=}")
             print("=" * 100)
+            if "success" in text:
+                return AgentFinish({"output": text}, text)
             raise Exception("Invalid Answer Format: missing '```'")
-            # return AgentFinish({"output": "Invalid Answer Format: missing '```'\n" + text}, text)
 
         actions = []
         for idx in range(1, len(parsed), 2):
@@ -91,7 +91,7 @@ def build_agent(
     llm = ChatOpenAI(temperature=temperature, model_name=model_name)
     # llm = RedPajamaLLM()
 
-    # shell_tool = CustomShellTool()
+    shell_tool = CustomShellTool()
 
     python_repl = CustomPythonREPL()
     python_tool = Tool(
@@ -169,7 +169,7 @@ def build_agent(
     tools = load_tools(
         ["google-search", "llm-math", "wikipedia"], llm=llm
     )  # , "terminal"
-    tools += [python_tool, trans_tool, summary_tool, error_analyzation_tool]
+    tools += [python_tool, shell_tool, trans_tool, summary_tool, error_analyzation_tool]
 
     kwargs = dict(memory=memory, return_intermediate_steps=True)
 
