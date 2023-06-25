@@ -1,11 +1,16 @@
 import json
 import re
 
+import requests
+
 
 # cf. https://github.com/ctlllll/LLM-ToolMaker.git
-def get_task(task):
-    with open(f"bbh/{task}.json") as f:
-        data = json.load(f)
+def get_task(task: str):
+    url: str = (
+        f"https://raw.githubusercontent.com/ctlllll/LLM-ToolMaker/main/bbh/{task}.json"
+    )
+    res = requests.get(url)
+    data = json.loads(res.text)
 
     # For dyck languages task, we need remove the spaces in the inputs to avoid unnecessary issues with tokenization
     if task == "dyck_languages":
