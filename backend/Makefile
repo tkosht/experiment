@@ -4,6 +4,11 @@
 demo:
 	@sh bin/run_demo.sh
 
+tool-maker:
+	@python -m app.llm_toolmaker.tool_maker
+
+tool-user:
+	@python -m app.llm_toolmaker.tool_user
 
 # ==========
 # # webapi tasks
