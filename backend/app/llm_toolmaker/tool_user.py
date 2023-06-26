@@ -18,6 +18,9 @@ load_dotenv()
 openai.api_key = os.environ["OPENAI_API_KEY"]
 
 
+# cf. https://github.com/ctlllll/LLM-ToolMaker.git
+
+
 def pickup_func(wrapper: str):
     func = re.findall(r"```python\n(.*?)\n```", wrapper, re.DOTALL)[0]
     return func
