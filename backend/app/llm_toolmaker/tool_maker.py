@@ -198,10 +198,10 @@ class LlmToolMaker(object):
 def _main(params: DictConfig):
     from app.llm_toolmaker.bbh import get_task
 
-    task_name = "word_sorting"
-    trainset, validset, testset = get_task(task=task_name)
+    g_logger.info(f"{params.task_name=}")
+    trainset, validset, testset = get_task(task=params.task_name)
 
-    ltm = LlmToolMaker(task_name=task_name)
+    ltm = LlmToolMaker(task_name=params.task_name)
     tool = ltm.buildup_tool_from_datasets(trainset, validset)
     print(f"{tool=}")
 
