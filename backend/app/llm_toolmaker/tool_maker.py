@@ -202,7 +202,8 @@ def _main(params: DictConfig):
     trainset, validset, testset = get_task(task=task_name)
 
     ltm = LlmToolMaker(task_name=task_name)
-    ltm.buildup_tool_from_datasets(trainset, validset)
+    tool = ltm.buildup_tool_from_datasets(trainset, validset)
+    print(f"{tool=}")
 
 
 # @from_config(params_file="conf/app.yml", root_key="/train")
