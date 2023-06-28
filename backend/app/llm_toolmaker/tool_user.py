@@ -154,13 +154,13 @@ class LlmToolEvaluator(object):
         wrapper: str,
         task_name: str = "example_task",
         model_name: str = "gpt-3.5-turbo",
-        max_threads=8,
+        max_threads: int = 8,
     ) -> None:
         self.wrapper: str = wrapper
         self.task_name: str = task_name
         self.model_name: str = model_name
 
-        self.max_threads = max_threads
+        self.max_threads: int = max_threads
         self.pool = BoundedSemaphore(self.max_threads)
         self.lock = Lock()
 
