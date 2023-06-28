@@ -12,7 +12,7 @@ class Logger(object):
         _msg = " ".join([str(elm) for elm in args])
         if kwargs:
             _msg += "[" + (" ".join([f"{k}={v}" for k, v in kwargs.items()])) + "]"
-        _msg = re.sub(r"\r?\n", " ", _msg)
+        _msg = re.sub(r"\r?\n", "\\n", _msg)
         return _msg
 
     def debug(self, msg, *args, **kwargs):

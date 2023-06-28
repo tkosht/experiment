@@ -17,7 +17,6 @@ g_logger = Logger(logger_name="app")
 load_dotenv()
 openai.api_key = os.environ["OPENAI_API_KEY"]
 
-
 # cf. https://github.com/ctlllll/LLM-ToolMaker.git
 
 
@@ -51,6 +50,7 @@ option_map = {
 
 
 def get_option(ans):
+    assert isinstance(ans, str)
     if ans in option_map:
         return option_map[ans]
     return ans
@@ -140,7 +140,8 @@ class LlmToolUser(object):
         func_call = pickup_func(caller)
         func_def = pickup_func(self.wrapper)
 
-        _ = exec(func_def + "\n" + func_call, globals())  # output: printed texts
+        exec_code = func_def + "\n" + func_call
+        _ = exec(exec_code, globals())  # output: printed texts
         answer_variable = re.findall(r"(ans.*?) =", func_call, re.DOTALL)[-1]
         ans = globals()[answer_variable]
 

@@ -5,10 +5,10 @@ demo:
 	@sh bin/run_demo.sh
 
 tool-maker:
-	@python -m app.llm_toolmaker.tool_maker
+	python -m app.llm_toolmaker.tool_maker --task-name=word_sorting
 
 tool-user:
-	@python -m app.llm_toolmaker.tool_user
+	python -m app.llm_toolmaker.tool_user --task-name=word_sorting
 
 # ==========
 # # webapi tasks
