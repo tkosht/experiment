@@ -7,8 +7,8 @@ demo:
 tool-maker:
 	python -m app.llm_toolmaker.tool_maker --task-name=word_sorting
 
-tool-user:
-	python -m app.llm_toolmaker.tool_user --task-name=word_sorting
+eval:
+	python -m app.llm_toolmaker.eval --task-name=word_sorting
 
 # ==========
 # # webapi tasks
