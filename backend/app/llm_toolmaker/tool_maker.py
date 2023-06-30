@@ -46,7 +46,7 @@ class LlmToolMaker(object):
 
         self._llm_messages: list = []
 
-        assert self.model_name in ["gpt-3.5-turbo", "gpt-4"]
+        assert self.model_name[: len("gpt")] == "gpt"
 
     def _params(self):
         params = {
