@@ -62,7 +62,9 @@ class LlmToolUser(object):
             except Exception as e:
                 if "Rate limit" in " ".join(e.args):
                     sleep_seconds = 15 + 2**n_retry + random.random()
-                    errmsg = re.sub(r"org-\w+", "org-" + ("x" * 24), f"{e}")
+                    errmsg = re.sub(
+                        r"org-\w+", "org-" + ("x" * 24), f"{e}"
+                    )  # masking for secure
                     g_logger.warning(f"{errmsg} ... try to retry [{sleep_seconds=}]")
                     time.sleep(sleep_seconds)
                 else:
