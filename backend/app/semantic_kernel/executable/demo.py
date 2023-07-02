@@ -71,7 +71,7 @@ def _main(params: DictConfig):
         with gr.Tab("Conversation"):
             with gr.Row():
                 chatbot = gr.Chatbot([], label="assistant", elem_id="demobot").style(
-                    height=405
+                    height=500
                 )
             with gr.Row():
                 with gr.Column():

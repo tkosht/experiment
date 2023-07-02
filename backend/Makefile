@@ -10,6 +10,13 @@ tool-maker:
 eval:
 	python -m app.llm_toolmaker.eval --task-name=word_sorting
 
+summary-semantic-memory:
+	python -m app.semantic_kernel.component.semantic_memory
+
+demo-semantic-memory:
+	python -m app.semantic_kernel.executable.demo
+
+
 # ==========
 # # webapi tasks
 webapi:
