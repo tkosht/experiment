@@ -1,10 +1,11 @@
+import re
 from inspect import signature
 
 import gradio as gr
 import typer
 from omegaconf import DictConfig
 
-from app.semantic_kernel.semantic_bot import SemanticBot
+from app.semantic_kernel.component.semantic_bot import SemanticBot
 
 
 def _init(history: list[tuple[str, str]], text: str):
@@ -12,22 +13,82 @@ def _init(history: list[tuple[str, str]], text: str):
     return history, "", ""
 
 
+def _find_urls(text_contains_urls: str) -> list[str]:
+    url_pattern = re.compile(
+        r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
+    )
+    urls = re.findall(url_pattern, text_contains_urls)
+    return urls
+
+
+class BotWrapper(object):
+    def __init__(self, bot: SemanticBot, memory_chunk_size: int = 1024) -> None:
+        self.bot = bot
+        self.memory_chunk_size = memory_chunk_size
+
+        self.processed = set()
+
+    async def _add_memory(self, text: str):
+        import requests
+        from bs4 import BeautifulSoup
+
+        urls = _find_urls(text)
+
+        successful_urls = []
+        for url in urls:
+            if url in self.processed:
+                continue
+
+            try:
+                self.processed.add(url)
+
+                response = requests.get(url)
+                soup = BeautifulSoup(response.text, "lxml")
+
+                for idx in range(0, len(soup.text), self.memory_chunk_size):
+                    await self.bot.memory.append(
+                        text=soup.text[idx : idx + self.memory_chunk_size],
+                        additional_metadata=url,
+                    )
+                successful_urls.append(url)
+            except Exception as e:
+                print(e)
+                continue
+
+        if not successful_urls:
+            return "no urls to be loaded."
+
+        return "success to loaded to the memory: \n" + "\n".join(successful_urls)
+
+
 def _main(params: DictConfig):
-    bot = SemanticBot()
     default_query = "LLMについて教えて？"
 
     with gr.Blocks() as demo:
+        bot = SemanticBot()
+        bot_wrapper = BotWrapper(bot=bot)
+
         with gr.Tab("Conversation"):
             with gr.Row():
+                chatbot = gr.Chatbot([], label="assistant", elem_id="demobot").style(
+                    height=405
+                )
+            with gr.Row():
                 with gr.Column():
-                    chatbot = gr.Chatbot(
-                        [], label="assistant", elem_id="demobot"
-                    ).style(height=405)
-                    txt = gr.Textbox(
+                    txt = gr.TextArea(
                         show_label=False,
                         placeholder="入力してね〜",
                         value=default_query,
+                        lines=5,
                     ).style(container=False)
+                with gr.Column():
+                    url_txt = gr.Textbox(
+                        show_label=True,
+                        label="please input url ",
+                        placeholder="No Memory",
+                        value="https://xtech.nikkei.com/atcl/nxt/column/18/02504/062600003/",
+                    ).style(container=False)
+                    btn = gr.Button(value="Add Memory")
 
         with gr.Tab("Setting"):
             with gr.Row():
@@ -53,6 +114,7 @@ def _main(params: DictConfig):
             [chatbot, model_dd, temperature_sl],
             [chatbot],
         )
+        btn.click(bot_wrapper._add_memory, [url_txt], [url_txt])
 
     if params.do_share:
         demo.launch(
