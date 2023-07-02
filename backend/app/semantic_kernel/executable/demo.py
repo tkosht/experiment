@@ -8,11 +8,6 @@ from omegaconf import DictConfig
 from app.semantic_kernel.component.semantic_bot import SemanticBot
 
 
-def _init(history: list[tuple[str, str]], text: str):
-    history = history + [(text, None)]
-    return history, "", ""
-
-
 def _find_urls(text_contains_urls: str) -> list[str]:
     url_pattern = re.compile(
         r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
@@ -28,7 +23,7 @@ class BotWrapper(object):
 
         self.processed = set()
 
-    async def _add_memory(self, text: str):
+    async def add_memory(self, text: str):
         import requests
         from bs4 import BeautifulSoup
 
@@ -58,15 +53,60 @@ class BotWrapper(object):
         if not successful_urls:
             return "no urls to be loaded."
 
-        return "success to loaded to the memory: \n" + "\n".join(successful_urls)
+        return "succeeded to load into the memory: \n" + "\n".join(successful_urls)
+
+
+def _init(
+    history: list[tuple[str, str]], text: str
+) -> tuple[list[tuple[str, str]], str]:
+    history = history + [(text, None)]
+    return history, ""
+
+
+def _init_session(status: dict) -> dict:
+    import uuid
+
+    if "session_id" in status:
+        return status
+
+    status["session_id"] = str(uuid.uuid4())
+    status["bot"] = bot = SemanticBot()
+    status["bot_wrapper"] = BotWrapper(bot=bot)
+    return status
+
+
+async def _add_memory(status: dict, text: str) -> dict:
+    status = _init_session(status)
+    bot_wrapper: BotWrapper = status["bot_wrapper"]
+    result: str = await bot_wrapper.add_memory(text)
+    return status, result
+
+
+async def _chat(
+    status: dict,
+    history: list[tuple[str, str]],
+    model_name: str,
+    temperature_percent: int,  # in [0, 200]
+    max_tokens: int = 1024,
+) -> list[tuple[str, str]]:
+    assert "bot" in status
+    bot: SemanticBot = status["bot"]
+    new_history = await bot.do_chat(
+        history=history,
+        model_name=model_name,
+        temperature_percent=temperature_percent,
+        max_tokens=max_tokens,
+    )
+    return status, new_history
 
 
 def _main(params: DictConfig):
     default_query = "LLMについて教えて？"
 
     with gr.Blocks() as demo:
-        bot = SemanticBot()
-        bot_wrapper = BotWrapper(bot=bot)
+        # bot = SemanticBot()
+        # bot_wrapper = BotWrapper(bot=bot)
+        status = gr.State({})
 
         with gr.Tab("Conversation"):
             with gr.Row():
@@ -109,12 +149,14 @@ def _main(params: DictConfig):
                 )
                 temperature_sl = gr.Slider(0, 200, 1, step=1, label="temperature (%)")
 
-        txt.submit(_init, [chatbot, txt], [chatbot, txt]).then(
-            bot.gr_chat,
-            [chatbot, model_dd, temperature_sl],
-            [chatbot],
+        txt.submit(_init_session, [status], [status]).then(
+            _init, [chatbot, txt], [chatbot, txt]
+        ).then(
+            _chat,
+            [status, chatbot, model_dd, temperature_sl],
+            [status, chatbot],
         )
-        btn.click(bot_wrapper._add_memory, [url_txt], [url_txt])
+        btn.click(_add_memory, [status, url_txt], [status, url_txt])
 
     if params.do_share:
         demo.launch(

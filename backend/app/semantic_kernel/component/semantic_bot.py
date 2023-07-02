@@ -25,7 +25,7 @@ class SemanticBot(object):
         ]
         return response
 
-    async def gr_chat(
+    async def do_chat(
         self,
         history: list[tuple[str, str]],
         model_name: str,
@@ -63,7 +63,7 @@ class SemanticBot(object):
         history[-1][1] = answer  # may be changed url to href
 
         context = f"Q: {query}\nA: {answer}"
-        self.memory.append(context)
+        await self.memory.append(context)
 
         return history
 
