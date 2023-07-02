@@ -38,6 +38,7 @@ Sphinx
 omegaconf
 notebook
 python-dotenv
+ulid-py
 
 # # for project
 # fastapi
@@ -99,4 +100,5 @@ accelerate
 bitsandbytes
 
 guidance
+semantic-kernel
 lightgbm
