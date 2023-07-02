@@ -41,7 +41,7 @@ class SemanticBot(object):
             query, search_results=results, model_name=model_name
         )
 
-        prompt = f"""必要に応じて`文脈:`を参考に、以下の`質問:`について正確にステップバイステップで回答をしてください。
+        prompt = f"""必要に応じて`文脈:`を参考に、以下の`質問:`について正確な回答をするようにステップバイステップでロジックツリー形式で回答してください。
 質問:
 ```
 {query}
