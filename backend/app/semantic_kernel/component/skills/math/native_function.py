@@ -13,6 +13,7 @@ class MathPlugin:
         input_description="The value to take the square root of",
     )
     def square_root(self, number: str) -> str:
+        print(f"MathPlugin.add: {number=}")
         return str(math.sqrt(float(number)))
 
     # add method
@@ -29,4 +30,7 @@ class MathPlugin:
         description="The second number to add",
     )
     def add(self, context: SKContext) -> str:
-        return str(float(context["input"]) + float(context["number2"]))
+        number1 = float(context["input"])
+        number2 = float(context["number2"])
+        print(f"MathPlugin.add: {number1=}, {number2=}")
+        return str(number1 + number2)

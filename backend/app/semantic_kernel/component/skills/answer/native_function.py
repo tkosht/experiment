@@ -7,10 +7,11 @@ class Answer:
 
     @sk_function(
         name="answer",
-        description="LLMを使って回答を生成する際に利用します",
+        description="最終的な回答を生成する際に利用します",
         input_description="query from user's input"
     )
     def answer(self, context: SKContext) -> str:
+        print(f"MathPlugin.add: input={context['input']}")
         return f"""「{context['input']}」の回答です ...
 ---
 「NotebookLM」というこの機能は、ノート作成ソフトウェアに対するGoogleの答えであり、言語モデルをその中核に据えたものとなっている。NotebookLMは一般的なチャットボットとは異なり、ユーザーが既に持っているコンテンツをベースに、ユーザーのコンテンツ理解をAIによって深めていけるようにする。

@@ -9,16 +9,65 @@ from semantic_kernel.connectors.ai.open_ai import (  # AzureTextCompletion,; Azu
     OpenAIChatCompletion, OpenAITextEmbedding)
 from semantic_kernel.orchestration.context_variables import ContextVariables
 from semantic_kernel.orchestration.sk_function_base import SKFunctionBase
-from semantic_kernel.planning.basic_planner import BasicPlanner
+from semantic_kernel.planning.basic_planner import PROMPT, BasicPlanner
 from semantic_kernel.planning.plan import Plan
 from typing_extensions import Self
 
 load_dotenv()
 
 
+# NOTE: cf. python3.10/dist-packages/semantic_kernel/planning/basic_planner.py
+class CustomPlanner(BasicPlanner):
+    def __init__(self, max_tokens: int = 1000, temperature: float = 0.0) -> None:
+        super().__init__()
+
+        self.max_tokens = max_tokens
+        self.temperature = temperature
+
+    async def create_plan_async(
+        self,
+        goal: str,
+        kernel: sk.Kernel,
+        prompt: str = PROMPT,
+    ) -> Plan:
+        planner = kernel.create_semantic_function(
+            prompt, max_tokens=self.max_tokens, temperature=self.temperature
+        )
+
+        available_functions_string = self._create_available_functions_string(kernel)
+
+        context = ContextVariables()
+        context["goal"] = goal
+        context["available_functions"] = available_functions_string
+        generated_plan = await planner.invoke_async(variables=context)
+        return Plan(prompt=prompt, goal=goal, plan=generated_plan)
+
+    async def execute_plan_async(self, plan: Plan, kernel: sk.Kernel) -> str:
+        if not plan.generated_plan.result:
+            raise Exception(plan.generated_plan)
+        generated_plan = json.loads(plan.generated_plan.result)
+
+        context = ContextVariables()
+        context["input"] = generated_plan["input"]
+        subtasks = generated_plan["subtasks"]
+
+        result = ""
+        for subtask in subtasks:
+            skill_name, function_name = subtask["function"].split(".")
+            sk_function = kernel.skills.get_function(skill_name, function_name)
+
+            args = subtask.get("args", None)
+            if args:
+                for key, value in args.items():
+                    context[key] = value
+            output = await sk_function.invoke_async(variables=context)
+            context["input"] = result = output.result
+        return result
+
+
 class AutoRunner(object):
-    def __init__(self, skill_dir=None) -> None:
-        self.planner: BasicPlanner = BasicPlanner()
+    def __init__(self, planner: BasicPlanner = BasicPlanner(), skill_dir=None) -> None:
+        self.planner: BasicPlanner = planner
         self.kernel: sk.Kernel = None
 
         self.skills: list[dict[str, SKFunctionBase]] = []
@@ -57,48 +106,32 @@ class AutoRunner(object):
         plan: Plan = await self.planner.create_plan_async(**params)
         return plan
 
-    async def run(self, plan: Plan) -> Self:
+    async def do_execute(self, plan: Plan) -> Self:
         response = await self.planner.execute_plan_async(plan, self.kernel)
         return response
 
-    async def run_custom(self, plan: Plan) -> Self:
-        if not plan.generated_plan.result:
-            raise Exception(plan.generated_plan)
-        generated_plan = json.loads(plan.generated_plan.result)
-        print(f"{generated_plan=}")
-
-        context = ContextVariables()
-        context["input"] = generated_plan["input"]
-        subtasks = generated_plan["subtasks"]
-
-        result = ""
-        for subtask in subtasks:
-            skill_name, function_name = subtask["function"].split(".")
-            sk_function = self.kernel.skills.get_function(skill_name, function_name)
-
-            args = subtask.get("args", None)
-            if args:
-                for key, value in args.items():
-                    context[key] = value
-            output = await sk_function.invoke_async(variables=context)
-            context["input"] = result = output.result
-        return result
-
 
 async def _main(params: DictConfig):
-    runner = AutoRunner(skill_dir="./app/semantic_kernel/component/skills/")
+    skill_dir = "./app/semantic_kernel/component/skills/"
     prompt = """今日の言語モデルに関するニュースを調べて100文字以内にまとめます
 """
 
+    # NOTE: using BasicPlanner
+    runner = AutoRunner(skill_dir=skill_dir)
+    print("-" * 50)
     plan: Plan = await runner.do_plan(input_query=prompt)
+    print(f"generated_plan: {json.loads(plan.generated_plan.result)}")
+    print("-" * 25)
+    response = await runner.do_execute(plan)
+    print(response)
+
+    # NOTE: using CustomPlanner (just customized `temperature`)
+    runner = AutoRunner(planner=CustomPlanner(), skill_dir=skill_dir)
     print("-" * 50)
-    print("runner.run()")
-    response = await runner.run(plan)
-    print(f"{response=}")
-    print("-" * 50)
-    print("runner.run_custom()")
-    result = await runner.run_custom(plan)
-    print(f"{result=}")
+    plan: Plan = await runner.do_plan(input_query=prompt)
+    print(f"generated_plan: {json.loads(plan.generated_plan.result)}")
+    response = await runner.do_execute(plan)
+    print(response)
 
 
 # @from_config(params_file="conf/app.yml", root_key="/train")

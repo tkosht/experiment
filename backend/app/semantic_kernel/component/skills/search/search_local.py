@@ -10,6 +10,7 @@ class SearchLocal:
     )
     def search(self, context: SKContext) -> str:
         query = context['input']
+        print(f"SearchLocal.search: {query=}")
         result_dict = {
             "original_query": query,
             "source": "None",

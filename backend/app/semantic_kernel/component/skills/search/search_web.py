@@ -8,8 +8,9 @@ class SearchWeb:
         description="ニュース等のWeb上の情報を検索するときに使用します",
         input_description="user input or previous output"
     )
-    def web(self, context: SKContext) -> str:
+    def search(self, context: SKContext) -> str:
         query = context['input']
+        print(f"SearchWeb.search: {query=}")
         result_dict = {
             "original_query": query,
             "source": f"https://search.test.com?query={query}",
