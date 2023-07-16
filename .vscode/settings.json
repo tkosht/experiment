@@ -10,10 +10,13 @@
   "files.watcherExclude": {
     "**/.git/objects/**": true,
     "**/.git/subtree-cache/**": true,
-    "**/result/*/**": true,
-    "**/mlruns/*/**": true,
-    "**/node_modules/*/**": true
+    "**/node_modules/*/**": true,
+    "**/result/**": true,
+    "**/mlruns/**": true,
+    "**/data/**": true,
+    "**/*cache*/**": true,
+    "**/wk/**": true,
+    "**/bk/**": true,
   },
-
   "python.formatting.provider": "black",
 }
