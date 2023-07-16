@@ -1,4 +1,3 @@
-import json
 from inspect import signature
 
 from dotenv import load_dotenv
@@ -12,24 +11,17 @@ load_dotenv()
 
 async def _main(params: DictConfig):
     skill_dir = "./app/semantic_kernel/component/skills/"
-    prompt = """今日の言語モデルに関するニュースを調べて100文字以内にまとめます
+    prompt = """今日の言語モデルに関するニュースを調べて正確にわかりやすくまとめます
 """
 
     # NOTE: using BasicPlanner
     runner = SimpleRunner(skill_dir=skill_dir)
-    print("-" * 50)
-    plan = await runner.do_plan(input_query=prompt)
-    print(f"generated_plan: {json.loads(plan.generated_plan.result)}")
-    print("-" * 25)
-    response = await runner.do_execute(plan)
+    response = await runner.do_run(prompt=prompt)
     print(response)
 
     # NOTE: using CustomPlanner (just customized `temperature`)
     runner = SimpleRunner(planner=CustomPlanner(), skill_dir=skill_dir)
-    print("-" * 50)
-    plan = await runner.do_plan(input_query=prompt)
-    print(f"generated_plan: {json.loads(plan.generated_plan.result)}")
-    response = await runner.do_execute(plan)
+    response = await runner.do_run(prompt=prompt)
     print(response)
 
 

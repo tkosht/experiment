@@ -1,3 +1,4 @@
+import json
 import os
 
 import semantic_kernel as sk
@@ -32,6 +33,8 @@ class SimpleRunner(object):
         return self
 
     def setup_skills(self, skill_dir: str = "./skills") -> Self:
+        from semantic_kernel.core_skills.http_skill import HttpSkill
+
         from app.semantic_kernel.component.skills.search.search_local import \
             SearchLocal
         from app.semantic_kernel.component.skills.search.search_web import \
@@ -39,15 +42,50 @@ class SimpleRunner(object):
 
         self.skills.append(self.kernel.import_skill(SearchLocal(), "SearchLocal"))
         self.skills.append(self.kernel.import_skill(SearchWeb(), "SearchWeb"))
+        self.skills.append(self.kernel.import_skill(HttpSkill(), "HttpSkill"))
         self.skills.append(self.kernel.import_native_skill_from_directory(skill_dir, "math"))
         self.skills.append(self.kernel.import_native_skill_from_directory(skill_dir, "answer"))
         return self
 
-    async def do_plan(self, input_query: str, prompt: str = None) -> Plan:
+    async def do_run(self, prompt: str, n_retries: int = 3) -> str:
+        _prompt = prompt
+        for _ in range(n_retries):
+            try:
+                print("-" * 50)
+                plan: Plan = await self.do_plan(input_query=_prompt)
+                print(f"generated_plan: {plan.generated_plan.result}")
+                print(f"{json.loads(plan.generated_plan.result)}")
+                print("-" * 25)
+                response = await self.do_execute(plan)
+                print(response)
+            except Exception as e:
+                _prompt = f"""
+# ユーザの依頼
+```
+{prompt}
+```
+
+# あなたは、先程は以下のようなプランを実行しました
+```
+{plan.generated_plan.result}
+```
+
+# しかし以下のようなエラーが発生しました
+```
+{e}
+```
+
+# この結果を踏まえて、プランの見直しを検討してください
+"""
+                continue
+        return response
+
+    async def do_plan(self, input_query: str, prompt: str = None, n_retries: int = 3) -> Plan:
         params = dict(goal=input_query, kernel=self.kernel)
+        _params = params.copy()
         if prompt:
             params.update(dict(prompt=prompt))
-        plan: Plan = await self.planner.create_plan_async(**params)
+        plan: Plan = await self.planner.create_plan_async(**_params)
         return plan
 
     async def do_execute(self, plan: Plan) -> Self:
