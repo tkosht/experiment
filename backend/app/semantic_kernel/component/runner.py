@@ -47,22 +47,22 @@ class SimpleRunner(object):
         self.skills.append(self.kernel.import_native_skill_from_directory(skill_dir, "answer"))
         return self
 
-    async def do_run(self, prompt: str, n_retries: int = 3) -> str:
-        _prompt = prompt
+    async def do_run(self, user_query: str, n_retries: int = 3) -> str:
+        input_query = user_query
         for _ in range(n_retries):
             try:
                 print("-" * 50)
-                plan: Plan = await self.do_plan(input_query=_prompt)
+                plan: Plan = await self.do_plan(input_query=input_query)
                 print(f"generated_plan: {plan.generated_plan.result}")
                 print(f"{json.loads(plan.generated_plan.result)}")
                 print("-" * 25)
                 response = await self.do_execute(plan)
                 print(response)
             except Exception as e:
-                _prompt = f"""
+                input_query = f"""
 # ユーザの依頼
 ```
-{prompt}
+{user_query}
 ```
 
 # あなたは、先程は以下のようなプランを実行しました

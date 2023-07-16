@@ -11,17 +11,18 @@ load_dotenv()
 
 async def _main(params: DictConfig):
     skill_dir = "./app/semantic_kernel/component/skills/"
-    prompt = """今日の言語モデルに関するニュースを調べて正確にわかりやすくまとめます
-"""
+    user_query = """今日の言語モデルに関するニュースを調べて情報源を含めて正確にわかりやすくまとめてくれますか？"""
+    print("-" * 50)
+    print(f"{user_query=}")
 
     # NOTE: using BasicPlanner
     runner = SimpleRunner(skill_dir=skill_dir)
-    response = await runner.do_run(prompt=prompt)
+    response = await runner.do_run(user_query=user_query)
     print(response)
 
     # NOTE: using CustomPlanner (just customized `temperature`)
     runner = SimpleRunner(planner=CustomPlanner(), skill_dir=skill_dir)
-    response = await runner.do_run(prompt=prompt)
+    response = await runner.do_run(user_query=user_query)
     print(response)
 
 
