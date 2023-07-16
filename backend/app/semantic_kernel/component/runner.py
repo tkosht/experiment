@@ -57,7 +57,7 @@ class SimpleRunner(object):
                 print(f"{json.loads(plan.generated_plan.result)}")
                 print("-" * 25)
                 response = await self.do_execute(plan)
-                print(response)
+                break
             except Exception as e:
                 input_query = f"""
 # ユーザの依頼
@@ -78,6 +78,7 @@ class SimpleRunner(object):
 # この結果を踏まえて、プランの見直しを検討してください
 """
                 continue
+        print(response)
         return response
 
     async def do_plan(self, input_query: str, prompt: str = None, n_retries: int = 3) -> Plan:
