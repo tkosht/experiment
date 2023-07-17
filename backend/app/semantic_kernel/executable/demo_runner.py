@@ -100,34 +100,6 @@ if "image_chache" not in st.session_state:
     st.session_state["image_chache"] = {}
 
 
-class ChatWriter(object):
-    async def load_logo(self, logo_file: str):
-        from PIL import Image
-
-        if logo_file in st.session_state.image_chache:
-            return st.session_state.image_chache[logo_file]
-
-        img = Image.open(logo_file)
-        img = img.resize((32, 32))
-
-        with g_lock_img:
-            st.session_state.image_chache.update({logo_file: img})
-
-        return img
-
-    async def chat_message(self, message: str, logo_file: str):
-        logo = await self.load_logo(logo_file=logo_file)
-        col_rates = [0.05, 0.95]
-        col1, col2 = st.columns(col_rates)
-        with col1:
-            st.image(logo)
-        with col2:
-            st.write(message)
-
-
-chatter = ChatWriter()
-
-
 if "is_running" not in st.session_state:
     st.session_state["is_running"] = False
 
@@ -186,6 +158,34 @@ response: {str(response)}
 
     history.append(memory_text)
     return response
+
+
+class ChatWriter(object):
+    async def load_logo(self, logo_file: str):
+        from PIL import Image
+
+        if logo_file in st.session_state.image_chache:
+            return st.session_state.image_chache[logo_file]
+
+        img = Image.open(logo_file)
+        img = img.resize((32, 32))
+
+        with g_lock_img:
+            st.session_state.image_chache.update({logo_file: img})
+
+        return img
+
+    async def chat_message(self, message: str, logo_file: str):
+        logo = await self.load_logo(logo_file=logo_file)
+        col_rates = [0.05, 0.95]
+        col1, col2 = st.columns(col_rates)
+        with col1:
+            st.image(logo)
+        with col2:
+            st.write(message)
+
+
+chatter = ChatWriter()
 
 
 async def do_chat():
