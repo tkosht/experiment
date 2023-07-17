@@ -75,7 +75,7 @@ def _init_session(status: dict) -> dict:
     return status
 
 
-async def _add_memory(status: dict, text: str) -> dict:
+async def _init_memory(status: dict, text: str) -> dict:
     status = _init_session(status)
     bot_wrapper: BotWrapper = status["bot_wrapper"]
     result: str = await bot_wrapper.add_memory(text)
@@ -104,8 +104,6 @@ def _main(params: DictConfig):
     default_query = "LLMについて教えて？"
 
     with gr.Blocks() as demo:
-        # bot = SemanticBot()
-        # bot_wrapper = BotWrapper(bot=bot)
         status = gr.State({})
 
         with gr.Tab("Conversation"):
@@ -156,7 +154,7 @@ def _main(params: DictConfig):
             [status, chatbot, model_dd, temperature_sl],
             [status, chatbot],
         )
-        btn.click(_add_memory, [status, url_txt], [status, url_txt])
+        btn.click(_init_memory, [status, url_txt], [status, url_txt])
 
     if params.do_share:
         demo.launch(

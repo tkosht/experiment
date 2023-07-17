@@ -102,3 +102,9 @@ bitsandbytes
 guidance
 semantic-kernel
 lightgbm
+
+streamlit
+hugchat
+streamlit-chat
+streamlit-extras
+
