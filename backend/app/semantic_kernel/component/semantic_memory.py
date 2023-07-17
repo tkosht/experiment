@@ -69,9 +69,7 @@ class SemanticMemorySummarizer(object):
 
 
 class SemanticMemory(object):
-    def __init__(self, memory_key: str = "memory") -> None:
-        self.memory_key = memory_key
-
+    def __init__(self) -> None:
         self.kernel: sk.Kernel = None
 
         self.setup_kernel()
@@ -92,12 +90,16 @@ class SemanticMemory(object):
         return self
 
     async def append(
-        self, text: str, memory_id: str = None, additional_metadata: str = None
+        self,
+        text: str,
+        memory_key: str = "memory",
+        memory_id: str = None,
+        additional_metadata: str = None,
     ) -> Self:
         if memory_id is None:
             memory_id = build_ulid(prefix="INF")
         await self.kernel.memory.save_information_async(
-            self.memory_key,
+            memory_key,
             id=memory_id,
             text=text,
             additional_metadata=additional_metadata,
@@ -112,11 +114,15 @@ class SemanticMemory(object):
         return self
 
     async def search(
-        self, query: str, limit: int = 3, min_relevance: float = 0.8
+        self,
+        query: str,
+        memory_key: str = "memory",
+        limit: int = 3,
+        min_relevance: float = 0.8,
     ) -> list[MemoryQueryResult]:
         self.query = query
         results = await self.kernel.memory.search_async(
-            self.memory_key, query, limit=limit, min_relevance_score=min_relevance
+            memory_key, query, limit=limit, min_relevance_score=min_relevance
         )
         return results
 

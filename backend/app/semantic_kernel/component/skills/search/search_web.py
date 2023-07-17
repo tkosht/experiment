@@ -19,14 +19,9 @@ class SearchWeb(object):
         self.tool: GoogleSearchRun = load_tools(["google-search"], llm=None)[0]
         self.tool.api_wrapper = CustomGoogleSearchAPIWrapper(k=n_search_results)
 
-    @sk_function(
-        name="web",
-        description="ニュース等のWeb上の情報を検索するときに使用します",
-        input_description="user input or previous output"
-    )
-    async def search(self, context: SKContext) -> str:
-        query = context['input']
-        print(f"SearchWeb.search: {query=}")
+    def _search(self, context: SKContext) -> str:
+        query = context["input"]
+        # print(f"SearchWeb._search: {query=}")
         searched_results = self.tool.run(tool_input=query)
 
         responses = []
@@ -38,3 +33,23 @@ class SearchWeb(object):
             responses.append(resdic)
 
         return str(responses)
+
+    @sk_function(
+        name="search_news",
+        description="Web上のニュースや記事等を検索するときに使用します",
+        input_description="user input or previous output",
+    )
+    def search_news(self, context: SKContext) -> str:
+        query = context["input"]
+        print(f"SearchWeb.search_news: {query=}")
+        return self._search(context=context)
+
+    @sk_function(
+        name="search_weather",
+        description="Web上の天気情報等を検索するときに使用します",
+        input_description="user input or previous output",
+    )
+    def search_weather(self, context: SKContext) -> str:
+        query = context["input"]
+        print(f"SearchWeb.search_weather: {query=}")
+        return self._search(context=context)

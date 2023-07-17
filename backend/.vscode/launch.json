@@ -15,7 +15,8 @@
             },
             "args": [
                 "run",
-                "${file}",
+                // "${file}",
+                "${workspaceFolder}/app/semantic_kernel/executable/demo_runner.py",
                 "--server.port",
                 "8501"
             ],

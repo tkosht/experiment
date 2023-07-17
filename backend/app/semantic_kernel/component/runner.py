@@ -13,14 +13,21 @@ from typing_extensions import Self, Any
 
 
 class SimpleRunner(object):
-    def __init__(self, planner: BasicPlanner = BasicPlanner(), skill_dir=None) -> None:
+    def __init__(
+        self,
+        planner: BasicPlanner = BasicPlanner(),
+        skill_dir=None,
+        model_name: str = "gpt-3.5-turbo",
+    ) -> None:
         self.planner: BasicPlanner = planner
+        self.skill_dir = skill_dir
+        self.model_name = model_name
+
         self.kernel: sk.Kernel = None
-
         self.skills: list[dict[str, SKFunctionBase]] = []
+        self.memory_store = sk.memory.VolatileMemoryStore()
 
-        self.setup_kernel()
-        self.setup_skills(skill_dir=skill_dir)
+        self.setup_kernel(model_name=model_name)
 
     def setup_kernel(self, model_name: str = "gpt-3.5-turbo") -> Self:
         kernel = sk.Kernel()
@@ -31,7 +38,13 @@ class SimpleRunner(object):
         kernel.add_chat_service(
             "gpt", OpenAIChatCompletion(model_name, api_key, org_id)
         )
+        kernel.add_text_embedding_generation_service(
+            "ada", OpenAITextEmbedding("text-embedding-ada-002", api_key, org_id)
+        )
+        kernel.register_memory_store(memory_store=self.memory_store)
         self.kernel = kernel
+
+        self.setup_skills(skill_dir=self.skill_dir)
         return self
 
     def setup_skills(self, skill_dir: str = "./skills") -> Self:
@@ -52,10 +65,19 @@ class SimpleRunner(object):
         return self
 
     async def do_run(self, user_query: str, n_retries: int = 3) -> str:
-        input_query = user_query
+        input_query = f"""[GOALここから]
+以下の`- ユーザの依頼`について実行してください。ただし、最後の回答はユーザの依頼に正確に自然言語でお願いします
+
+- ユーザの依頼
+(((
+{user_query}
+)))
+[GOALここまで]
+"""
         for _ in range(n_retries):
             try:
                 print("-" * 50)
+                print("input_query:", input_query)
                 plan: Plan = await self.do_plan(input_query=input_query)
                 print(f"generated_plan: {plan.generated_plan.result}")
                 print(f"{json.loads(plan.generated_plan.result)}")
@@ -64,23 +86,24 @@ class SimpleRunner(object):
                 break
             except Exception as e:
                 input_query = f"""
-# ユーザの依頼
-```
+- ユーザの依頼
+(((
 {user_query}
-```
+)))
 
-# あなたは、先程は以下のようなプランを実行しました
-```
+- あなたは、直前に以下のようなプランを実行しました
+(((
 {plan.generated_plan.result}
-```
+)))
 
-# しかし以下のようなエラーが発生しました
-```
+- しかし以下のようなエラーが発生しました
+(((
 {e}
-```
+)))
 
-# この結果を踏まえて、プランの見直しを検討してください
+- 以上の結果を踏まえて、プランの見直しを検討してください
 """
+                print(input_query)
                 continue
         print(response)
         return response
