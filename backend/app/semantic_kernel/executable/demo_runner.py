@@ -71,7 +71,7 @@ async def _submit():
         st.session_state.user_chat.append(user_input)
 
         user_message = user_input
-        st.session_state.user_input = ""
+        # st.session_state.user_input = ""
 
         # bot
         response = await generate_response(user_message)
@@ -84,7 +84,7 @@ async def _submit():
 def get_text(input_text):
     label = """メッセージを入力してね✨"""
     user_input = input_text.text_input(
-        label, value="", key="user_input", on_change=submit
+        label, value="", key="user_input"  # , on_change=submit
     )
     return user_input
 
@@ -119,7 +119,7 @@ async def generate_response(prompt: str):
         return "hello"
 
     runner: SimpleRunner = st.session_state.runner
-    runner.setup_kernel(model_name=model_name)
+    runner.setup_kernel(model_name=model_name)  # update model
     history: list[str] = st.session_state.history
     memory: SemanticMemory = st.session_state.memory
 
@@ -205,6 +205,9 @@ async def do_chat():
             # bot
             bot_message = st.session_state["bot_chat"][i]
             await chatter.chat_message(bot_message, logo_file=logo_file_bot)
+
+    if user_input:
+        await _submit()
 
 
 with st.spinner(text="Now loading..."):

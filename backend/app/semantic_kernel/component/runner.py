@@ -9,7 +9,7 @@ from semantic_kernel.connectors.ai.open_ai import (  # AzureTextCompletion,; Azu
 from semantic_kernel.orchestration.sk_function_base import SKFunctionBase
 from semantic_kernel.planning.basic_planner import BasicPlanner
 from semantic_kernel.planning.plan import Plan
-from typing_extensions import Self, Any
+from typing_extensions import Any, Self
 
 
 class SimpleRunner(object):
@@ -114,7 +114,7 @@ class SimpleRunner(object):
         params = dict(goal=input_query, kernel=self.kernel)
         _params = params.copy()
         if prompt:
-            params.update(dict(prompt=prompt))
+            _params.update(dict(prompt=prompt))
         plan: Plan = await self.planner.create_plan_async(**_params)
         return plan
 
