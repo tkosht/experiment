@@ -4,17 +4,16 @@ from semantic_kernel.skill_definition import sk_function
 
 class SearchLocal:
     @sk_function(
-        name="search",
-        description="Webにはない専門的な内容や社内の情報について検索するときに使用します",
-        input_description="user input or previous output"
+        name="search_local_files",
+        description="(未実装のため使用しないこと) Webにはないローカルな情報(社内文書などのファイル群)について検索するときに使用します。JSON(python の dict型)を返します",
+        input_description="user input or previous output",
     )
-    def search(self, context: SKContext) -> str:
-        query = context['input']
+    def search_file(self, context: SKContext) -> str:
+        query = context["input"]
         print(f"SearchLocal.search: {query=}")
         result_dict = {
-            "original_query": query,
-            "source": "None",
-            "content": "今日のニュースはわかりません・・"
+            "source_file": "Not Found",
+            "content": "(empty)",
         }
 
         return str(result_dict)

@@ -71,8 +71,9 @@ class SimpleRunner(object):
         return self
 
     async def do_run(self, user_query: str, n_retries: int = 3) -> str:
+        meta_order = "以下の`- ユーザの依頼`について過去のやり取り(文脈)も踏まえて実行プランを作成してください。人間が読みやすい形に整形したりまとめて最終回答を作ってください。"  # noqa
         input_query = f"""[GOALここから]
-以下の`- ユーザの依頼`について過去のやり取り(文脈)も踏まえて実行プランを作成してください。ただし、最後の回答はユーザの依頼に正確に自然言語でお願いします
+{meta_order}
 
 - ユーザの依頼
 (((
@@ -94,6 +95,8 @@ class SimpleRunner(object):
                 break
             except Exception as e:
                 input_query = f"""[GOALここから]
+{meta_order}
+
 - ユーザの依頼
 (((
 {user_query}
@@ -113,7 +116,7 @@ class SimpleRunner(object):
 [GOALここまで]
 """
                 print(input_query)
-                response = f"プランの作成と実行に失敗しました\n\n{e}"
+                response = f"プランの作成と実行に失敗しました\n\n{user_query}\n\n{e}"
                 continue
         print(response)
         return response

@@ -118,7 +118,7 @@ class SemanticMemory(object):
         query: str,
         memory_key: str = "memory",
         limit: int = 3,
-        min_relevance: float = 0.8,
+        min_relevance: float = 0.7,
     ) -> list[MemoryQueryResult]:
         self.query = query
         results = await self.kernel.memory.search_async(

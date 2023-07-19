@@ -31,6 +31,7 @@ async def _run(
     model_name: str,
     temperature_percent: int,  # in [0, 200]
     max_tokens: int = 1024,
+    n_window: int = 3,
 ) -> list[tuple[str, str]]:
     input_query: str = history[-1][0]
     temperature: float = temperature_percent / 100
@@ -41,8 +42,14 @@ async def _run(
         skill_dir=skill_dir,
         model_name=model_name,
     )
-    context = "---\n\n".join([f"order: {q}\nanswer: {a}" for q, a in history[:-1]])
+
+    # NOTE: たぶん、memory を使わないほうが賢い動きになるかも(文脈の必要なところをLLMに任せるため)
+    context = "---\n\n".join(
+        [f"\norder: {q}answer: {a}" for q, a in history[-1 - n_window : -1]]
+    )
     context = context.replace("\n", "\n    ")
+
+    # make user query
     user_query = f"""`これまでのユーザの依頼と回答(文脈)` を可能な範囲で踏まえて、`今回のユーザの依頼` に応えてください。
 
     # 今回のユーザの依頼
@@ -57,7 +64,10 @@ async def _run(
 """
 
     response = await runner.do_run(user_query=user_query, n_retries=3)
+
+    # keep memory
     history[-1][1] = response
+
     return status, history
 
 
