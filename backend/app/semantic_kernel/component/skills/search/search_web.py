@@ -36,7 +36,7 @@ class SearchWeb(object):
 
     @sk_function(
         name="search_news",
-        description="Web上のニュースや記事等を検索するときに使用します",
+        description="Web上のニュースや記事等を検索するときに使用します。JSONでロードできる文字コードのみで出力すること",
         input_description="user input or previous output",
     )
     def search_news(self, context: SKContext) -> str:

@@ -2,6 +2,7 @@ import json
 import os
 
 import semantic_kernel as sk
+from dotenv import load_dotenv
 from semantic_kernel.connectors.ai.open_ai import (  # AzureTextCompletion,; AzureTextEmbedding,; ; OpenAITextCompletion,   # noqa
     OpenAIChatCompletion,
     OpenAITextEmbedding,
@@ -29,9 +30,14 @@ class SimpleRunner(object):
 
         self.setup_kernel(model_name=model_name)
 
+    def set_planner(self, planner: BasicPlanner) -> Self:
+        self.planner = planner
+        return self
+
     def setup_kernel(self, model_name: str = "gpt-3.5-turbo") -> Self:
         kernel = sk.Kernel()
 
+        load_dotenv()
         api_key = os.environ.get("OPENAI_API_KEY")
         org_id = os.environ.get("OPENAI_ORG_ID")
 
@@ -66,7 +72,7 @@ class SimpleRunner(object):
 
     async def do_run(self, user_query: str, n_retries: int = 3) -> str:
         input_query = f"""[GOALここから]
-以下の`- ユーザの依頼`について実行してください。ただし、最後の回答はユーザの依頼に正確に自然言語でお願いします
+以下の`- ユーザの依頼`について過去のやり取り(文脈)も踏まえて実行プランを作成してください。ただし、最後の回答はユーザの依頼に正確に自然言語でお願いします
 
 - ユーザの依頼
 (((
@@ -74,8 +80,10 @@ class SimpleRunner(object):
 )))
 [GOALここまで]
 """
+
         for _ in range(n_retries):
             try:
+                input_query = input_query.replace("\\x", "\\\\x")
                 print("-" * 50)
                 print("input_query:", input_query)
                 plan: Plan = await self.do_plan(input_query=input_query)
@@ -85,13 +93,13 @@ class SimpleRunner(object):
                 response = await self.do_execute(plan)
                 break
             except Exception as e:
-                input_query = f"""
+                input_query = f"""[GOALここから]
 - ユーザの依頼
 (((
 {user_query}
 )))
 
-- あなたは、直前に以下のようなプランを実行しました
+- あなたは、直前に以下のようなプランを作成し実行しました
 (((
 {plan.generated_plan.result}
 )))
@@ -101,9 +109,11 @@ class SimpleRunner(object):
 {e}
 )))
 
-- 以上の結果を踏まえて、プランの見直しを検討してください
+- エラーが起きないように確実に対処するように、ステップバイステップでプランの見直しを改めて検討してください
+[GOALここまで]
 """
                 print(input_query)
+                response = f"プランの作成と実行に失敗しました\n\n{e}"
                 continue
         print(response)
         return response

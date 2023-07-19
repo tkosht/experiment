@@ -40,25 +40,25 @@ class Answer:
 
     @sk_function(
         name="answer_skill",
-        description="任意のテキストに対して、大規模言語モデルを使用して要約やまとめなどの回答を生成する際に利用します。過去の依頼や回答も含めること",
+        description="任意のテキストに対して、大規模言語モデルを使用して要約やまとめなどの回答を生成する際に利用します。過去の依頼や回答も含めること。",  # 最後のツール・スキルとして必ず指定すること
         input_description="arbitrary text like user input or previous tool's/skill's output",
     )
     @sk_function_context_parameter(
         name="query",
-        description="どのような回答を作成したいかを指示します。",
+        description="どのような回答を作成したいかを指定します",
     )
     @sk_function_context_parameter(
-        name="goal",
-        description="最終的なゴールを指示します",
+        name="past_context",
+        description="過去のやり取りなどの文脈(文章もOK)を指定します",
     )
     def make_answer(self, context: SKContext) -> str:
         input_text = context["input"]
-        goal = context["goal"]
+        past_context = context["past_context"]
         query = (
             context["query"]
             + " 特に、自ら文章を創作しないようにし、情報源のリンクが明記されている場合は省略せずMarkdown形式で表現すること"  # noqa
         )
-        print(f"Answer.make_answer: {input_text=}, {query=}, {goal=}")
+        print(f"Answer.make_answer: {input_text=}, {query=}, {past_context=}")
 
         message = f"""以下の`テキスト`に対して、`ゴール` を満たすように 以下の`指示`に従い文章を生成してください。
 
@@ -72,9 +72,9 @@ class Answer:
 {query}
 ```
 
-# ゴール
+# 過去の文脈
 ```
-{goal}
+{past_context}
 ```
 """
 
