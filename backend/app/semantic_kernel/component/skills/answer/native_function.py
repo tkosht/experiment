@@ -15,7 +15,7 @@ class Answer:
     def __init__(
         self,
         model_name: str = "gpt-4",
-        temperature: float = 0.3,
+        temperature: float = 0.1,
         max_tokens: int = 2048,
     ) -> None:
         self.model_name: str = model_name
@@ -53,16 +53,20 @@ class Answer:
     )
     def make_answer(self, context: SKContext) -> str:
         input_text = context["input"]
-        past_context = context["past_context"]
-        query = (
-            context["query"]
-            + " 特に、自ら文章を創作しないようにし、情報源のリンクが明記されている場合は省略せずMarkdown形式で表現すること"  # noqa
-        )
+        try:
+            past_context = context["past_context"]
+        except Exception:
+            past_context = "なし"
+        try:
+            query = context["query"]
+        except Exception:
+            query = "`入力テキスト`を人間が読みやすいようにまとめます。"
+        query += " 特に、自ら文章を創作しないようにし、情報源のリンクが明記されている場合は省略せずMarkdown形式で表現すること"
         print(f"Answer.make_answer: {input_text=}, {query=}, {past_context=}")
 
-        message = f"""以下の`テキスト`に対して、`ゴール` を満たすように 以下の`指示`に従い文章を生成してください。
+        message = f"""以下の`テキスト`に対して、`ゴール` を満たすように 以下の`指示`に従い文章を生成してください。`指示`がない場合は`入力テキスト`に従ってください
 
-# テキスト
+# 入力テキスト
 ```
 {input_text}
 ```

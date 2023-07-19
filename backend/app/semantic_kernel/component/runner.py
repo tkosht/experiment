@@ -1,4 +1,3 @@
-import json
 import os
 
 import semantic_kernel as sk
@@ -50,12 +49,15 @@ class SimpleRunner(object):
         kernel.register_memory_store(memory_store=self.memory_store)
         self.kernel = kernel
 
-        self.setup_skills(skill_dir=self.skill_dir)
+        self.setup_skills(skill_dir=self.skill_dir, model_name=model_name)
         return self
 
-    def setup_skills(self, skill_dir: str = "./skills") -> Self:
+    def setup_skills(
+        self, skill_dir: str = "./skills", model_name: str = "gpt-3.5-turbo"
+    ) -> Self:
         from semantic_kernel.core_skills.http_skill import HttpSkill
 
+        from app.semantic_kernel.component.skills.answer.native_function import Answer
         from app.semantic_kernel.component.skills.search.search_local import SearchLocal
         from app.semantic_kernel.component.skills.search.search_web import SearchWeb
 
@@ -63,21 +65,27 @@ class SimpleRunner(object):
         self.skills.append(self.kernel.import_skill(SearchWeb(), "SearchWeb"))
         self.skills.append(self.kernel.import_skill(HttpSkill(), "HttpSkill"))
         self.skills.append(
-            self.kernel.import_native_skill_from_directory(skill_dir, "math")
+            self.kernel.import_skill(Answer(model_name=model_name), "Answer")
         )
         self.skills.append(
-            self.kernel.import_native_skill_from_directory(skill_dir, "answer")
+            self.kernel.import_native_skill_from_directory(skill_dir, "math")
         )
         return self
 
     async def do_run(self, user_query: str, n_retries: int = 3) -> str:
-        meta_order = "以下の`- ユーザの依頼`について過去のやり取り(文脈)も踏まえて実行プランを作成してください。人間が読みやすい形に整形したりまとめて最終回答を作ってください。"  # noqa
+        meta_order = "以下の`- ユーザの依頼`について過去のやり取り(文脈)も踏まえて実行プランを作成してください。"  # noqa
+        constraint = "最後に Answer を必ず使ってください。ステップバイステップでプランを作成してください。"
         input_query = f"""[GOALここから]
 {meta_order}
 
 - ユーザの依頼
 (((
 {user_query}
+)))
+
+- 制約
+(((
+{constraint}
 )))
 [GOALここまで]
 """
@@ -89,7 +97,7 @@ class SimpleRunner(object):
                 print("input_query:", input_query)
                 plan: Plan = await self.do_plan(input_query=input_query)
                 print(f"generated_plan: {plan.generated_plan.result}")
-                print(f"{json.loads(plan.generated_plan.result)}")
+                # print(f"{json.loads(plan.generated_plan.result)}")
                 print("-" * 25)
                 response = await self.do_execute(plan)
                 break
@@ -100,6 +108,11 @@ class SimpleRunner(object):
 - ユーザの依頼
 (((
 {user_query}
+)))
+
+- 制約
+(((
+{constraint}
 )))
 
 - あなたは、直前に以下のようなプランを作成し実行しました
@@ -115,6 +128,7 @@ class SimpleRunner(object):
 - エラーが起きないように確実に対処するように、ステップバイステップでプランの見直しを改めて検討してください
 [GOALここまで]
 """
+
                 print(input_query)
                 response = f"プランの作成と実行に失敗しました\n\n{user_query}\n\n{e}"
                 continue
