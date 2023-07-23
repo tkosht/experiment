@@ -63,13 +63,37 @@ async def _run(
     >>>
 """
 
-    response = await runner.do_run(user_query=user_query, n_retries=3)
+    response: str = await runner.do_run(user_query=user_query, n_retries=3)
+    img = None
+
+    try:
+        import json
+
+        resdic = json.loads(response)
+        if "text" in resdic:
+            response: str = resdic["text"]
+        if "images" in resdic:
+            import base64
+            from io import BytesIO
+
+            from PIL import Image
+
+            for img64 in resdic["images"]:
+                img_io = BytesIO(base64.b64decode(img64.encode()))
+                img = Image.open(img_io)
+                if img.mode not in ("RGB", "L"):  # L is for greyscale images
+                    img = img.convert("RGB")
+                break
+
+    except Exception as e:
+        print(e)
+        pass
 
     # keep memory
     history[-1][1] = response
 
     await runner.terminate()
-    return status, history
+    return status, history, img
 
 
 def _main(params: DictConfig):
@@ -82,9 +106,13 @@ def _main(params: DictConfig):
 
         with gr.Tab("Conversation"):
             with gr.Row():
-                chatbot = gr.Chatbot([], label="assistant", elem_id="demobot").style(
-                    height=500
-                )
+                height: int = 500
+                with gr.Column():
+                    chatbot = gr.Chatbot(
+                        [], label="assistant", elem_id="demobot"
+                    ).style(height=height)
+                with gr.Column():
+                    img = gr.outputs.Image(type="pil").style(height=height)
             with gr.Row():
                 with gr.Column():
                     txt = gr.TextArea(
@@ -118,7 +146,7 @@ def _main(params: DictConfig):
         ).then(
             _run,
             [status, chatbot, model_dd, temperature_sl],
-            [status, chatbot],
+            [status, chatbot, img],
         )
 
     if params.do_share:

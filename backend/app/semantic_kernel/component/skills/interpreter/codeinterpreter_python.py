@@ -1,3 +1,6 @@
+import base64
+import json
+
 from semantic_kernel import SKContext
 from semantic_kernel.skill_definition import sk_function
 
@@ -16,16 +19,20 @@ class CodeInterpeterPython(object):
 
     @sk_function(
         name="code_interpreter_in_python",
-        description="""Pythonのコードインタープリターです。指定されたPythonコードを実行して結果を返します。データ分析に関わるタスクに使うとよいでしょう。""",
-        input_description="specify python notebook codes which are user input or previous output",
+        description="""グラフ化やデータ加工やモデル作成等のデータ分析タスクの結果を返します""",
+        input_description="user input or previous output",
     )
-    def run(self, context: SKContext) -> str:
-        # request: str = context["input"]
-        # response: CodeInterpreterResponse = await self.session.generate_response(
-        #     request
-        # )
-        # return response
-        return "AAA"
+    async def run(self, context: SKContext) -> str:
+        request: str = context["input"]
+        response: CodeInterpreterResponse = await self.session.generate_response(
+            request
+        )
+        resdic = dict(
+            text=response.content,
+            images=[base64.b64encode(fl.content).decode() for fl in response.files],
+        )
+        res = json.dumps(resdic)
+        return res
 
     async def astop(self):
         await self.session.astop()

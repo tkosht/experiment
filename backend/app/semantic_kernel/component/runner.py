@@ -59,24 +59,24 @@ class SimpleRunner(object):
     async def setup_skills(
         self, skill_dir: str = "./skills", model_name: str = "gpt-3.5-turbo"
     ) -> Self:
-        from semantic_kernel.core_skills.http_skill import HttpSkill
+        # from semantic_kernel.core_skills.http_skill import HttpSkill
 
-        from app.semantic_kernel.component.skills.answer.native_function import Answer
-        from app.semantic_kernel.component.skills.search.search_local import SearchLocal
-        from app.semantic_kernel.component.skills.search.search_web import SearchWeb
+        # from app.semantic_kernel.component.skills.answer.native_function import Answer
+        # from app.semantic_kernel.component.skills.search.search_local import SearchLocal
+        # from app.semantic_kernel.component.skills.search.search_web import SearchWeb
 
-        self.skills.append(self.kernel.import_skill(SearchLocal(), "SearchLocal"))
-        self.skills.append(self.kernel.import_skill(SearchWeb(), "SearchWeb"))
-        self.skills.append(self.kernel.import_skill(HttpSkill(), "HttpSkill"))
+        # self.skills.append(self.kernel.import_skill(SearchLocal(), "SearchLocal"))
+        # self.skills.append(self.kernel.import_skill(SearchWeb(), "SearchWeb"))
+        # self.skills.append(self.kernel.import_skill(HttpSkill(), "HttpSkill"))
+        # self.skills.append(
+        #     self.kernel.import_skill(Answer(model_name=model_name), "Answer")
+        # )
+        # self.skills.append(
+        #     self.kernel.import_native_skill_from_directory(skill_dir, "math")
+        # )
         self.code_interpreter = CodeInterpeterPython()
         self.skills.append(
             self.kernel.import_skill(self.code_interpreter, "CodeInterpeterPython")
-        )
-        self.skills.append(
-            self.kernel.import_skill(Answer(model_name=model_name), "Answer")
-        )
-        self.skills.append(
-            self.kernel.import_native_skill_from_directory(skill_dir, "math")
         )
 
         await self.code_interpreter.astart()
