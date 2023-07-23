@@ -112,7 +112,7 @@ semantic-kernel = "*"
 # for LLM
 huggingface_hub = "*"
 # codeinterpreterapi = "*"
-# codeboxapi = "*"
+codeboxapi = "*"
 
 # webapp
 gradio = "*"

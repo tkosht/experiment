@@ -794,6 +794,23 @@ files = [
 test = ["coverage (>=4.2)", "flake8 (>=3.0.4)", "path.py (>=11.5.0)", "pytest (>=3.0.3)", "pytest-cov (>=2.4.0)", "pytest-runner (>=2.9)", "pytest-virtualenv (>=1.7.0)", "scikit-build (>=0.10.0)", "setuptools (>=28.0.0)", "virtualenv (>=15.0.3)", "wheel"]
 
 [[package]]
+name = "codeboxapi"
+version = "0.0.5"
+description = "CodeBox is the simplest cloud infrastructure for your LLM Apps and Services."
+optional = false
+python-versions = ">=3.9,<4.0"
+files = [
+    {file = "codeboxapi-0.0.5-py3-none-any.whl", hash = "sha256:220a9a5d31f570157db4c36b549463551a93bf67d28b7d8de5da2a2b63ae6534"},
+    {file = "codeboxapi-0.0.5.tar.gz", hash = "sha256:1c39727f9d2109f45a2d8df68d53ac44c224b964a75919ea969b947a537aa876"},
+]
+
+[package.dependencies]
+aiohttp = ">=3.8.4,<4.0.0"
+python-dotenv = ">=1.0.0,<2.0.0"
+requests = ">=2.31.0,<3.0.0"
+websockets = ">=11.0.3,<12.0.0"
+
+[[package]]
 name = "colorama"
 version = "0.4.6"
 description = "Cross-platform colored terminal text."
@@ -7700,4 +7717,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "34dc22226721b16e82582e8f196a28d17a2eb64e892b3a0daaa144388c497e1f"
+content-hash = "8491271bd6bc29a6bcf2002279eb0bff1b47c06f602ecc3b6756390a9d2341fa"
