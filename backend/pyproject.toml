@@ -87,7 +87,7 @@ datasets = "*"
 
 # LLM relatives
 # # for langchain
-langchain = "^0.0.154"
+langchain = "^0.0.232"
 openai = "*"
 google-search-results = "*"
 google-api-python-client = "*"
@@ -111,7 +111,7 @@ semantic-kernel = "*"
 
 # for LLM
 huggingface_hub = "*"
-# codeinterpreterapi = "*"
+codeinterpreterapi = "^0.0.6"
 codeboxapi = "*"
 
 # webapp

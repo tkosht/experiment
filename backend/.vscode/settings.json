@@ -1,15 +1,18 @@
 {
-    "python.pythonPath": "/usr/bin/python",
     "jupyter.jupyterServerType": "local",
     "files.exclude": {
-        "backend/**": true,
-        "frontend/**": true
+        "frontend/**": true,
+        "**/mlruns/**": true,
+        "**/__pycache__/**": true,
+        "**/[bw]k/**": true,
+        "**/.*/**": true
     },
     "files.watcherExclude": {
         "**/.git/objects/**": true,
         "**/.git/subtree-cache/**": true,
         "**/result/*/**": true,
-        "**/mlruns/*/**": true
+        "**/mlruns/*/**": true,
+        "**/.*/*/**": true
     },
     "python.testing.pytestArgs": [
         "test"
