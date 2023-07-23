@@ -40,10 +40,10 @@ async def _run(
     runner = SimpleRunner(
         planner=CustomPlanner(temperature=temperature, max_tokens=max_tokens),
         skill_dir=skill_dir,
-        model_name=model_name,
     )
+    await runner.setup_kernel(model_name=model_name)
 
-    # NOTE: たぶん、memory を使わないほうが賢い動きになるかも(文脈の必要なところをLLMに任せるため)
+    # NOTE: たぶん、memory を使わないほうが賢い動きになるかも(文脈の必要なところをLLMに任せられるため)
     context = "---\n\n".join(
         [f"\norder: {q}answer: {a}" for q, a in history[-1 - n_window : -1]]
     )
@@ -68,12 +68,14 @@ async def _run(
     # keep memory
     history[-1][1] = response
 
+    await runner.terminate()
     return status, history
 
 
 def _main(params: DictConfig):
     # default_query = "今日の川崎の天気を教えてくれませんか？"
-    default_query = "今日の大規模言語モデル(LLM)に関するニュースを調べて情報源を含めて正確にわかりやすくまとめてくれますか？"
+    # default_query = "今日の大規模言語モデル(LLM)に関するニュースを調べて情報源を含めて正確にわかりやすくまとめてくれますか？"
+    default_query = "Plot the bitcoin chart of 2023 YTD"
 
     with gr.Blocks() as demo:
         status = gr.State({})

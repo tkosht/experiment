@@ -1,9 +1,8 @@
 import json
 
+import regex
 import semantic_kernel as sk
-from semantic_kernel.orchestration.context_variables import ContextVariables
 from semantic_kernel.planning.basic_planner import PROMPT, BasicPlanner
-from semantic_kernel.planning.plan import Plan
 
 
 # NOTE: cf. python3.10/dist-packages/semantic_kernel/planning/basic_planner.py
@@ -19,27 +18,30 @@ class CustomPlanner(BasicPlanner):
         goal: str,
         kernel: sk.Kernel,
         prompt: str = PROMPT,
-    ) -> Plan:
+    ) -> sk.SKContext:
         planner = kernel.create_semantic_function(
             prompt, max_tokens=self.max_tokens, temperature=self.temperature
         )
 
         available_functions_string = self._create_available_functions_string(kernel)
 
-        context = ContextVariables()
+        context = kernel.create_new_context()
         context["goal"] = goal
         context["available_functions"] = available_functions_string
-        generated_plan = await planner.invoke_async(variables=context)
-        return Plan(prompt=prompt, goal=goal, plan=generated_plan)
+        generated_plan = await planner.invoke_async(context=context)
+        return generated_plan
 
-    async def execute_plan_async(self, plan: Plan, kernel: sk.Kernel) -> str:
-        generated_plan = json.loads(plan.generated_plan.result)
+    async def execute_plan_async(
+        self, generated_plan: sk.SKContext, kernel: sk.Kernel
+    ) -> str:
+        json_regex = r"\{(?:[^{}]|(?R))*\}"
+        generated_plan_string = regex.search(json_regex, generated_plan.result).group()
+        generated_plan = json.loads(generated_plan_string)
 
-        context = ContextVariables()
+        context = kernel.create_new_context()
         context["input"] = generated_plan["input"]
         subtasks = generated_plan["subtasks"]
 
-        result = ""
         for subtask in subtasks:
             skill_name, function_name = subtask["function"].split(".")
             sk_function = kernel.skills.get_function(skill_name, function_name)
@@ -48,6 +50,8 @@ class CustomPlanner(BasicPlanner):
             if args:
                 for key, value in args.items():
                     context[key] = value
-            output = await sk_function.invoke_async(variables=context)
-            context["input"] = result = output.result
-        return result
+            output = await sk_function.invoke_async(context=context)
+
+            context["input"] = output.result
+
+        return output.result

@@ -7,34 +7,38 @@ from semantic_kernel.connectors.ai.open_ai import (  # AzureTextCompletion,; Azu
     OpenAITextEmbedding,
 )
 from semantic_kernel.orchestration.sk_function_base import SKFunctionBase
-from semantic_kernel.planning.basic_planner import BasicPlanner
-from semantic_kernel.planning.plan import Plan
 from typing_extensions import Any, Self
+
+from app.semantic_kernel.component.planner import CustomPlanner
+from app.semantic_kernel.component.skills.interpreter.codeinterpreter_python import (
+    CodeInterpeterPython,
+)
 
 
 class SimpleRunner(object):
     def __init__(
         self,
-        planner: BasicPlanner = BasicPlanner(),
+        planner: CustomPlanner = CustomPlanner(),
         skill_dir=None,
         model_name: str = "gpt-3.5-turbo",
     ) -> None:
-        self.planner: BasicPlanner = planner
+        self.planner: CustomPlanner = planner
         self.skill_dir = skill_dir
         self.model_name = model_name
 
         self.kernel: sk.Kernel = None
         self.skills: list[dict[str, SKFunctionBase]] = []
         self.memory_store = sk.memory.VolatileMemoryStore()
+        self.code_interpreter: CodeInterpeterPython = None
 
-        self.setup_kernel(model_name=model_name)
-
-    def set_planner(self, planner: BasicPlanner) -> Self:
+    def set_planner(self, planner: CustomPlanner) -> Self:
         self.planner = planner
         return self
 
-    def setup_kernel(self, model_name: str = "gpt-3.5-turbo") -> Self:
+    async def setup_kernel(self, model_name: str = None) -> Self:
         kernel = sk.Kernel()
+        if model_name:
+            self.model_name = model_name
 
         load_dotenv()
         api_key = os.environ.get("OPENAI_API_KEY")
@@ -49,10 +53,10 @@ class SimpleRunner(object):
         kernel.register_memory_store(memory_store=self.memory_store)
         self.kernel = kernel
 
-        self.setup_skills(skill_dir=self.skill_dir, model_name=model_name)
+        await self.setup_skills(skill_dir=self.skill_dir, model_name=self.model_name)
         return self
 
-    def setup_skills(
+    async def setup_skills(
         self, skill_dir: str = "./skills", model_name: str = "gpt-3.5-turbo"
     ) -> Self:
         from semantic_kernel.core_skills.http_skill import HttpSkill
@@ -64,12 +68,18 @@ class SimpleRunner(object):
         self.skills.append(self.kernel.import_skill(SearchLocal(), "SearchLocal"))
         self.skills.append(self.kernel.import_skill(SearchWeb(), "SearchWeb"))
         self.skills.append(self.kernel.import_skill(HttpSkill(), "HttpSkill"))
+        self.code_interpreter = CodeInterpeterPython()
+        self.skills.append(
+            self.kernel.import_skill(self.code_interpreter, "CodeInterpeterPython")
+        )
         self.skills.append(
             self.kernel.import_skill(Answer(model_name=model_name), "Answer")
         )
         self.skills.append(
             self.kernel.import_native_skill_from_directory(skill_dir, "math")
         )
+
+        await self.code_interpreter.astart()
         return self
 
     async def do_run(self, user_query: str, n_retries: int = 3) -> str:
@@ -95,11 +105,12 @@ class SimpleRunner(object):
                 input_query = input_query.replace("\\x", "\\\\x")
                 print("-" * 50)
                 print("input_query:", input_query)
-                plan: Plan = await self.do_plan(input_query=input_query)
-                print(f"generated_plan: {plan.generated_plan.result}")
-                # print(f"{json.loads(plan.generated_plan.result)}")
+                generated_plan: sk.SKContext = await self.do_plan(
+                    input_query=input_query
+                )
+                print(f"generated_plan: {generated_plan.result}")
                 print("-" * 25)
-                response = await self.do_execute(plan)
+                response = await self.do_execute(generated_plan)
                 break
             except Exception as e:
                 input_query = f"""[GOALここから]
@@ -117,7 +128,7 @@ class SimpleRunner(object):
 
 - あなたは、直前に以下のようなプランを作成し実行しました
 (((
-{plan.generated_plan.result}
+{generated_plan.result}
 )))
 
 - しかし以下のようなエラーが発生しました
@@ -137,14 +148,18 @@ class SimpleRunner(object):
 
     async def do_plan(
         self, input_query: str, prompt: str = None, n_retries: int = 3
-    ) -> Plan:
+    ) -> sk.SKContext:
         params = dict(goal=input_query, kernel=self.kernel)
         _params = params.copy()
         if prompt:
             _params.update(dict(prompt=prompt))
-        plan: Plan = await self.planner.create_plan_async(**_params)
-        return plan
+        generated_plan: sk.SKContext = await self.planner.create_plan_async(**_params)
+        return generated_plan
 
-    async def do_execute(self, plan: Plan) -> Any:
-        response = await self.planner.execute_plan_async(plan, self.kernel)
+    async def do_execute(self, generated_plan: sk.SKContext) -> Any:
+        response = await self.planner.execute_plan_async(generated_plan, self.kernel)
         return response
+
+    async def terminate(self) -> Self:
+        await self.code_interpreter.astop()
+        return self
