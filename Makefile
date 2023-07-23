@@ -1,6 +1,8 @@
 default: all
 
-all: up
+all: up install
+
+install: backend-poetry-install
 
 # ==========
 # interaction tasks
@@ -10,8 +12,8 @@ bash:
 python: up
 	docker compose exec app python
 
-lowcode:
-	docker compose up lowcode_llm
+# lowcode:
+# 	docker compose up lowcode_llm
 
 # switch mode
 cpu gpu:
@@ -27,7 +29,7 @@ mode:
 pip: _pip commit
 
 _pip:
-	docker compose exec app python -m pip install -r requirements.txt
+	docker compose exec app python -m pip install -r requirements.txt         # too slow
 
 commit:
 	@echo "$$(date +'%Y/%m/%d %T') - Start $@"
@@ -93,7 +95,7 @@ frontend-restore: frontend-ci
 
 # ==========
 # backend tasks
-backend-demo: up
+backend-demo backend-poetry-install backend-poetry: up
 	$(eval task_name=$(shell echo "$@" | perl -pe 's/backend-//'))
 	@echo "runnning task @ backend: $(task_name)"
 	docker compose exec app bash -c "cd backend && make $(task_name)"

@@ -1,4 +1,13 @@
 # backend tasks
+
+# ==========
+# environments
+poetry-install:
+	@sh bin/poetry_install.sh
+
+poetry:
+	@PATH=$$HOME/.local/bin:$$PATH poetry shell
+
 # ==========
 # # for app
 demo:
