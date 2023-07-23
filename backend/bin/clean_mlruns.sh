@@ -1,4 +1,4 @@
-#!/usr/bin/sh
+#!/bin/sh
 
 sql="select run_uuid from runs where lifecycle_stage == 'deleted'"
 

@@ -76,7 +76,7 @@ build-no-cache:
 
 reup: down up
 
-clean: clean-logs clean-container
+clean: backend-clean clean-logs clean-container
 
 clean-logs:
 	rm -rf log/*.log
@@ -101,4 +101,9 @@ backend-demo backend-poetry-install backend-poetry: up
 	$(eval task_name=$(shell echo "$@" | perl -pe 's/backend-//'))
 	@echo "runnning task @ backend: $(task_name)"
 	docker compose exec app bash -c "cd backend && make $(task_name)"
+
+backend-clean:
+	$(eval task_name=$(shell echo "$@" | perl -pe 's/backend-//'))
+	@echo "runnning task @ backend: $(task_name)"
+	cd backend && make $(task_name)
 

@@ -89,7 +89,11 @@ clean-result:
 clean-mlruns:
 	sh bin/clean_mlruns.sh
 
+clean-venv:
+	@rm -rf .venv/
+
 _clean-experiment:	# if use, be carefull !!
 	rm -rf mlruns data/mlflow.db
 
-clean: clean-result clean-mlruns
+# clean: clean-result clean-mlruns clean-venv
+clean: clean-result clean-venv
