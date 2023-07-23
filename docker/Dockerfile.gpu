@@ -1,5 +1,4 @@
 FROM nvidia/cuda:11.8.0-devel-ubuntu22.04
-# FROM nvidia/cuda:11.7.0-devel-ubuntu22.04
 
 LABEL maintainer="tkosht <takehito.oshita.business@gmail.com>"
 
@@ -41,12 +40,6 @@ WORKDIR /tmp
 
 RUN python -m pip install --upgrade pip==21.0.1
 
-# requirements
-# COPY ./requirements.txt /requirements.txt
-# RUN python -m pip install --upgrade pip==21.0.1 \
-#     && python -m pip install -r /requirements.txt \
-#     && rm -f /requirements.txt
-
 # upgrade system
 RUN apt-get upgrade -y \
     && apt-get autoremove -y \
@@ -73,21 +66,8 @@ RUN echo $user_name ALL=\(root\) NOPASSWD:ALL \
 RUN chown -R $user_name:$group_name $home_dir 
 USER $user_name
 
-
 # Poetry
 RUN curl -sSL https://install.python-poetry.org | python3 -
-
-# # unidic for MeCab
-# RUN pip install unidic-lite
-
-# # Sudachi
-# RUN python -m pip install sudachidict_core sudachidict_small sudachidict_full
-# 
-# matplotlib
-# RUN python -m pip install matplotlib
-# setup matplotlib for japanese
-# RUN sed -i -e 's/^#font.family:\s*sans-serif/#font.family: IPAexGothic/' $(python -c 'import matplotlib as m; print(m.matplotlib_fname())')
-
 
 # Switch back to dialog for any ad-hoc use of apt-get
 ENV DEBIAN_FRONTEND=dialog

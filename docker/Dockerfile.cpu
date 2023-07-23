@@ -4,6 +4,7 @@ LABEL maintainer="tkosht <takehito.oshita.business@gmail.com>"
 
 ENV TZ Asia/Tokyo
 ENV DEBIAN_FRONTEND=noninteractive
+
 RUN apt-get update -y && apt-get upgrade -y \
     && apt-get install --fix-missing -y sudo build-essential autoconf \
         vim tmux tzdata locales dialog git openssh-server bash-completion \
@@ -32,32 +33,18 @@ ENV LANG="ja_JP.UTF-8" \
 # # Install for Tokenizers
 WORKDIR /tmp
 
-# MeCab
-RUN git config --global http.postBuffer 1048576000 \
-    && git clone https://github.com/neologd/mecab-ipadic-neologd.git \
-    && cd mecab-ipadic-neologd && bin/install-mecab-ipadic-neologd -n -a -y \
-    && pip install unidic-lite
+# # MeCab
+# RUN git config --global http.postBuffer 1048576000 \
+#     && git clone https://github.com/neologd/mecab-ipadic-neologd.git \
+#     && cd mecab-ipadic-neologd && bin/install-mecab-ipadic-neologd -n -a -y
 
-# Sudachi
-RUN python -m pip install sudachidict_core sudachidict_small sudachidict_full
-
-# matplotlib
-RUN python -m pip install matplotlib
-
-# requirements
-COPY ./requirements.txt /requirements.txt
-RUN python -m pip install --upgrade pip \
-    && python -m pip install -r /requirements.txt \
-    && rm -f /requirements.txt
+RUN python -m pip install --upgrade pip==21.0.1
 
 # upgrade system
 RUN apt-get upgrade -y \
     && apt-get autoremove -y \
     && apt-get clean -y
     # && rm -rf /var/lib/apt/lists/*
-
-# setup matplotlib for japanese
-RUN sed -i -e 's/^#font.family:\s*sans-serif/#font.family: IPAexGothic/' $(python -c 'import matplotlib as m; print(m.matplotlib_fname())')
 
 # setup general user
 ARG user_id=1000
@@ -79,5 +66,9 @@ RUN echo $user_name ALL=\(root\) NOPASSWD:ALL \
 RUN chown -R $user_name:$group_name $home_dir 
 USER $user_name
 
+# Poetry
+RUN curl -sSL https://install.python-poetry.org | python3 -
+
 # Switch back to dialog for any ad-hoc use of apt-get
 ENV DEBIAN_FRONTEND=dialog
+

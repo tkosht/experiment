@@ -6,7 +6,7 @@ poetry-install:
 	@sh bin/poetry_install.sh
 
 poetry:
-	@PATH=$$HOME/.local/bin:$$PATH poetry shell
+	@bash -i -c 'SHELL=/usr/bin/bash poetry shell'
 
 # ==========
 # # for app
