@@ -9,6 +9,8 @@ install: backend-poetry-install
 bash:
 	docker compose exec app bash
 
+poetry: backend-poetry
+
 python: up
 	docker compose exec app python
 
