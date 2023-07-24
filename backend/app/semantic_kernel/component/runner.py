@@ -93,9 +93,7 @@ class SimpleRunner(object):
     async def do_run(self, user_query: str, n_retries: int = 3) -> str:
         meta_order = "以下の`- ユーザの依頼`について過去のやり取り(文脈)も踏まえて実行プランを作成してください。"  # noqa
         # constraint = "最後に Answer を必ず使ってください。ステップバイステップでプランを作成してください。"
-        constraint = (
-            "極力、データサイエンスやデータ分析タスクとして扱ってください。そして無駄がないように最も少ない `subtasks` で実現してください。"
-        )
+        constraint = "極力、データサイエンスやデータ分析タスクとして扱ってください。そして無駄がないように最も少ない `subtasks` で実現してください。特に、_GLOBAL_FUNCTIONS_.* は絶対に使わないでください。"
         input_query = f"""[GOALここから]
 {meta_order}
 
