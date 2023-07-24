@@ -146,8 +146,8 @@ def _main(params: DictConfig):
                 )
                 temperature_sl = gr.Slider(0, 200, 1, step=1, label="temperature (%)")
 
-        txt.submit(_init_session, [status], [status]).then(
-            _init, [chatbot, txt], [chatbot, txt]
+        txt.submit(_init, [chatbot, txt], [chatbot, txt]).then(
+            _init_session, [status], [status]
         ).then(
             _run, [status, chatbot, model_dd, temperature_sl], [status, chatbot, img]
         )
