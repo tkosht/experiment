@@ -434,3 +434,8 @@ class CustomLocalBox(BaseBox):
     @property
     def ws_url(self) -> str:
         return f"ws://localhost:{self.port}/api"
+
+
+# -----
+# Copyright (c) 2023 Dominic
+# Copyright (c) 2023 tkosht

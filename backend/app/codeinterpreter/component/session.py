@@ -54,6 +54,9 @@ class CodeInterpreterSession:
         self.input_files: list[File] = []
         self.output_files: list[File] = []
 
+    def start(self) -> None:
+        self.codebox.start()
+
     async def astart(self) -> None:
         await self.codebox.astart()
 
@@ -216,6 +219,9 @@ class CodeInterpreterSession:
     async def is_running(self) -> bool:
         return await self.codebox.astatus() == "running"
 
+    def stop(self) -> None:
+        self.codebox.stop()
+
     async def astop(self) -> None:
         await self.codebox.astop()
 
@@ -227,5 +233,6 @@ class CodeInterpreterSession:
         await self.astop()
 
 
+# -----
 # Copyright (c) 2023 Dominic
 # Copyright (c) 2023 tkosht

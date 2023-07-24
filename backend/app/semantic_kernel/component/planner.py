@@ -49,7 +49,10 @@ class CustomPlanner(BasicPlanner):
             args = subtask.get("args", None)
             if args:
                 for key, value in args.items():
-                    context[key] = value
+                    if isinstance(value, str):
+                        context[key] = value
+                    else:
+                        print(f"WARNING not a string value: {key}={value}")
             output = await sk_function.invoke_async(context=context)
 
             context["input"] = output.result

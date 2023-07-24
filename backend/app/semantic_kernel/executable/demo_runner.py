@@ -15,13 +15,18 @@ def _init(
     return history, ""
 
 
-def _init_session(status: dict) -> dict:
+async def _init_session(status: dict) -> dict:
     import uuid
 
     if "session_id" in status:
         return status
 
     status["session_id"] = str(uuid.uuid4())
+    skill_dir = "./app/semantic_kernel/component/skills/"
+    runner = SimpleRunner(planner=CustomPlanner(), skill_dir=skill_dir)
+    await runner.astart()
+    status["runner"] = runner
+
     return status
 
 
@@ -36,12 +41,11 @@ async def _run(
     input_query: str = history[-1][0]
     temperature: float = temperature_percent / 100
 
-    skill_dir = "./app/semantic_kernel/component/skills/"
-    runner = SimpleRunner(
-        planner=CustomPlanner(temperature=temperature, max_tokens=max_tokens),
-        skill_dir=skill_dir,
+    runner: SimpleRunner = status["runner"]
+    runner.set_planner(
+        planner=CustomPlanner(temperature=temperature, max_tokens=max_tokens)
     )
-    await runner.setup_kernel(model_name=model_name)
+    runner.update_kernel_model(model_name=model_name)
 
     # NOTE: たぶん、memory を使わないほうが賢い動きになるかも(文脈の必要なところをLLMに任せられるため)
     context = "---\n\n".join(
@@ -92,7 +96,6 @@ async def _run(
     # keep memory
     history[-1][1] = response
 
-    await runner.terminate()
     return status, history, img
 
 
@@ -109,10 +112,11 @@ def _main(params: DictConfig):
                 height: int = 500
                 with gr.Column():
                     chatbot = gr.Chatbot(
-                        [], label="assistant", elem_id="demobot"
-                    ).style(height=height)
+                        [], label="assistant", elem_id="demobot", height=height
+                    )
                 with gr.Column():
                     img = gr.outputs.Image(type="pil").style(height=height)
+
             with gr.Row():
                 with gr.Column():
                     txt = gr.TextArea(
@@ -120,7 +124,8 @@ def _main(params: DictConfig):
                         placeholder="入力してね〜",
                         value=default_query,
                         lines=5,
-                    ).style(container=False)
+                        container=False,
+                    )
 
         with gr.Tab("Setting"):
             with gr.Row():
@@ -144,9 +149,7 @@ def _main(params: DictConfig):
         txt.submit(_init_session, [status], [status]).then(
             _init, [chatbot, txt], [chatbot, txt]
         ).then(
-            _run,
-            [status, chatbot, model_dd, temperature_sl],
-            [status, chatbot, img],
+            _run, [status, chatbot, model_dd, temperature_sl], [status, chatbot, img]
         )
 
     if params.do_share:

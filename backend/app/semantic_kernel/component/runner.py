@@ -31,21 +31,21 @@ class SimpleRunner(object):
         self.memory_store = sk.memory.VolatileMemoryStore()
         self.code_interpreter: CodeInterpeterPython = None
 
+        self.setup_kernel().setup_skills()
+
     def set_planner(self, planner: CustomPlanner) -> Self:
         self.planner = planner
         return self
 
-    async def setup_kernel(self, model_name: str = None) -> Self:
+    def setup_kernel(self) -> Self:
         kernel = sk.Kernel()
-        if model_name:
-            self.model_name = model_name
-
         load_dotenv()
+
         api_key = os.environ.get("OPENAI_API_KEY")
         org_id = os.environ.get("OPENAI_ORG_ID")
 
         kernel.add_chat_service(
-            "gpt", OpenAIChatCompletion(model_name, api_key, org_id)
+            "gpt", OpenAIChatCompletion(self.model_name, api_key, org_id)
         )
         kernel.add_text_embedding_generation_service(
             "ada", OpenAITextEmbedding("text-embedding-ada-002", api_key, org_id)
@@ -53,12 +53,22 @@ class SimpleRunner(object):
         kernel.register_memory_store(memory_store=self.memory_store)
         self.kernel = kernel
 
-        await self.setup_skills(skill_dir=self.skill_dir, model_name=self.model_name)
         return self
 
-    async def setup_skills(
-        self, skill_dir: str = "./skills", model_name: str = "gpt-3.5-turbo"
-    ) -> Self:
+    def update_kernel_model(self, model_name: str = None) -> Self:
+        api_key = os.environ.get("OPENAI_API_KEY")
+        org_id = os.environ.get("OPENAI_ORG_ID")
+
+        try:
+            self.kernel.remove_chat_service("gpt")
+        except Exception:
+            pass
+        self.kernel.add_chat_service(
+            "gpt", OpenAIChatCompletion(model_name, api_key, org_id)
+        )
+        return self
+
+    def setup_skills(self, model_name: str = "gpt-3.5-turbo") -> Self:
         # from semantic_kernel.core_skills.http_skill import HttpSkill
 
         # from app.semantic_kernel.component.skills.answer.native_function import Answer
@@ -78,13 +88,14 @@ class SimpleRunner(object):
         self.skills.append(
             self.kernel.import_skill(self.code_interpreter, "CodeInterpeterPython")
         )
-
-        await self.code_interpreter.astart()
         return self
 
     async def do_run(self, user_query: str, n_retries: int = 3) -> str:
         meta_order = "以下の`- ユーザの依頼`について過去のやり取り(文脈)も踏まえて実行プランを作成してください。"  # noqa
-        constraint = "最後に Answer を必ず使ってください。ステップバイステップでプランを作成してください。"
+        # constraint = "最後に Answer を必ず使ってください。ステップバイステップでプランを作成してください。"
+        constraint = (
+            "極力、データサイエンスやデータ分析タスクとして扱ってください。そして無駄がないように最も少ない `subtasks` で実現してください。"
+        )
         input_query = f"""[GOALここから]
 {meta_order}
 
@@ -160,6 +171,18 @@ class SimpleRunner(object):
         response = await self.planner.execute_plan_async(generated_plan, self.kernel)
         return response
 
-    async def terminate(self) -> Self:
+    def start(self) -> Self:
+        self.code_interpreter.start()
+        return self
+
+    async def astart(self) -> Self:
+        await self.code_interpreter.astart()
+        return self
+
+    async def astop(self) -> Self:
         await self.code_interpreter.astop()
+        return self
+
+    async def stop(self) -> Self:
+        await self.code_interpreter.stop()
         return self
