@@ -7,6 +7,11 @@ cd $d/../
 # rm -rf .venv/
 # 
 export PATH="$HOME/.local/bin:$PATH" 
+
+# for llama-cpp-python
+export CMAKE_ARGS="-DLLAMA_CUBLAS=ON"
+export FORCE_CMAKE=1
+
 poetry config virtualenvs.in-project true
 poetry install
 
