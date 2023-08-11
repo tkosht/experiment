@@ -17,7 +17,8 @@
                 "run",
                 // "${file}",
                 // "${workspaceFolder}/app/semantic_kernel/executable/demo_runner.py",
-                "${workspaceFolder}/app/langchain/executable/demo_stream.py",
+                // "${workspaceFolder}/app/langchain/executable/demo_stream.py",
+                "${workspaceFolder}/app/codeinterpreter/executable/demo_stream.py",
                 "--server.port",
                 "8501"
             ],

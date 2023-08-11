@@ -1,5 +1,3 @@
-"""Example Streamlit chat UI that exposes a Feedback button and link to LangSmith traces."""
-
 import streamlit as st
 from dotenv import load_dotenv
 from langchain.callbacks.tracers.run_collector import \
@@ -37,7 +35,6 @@ if st.sidebar.button("Clear message history"):
     print("Clearing message history")
     st.session_state.messages = []
 
-# Add a button to choose between llmchain and expression chain
 _DEFAULT_SYSTEM_PROMPT = (
     "You are a cool and smart whale with the smartest AI brain. "
     "You love programming, coding, mathematics, Japanese, and friendship!"
@@ -63,7 +60,6 @@ for msg in st.session_state.messages:
     streamlit_type = get_openai_type(msg)
     avatar = None
     avatar = user_avatar if streamlit_type == "user" else avatar
-    # print(f"{streamlit_type=} {avatar=}")
     avatar = ai_avatar if streamlit_type == "assistant" else avatar
     with st.chat_message(streamlit_type, avatar=avatar):
         st.markdown(msg.content)
@@ -81,7 +77,6 @@ with container:
         with col2:
             with st.empty():
                 st.markdown("<br>" * 3, unsafe_allow_html=True)
-
             submit_button = st.form_submit_button(label="🫧")
 
 if submit_button and prompt:

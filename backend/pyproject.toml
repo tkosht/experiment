@@ -89,7 +89,7 @@ datasets = "*"
 
 # LLM relatives
 # # for langchain
-langchain = "*"
+langchain = "^0.0.262"
 openai = "*"
 google-search-results = "*"
 google-api-python-client = "*"
@@ -113,7 +113,6 @@ semantic-kernel = "*"
 
 # for LLM
 huggingface_hub = "*"
-# codeinterpreterapi = "^0.0.6"
 codeboxapi = "*"
 llama-cpp-python = "*"
 
@@ -132,6 +131,7 @@ numba = "^0.57.1"
 tslearn = "^0.6.1"
 sktime = "^0.21.0"
 protobuf = "3.20.1"
+jupyter-kernel-gateway = "^2.5.2"
 
 
 [tool.poetry.dev-dependencies]
