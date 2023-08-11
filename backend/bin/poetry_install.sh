@@ -4,8 +4,9 @@ d=$(cd $(dirname $0) && pwd)
 cd $d/../
 
 # # cleanup previous virtual env
-# rm -rf .venv/
-# 
+rm -rf .venv/
+rm -f poetry.lock
+
 export PATH="$HOME/.local/bin:$PATH" 
 
 # for llama-cpp-python

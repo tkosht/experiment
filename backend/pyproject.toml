@@ -60,7 +60,7 @@ tensorflow-datasets = "*"
 # pyro-ppl = "*"
 # pystan = "2.19.1.1"
 # pystan = "*"
-# # fbprophet = "*"
+prophet = "*"
 # neo4j = "*"
 # neomodel = "*"
 
@@ -79,6 +79,8 @@ tensorflow-datasets = "*"
 # gensim = "*"
 # janome = "*"
 # wordcloud = "*"
+sentencepiece = "*"
+einops = "*"
 
 # transformers = "*"
 # git+https://github.com/huggingface/transformers
