@@ -3,9 +3,9 @@
 d=$(cd $(dirname $0) && pwd)
 cd $d/../
 
-# # cleanup previous virtual env
-rm -rf .venv/
-rm -f poetry.lock
+# # cleanup previous virtual env -> use `make clean`
+# rm -rf .venv/
+# rm -f poetry.lock
 
 export PATH="$HOME/.local/bin:$PATH" 
 

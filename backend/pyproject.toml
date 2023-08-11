@@ -89,7 +89,7 @@ datasets = "*"
 
 # LLM relatives
 # # for langchain
-langchain = "^0.0.232"
+langchain = "*"
 openai = "*"
 google-search-results = "*"
 google-api-python-client = "*"
@@ -113,13 +113,13 @@ semantic-kernel = "*"
 
 # for LLM
 huggingface_hub = "*"
-codeinterpreterapi = "^0.0.6"
+# codeinterpreterapi = "^0.0.6"
 codeboxapi = "*"
 llama-cpp-python = "*"
 
 # webapp
 gradio = "*"
-streamlit = "*"
+streamlit = "^1.24.0"
 streamlit-chat = "*"
 streamlit-extras = "*"
 hugchat = "*"
@@ -131,6 +131,7 @@ llvmlite = "^0.40.1"
 numba = "^0.57.1"
 tslearn = "^0.6.1"
 sktime = "^0.21.0"
+protobuf = "3.20.1"
 
 
 [tool.poetry.dev-dependencies]

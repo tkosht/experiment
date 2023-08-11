@@ -4,7 +4,7 @@
         "frontend/**": true,
         "**/mlruns/**": true,
         "**/__pycache__/**": true,
-        "**/[bw]k/**": true,
+        "**/[b]k/**": true,
         "**/.*/**": true
     },
     "files.watcherExclude": {
