@@ -2,7 +2,8 @@
 
 import streamlit as st
 from dotenv import load_dotenv
-from langchain.callbacks.tracers.run_collector import RunCollectorCallbackHandler
+from langchain.callbacks.tracers.run_collector import \
+    RunCollectorCallbackHandler
 from langchain.schema.runnable import RunnableConfig
 
 from app.langchain.component.chain.stream import get_chain, get_openai_type
@@ -76,13 +77,12 @@ with container:
     with st.form(key="my_form", clear_on_submit=True):
         col1, col2 = st.columns([0.96, 0.04])
         with col1:
-            # prompt = st.text_input(label="Message:", key="input")
-            prompt = st.text_area(label="Message: ", key="input", height=100)
+            prompt = st.text_area(label="Message: ", key="input")
         with col2:
             with st.empty():
                 st.markdown("<br>" * 3, unsafe_allow_html=True)
 
-            submit_button = st.form_submit_button(label="▶")
+            submit_button = st.form_submit_button(label="🫧")
 
 if submit_button and prompt:
     with latest_avatar_user:
