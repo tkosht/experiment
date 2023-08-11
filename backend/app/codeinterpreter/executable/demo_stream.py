@@ -64,7 +64,8 @@ if st.sidebar.button("Clear message history"):
 
 _DEFAULT_SYSTEM_PROMPT = (
     "You are a cool and smart whale with the smartest AI brain. "
-    "You love programming, coding, mathematics, Japanese, and friendship!"
+    "You love programming, coding, mathematics, Japanese, and friendship! "
+    "You MUST always answer in Japanese. "
 )
 
 system_prompt = st.sidebar.text_area(
@@ -143,7 +144,6 @@ runnable_config = RunnableConfig(
 )
 
 if submit_button and prompt:
-    print("submitted")
     with latest_avatar_user:
         with st.chat_message("user", avatar=user_avatar):
             st.write(f"{prompt}")
@@ -154,11 +154,28 @@ if submit_button and prompt:
             _msg_area_ai = st.empty()
             _image_area_ai = st.empty()
 
+        # with _msg_area_ai:
+        #     st.markdown("(少々お待ち下さい・・)")
+
         with _msg_area_ai:
             text: str = ""
-            cdp: CodeInterpreter = st.session_state["codeinterpreter"]
-            response = cdp.generate_response_sync(user_msg=prompt)
-            text, imgs = parse_response(response)
+            with st.spinner("少々お待ち下さい・・"):
+                cdp: CodeInterpreter = st.session_state["codeinterpreter"]
+                response = cdp.generate_response_sync(user_msg=prompt)
+                _text, imgs = parse_response(response)
+
+            # NOTE: just in japanese
+            msg = f"""以下を日本語にしてください。
+            ```
+            {_text}
+            ```
+            """
+
+            # streaming output
+            for chunk in chain.stream({"input": msg}, config=runnable_config):
+                text += chunk.content
+                st.markdown(text + "▌")
+            st.markdown(text)
 
             # display
             with st.empty():
@@ -167,12 +184,6 @@ if submit_button and prompt:
         with _image_area_ai:
             for img in imgs:
                 st.image(image=img)
-
-        # NOTE: implement for streaming output
-        # for chunk in chain.stream({"input": prompt}, config=runnable_config):
-        #     text += chunk.content
-        #     st.markdown(text + "▌")
-        # st.markdown(text)
 
     memory.save_context({"input": prompt}, {"output": text})
     st.session_state.messages = memory.buffer
