@@ -96,6 +96,8 @@ for msg in st.session_state.messages:
 latest_avatar_user = st.empty()
 latest_avatar_ai = st.empty()
 
+from app.codeinterpreter.component.schema import File
+
 with st.container():
     with st.form(key="my_form", clear_on_submit=True):
         col1, col2 = st.columns([0.96, 0.04])
@@ -104,15 +106,11 @@ with st.container():
             prompt = st.text_area(
                 label=f"Message: ex) {message_example}", key="input", value=""
             )
+            uploaded_file = st.file_uploader("", label_visibility="hidden")
         with col2:
             with st.empty():
                 st.markdown("<br>" * 3, unsafe_allow_html=True)
             submit_button = st.form_submit_button(label="🫧")
-        # default_message = "Plot the bitcoin chart of 2023 YTD"
-        # prompt = st.text_area(
-        #     label=f"Message: ex) {default_message}", key="input", value=""
-        # )
-        # submit_button = st.form_submit_button(label="🫧")
 
 
 def parse_response(response: CodeInterpreterResponse):
@@ -154,14 +152,15 @@ if submit_button and prompt:
             _msg_area_ai = st.empty()
             _image_area_ai = st.empty()
 
-        # with _msg_area_ai:
-        #     st.markdown("(少々お待ち下さい・・)")
-
         with _msg_area_ai:
             text: str = ""
             with st.spinner("少々お待ち下さい・・"):
+                files = []
+                if uploaded_file:
+                    fl = File(name=uploaded_file.name, content=uploaded_file.getvalue())
+                    files.append(fl)
                 cdp: CodeInterpreter = st.session_state["codeinterpreter"]
-                response = cdp.generate_response_sync(user_msg=prompt)
+                response = cdp.generate_response_sync(user_msg=prompt, files=files)
                 _text, imgs = parse_response(response)
 
             # NOTE: just in japanese
