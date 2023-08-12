@@ -33,6 +33,7 @@ def _init_session_state(key: str, init_value):
 
 
 # Initialize State(
+_init_session_state("welcome", init_value=False)
 _init_session_state("messages", init_value=[])
 _init_session_state("images", init_value=[])
 
@@ -64,7 +65,7 @@ if st.sidebar.button("Clear message history"):
 
 _DEFAULT_SYSTEM_PROMPT = (
     "You are a cool and smart whale with the smartest AI brain. "
-    "You love programming, coding, mathematics, Japanese, and friendship! "
+    "You love programming, coding, mathematics, Japanese "
     "You MUST always answer in Japanese. "
 )
 
@@ -76,6 +77,11 @@ system_prompt = st.sidebar.text_area(
 system_prompt = system_prompt.strip().replace("{", "{{").replace("}", "}}")
 chain, memory = get_chain(system_prompt)
 
+# Welcome Message holder
+if not st.session_state.welcome:
+    welcome_message_holder = st.chat_message("assistant", avatar=ai_avatar)
+else:
+    welcome_message_holder = st.empty()
 
 # chat messages from history
 ai_idx = 0
@@ -102,7 +108,7 @@ with st.container():
     with st.form(key="my_form", clear_on_submit=True):
         col1, col2 = st.columns([0.96, 0.04])
         with col1:
-            message_example = "Plot the bitcoin chart of 2023 YTD"
+            message_example = "2023年までの日経平均株価を適切な前処理をした上で画像にプロットして"
             prompt = st.text_area(
                 label=f"Message: ex) {message_example}", key="input", value=""
             )
@@ -152,33 +158,32 @@ if submit_button and prompt:
             _msg_area_ai = st.empty()
             _image_area_ai = st.empty()
 
+        files = []
+        if uploaded_file:
+            fl = File(name=uploaded_file.name, content=uploaded_file.getvalue())
+            files.append(fl)
+
         with _msg_area_ai:
-            text: str = ""
             with st.spinner("少々お待ち下さい・・"):
-                files = []
-                if uploaded_file:
-                    fl = File(name=uploaded_file.name, content=uploaded_file.getvalue())
-                    files.append(fl)
                 cdp: CodeInterpreter = st.session_state["codeinterpreter"]
                 response = cdp.generate_response_sync(user_msg=prompt, files=files)
                 _text, imgs = parse_response(response)
 
             # NOTE: just in japanese
-            msg = f"""以下を日本語にしてください。
+            msg = f"""以下を日本語にしてください。翻訳した結果の日本語のみ返してください。
             ```
             {_text}
             ```
             """
+
+            text: str = ""
+            st.markdown(text + "▌")
 
             # streaming output
             for chunk in chain.stream({"input": msg}, config=runnable_config):
                 text += chunk.content
                 st.markdown(text + "▌")
             st.markdown(text)
-
-            # display
-            with st.empty():
-                st.markdown(text)
 
         with _image_area_ai:
             for img in imgs:
@@ -187,3 +192,14 @@ if submit_button and prompt:
     memory.save_context({"input": prompt}, {"output": text})
     st.session_state.messages = memory.buffer
     st.session_state.images.append(imgs)
+
+# make welcome message
+if not st.session_state.welcome:
+    with welcome_message_holder:
+        with st.empty():
+            msg = "You have to make a welcome message to the user, politely and friendly in japanese."
+            welcome_message = ""
+            for chunk in chain.stream({"input": msg}):
+                welcome_message += chunk.content
+                st.markdown(welcome_message)
+    st.session_state.welcome = True
