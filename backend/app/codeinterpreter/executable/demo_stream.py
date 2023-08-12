@@ -14,7 +14,7 @@ from app.langchain.component.chain.stream import get_chain, get_openai_type
 load_dotenv()
 
 
-user_avatar = "🙂"
+user_avatar = "😄"
 ai_avatar = "🐳"
 
 st.set_page_config(
@@ -106,7 +106,7 @@ with st.container():
             prompt = st.text_area(
                 label=f"Message: ex) {message_example}", key="input", value=""
             )
-            uploaded_file = st.file_uploader("", label_visibility="hidden")
+            uploaded_file = st.file_uploader("upload file", label_visibility="hidden")
         with col2:
             with st.empty():
                 st.markdown("<br>" * 3, unsafe_allow_html=True)
