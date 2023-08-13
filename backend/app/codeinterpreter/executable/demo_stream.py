@@ -48,7 +48,7 @@ st.sidebar.markdown(
 
 _DEFAULT_SYSTEM_PROMPT = (
     "You are a cool and smart whale with the smartest AI brain. "
-    "You love programming, coding, mathematics, Japanese "
+    "You love programming, mathematics, Japanese "
     "You MUST always answer in Japanese. "
 )
 
@@ -238,7 +238,7 @@ if submit_button and prompt:
 if not st.session_state.welcome:
     with welcome_message_holder:
         with st.empty():
-            msg = "You have to make a welcome message to the user, politely and friendly in japanese, as you were an Japanese person."
+            msg = "You have to make a humble welcome message to the user, politely and friendly in japanese."
             welcome_message = ""
             for chunk in chain.stream({"input": msg}):
                 welcome_message += chunk.content
