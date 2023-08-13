@@ -1,5 +1,3 @@
-"""Example Streamlit chat UI that exposes a Feedback button and link to LangSmith traces."""
-
 import streamlit as st
 from dotenv import load_dotenv
 from langchain.callbacks.tracers.run_collector import RunCollectorCallbackHandler
