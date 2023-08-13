@@ -111,7 +111,7 @@ with st.container():
     with st.form(key="my_form", clear_on_submit=True):
         col1, col2 = st.columns([0.96, 0.04])
         with col1:
-            message_example = "2023年までの日経平均株価を適切な前処理をした上で画像にプロットして"
+            message_example = "2023年までの日経平均株価を適切な前処理をした上で画像にプロットしてくれますか"
             prompt = st.text_area(
                 label=f"Message: ex) {message_example}", key="input", value=""
             )
