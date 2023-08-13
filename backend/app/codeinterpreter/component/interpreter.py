@@ -8,7 +8,7 @@ import base64
 import re
 import traceback
 from io import BytesIO
-from typing import Optional
+from typing import Callable, Optional
 from uuid import UUID, uuid4
 
 from codeboxapi.schema import CodeBoxOutput, CodeBoxStatus
@@ -43,9 +43,10 @@ class CodeInterpreter:
         **kwargs,
     ) -> None:
         # params
-        self.port = kwargs.get("port", 7801)
-        self.max_iterations = kwargs.get("max_iterations", 10)
-        self.verbose = kwargs.get("verbose", False)
+        self.port: int = kwargs.get("port", 7801)
+        self.max_iterations: int = kwargs.get("max_iterations", 10)
+        self.verbose: bool = kwargs.get("verbose", False)
+        self.log_handler: Callable = kwargs.get("log_handler", lambda x: x)
 
         # instances
         self.codebox: CustomLocalBox = CustomLocalBox(port=self.port)
@@ -82,6 +83,10 @@ class CodeInterpreter:
             memory=self.memory,
             verbose=self.verbose,
         )
+        return self
+
+    def update_log_handler(self, log_handler: Callable) -> Self:
+        self.log_handler: Callable = log_handler
         return self
 
     def _input_handler(self, request: UserRequest) -> None:
@@ -141,6 +146,7 @@ class CodeInterpreter:
     def _run_handler(self, code: str):
         """Run code in container and send the output to the user"""
         print("code:", code)
+        self.log_handler(text=code, is_code=True)
 
         output: CodeBoxOutput = self.codebox.run(code)
         self.code_log.append((code, output.content))

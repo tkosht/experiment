@@ -33,29 +33,34 @@ st.set_page_config(
 f"# {ai_avatar}️ Whale Chat"
 
 
-# Initialize State(
+# Initialize session state
 init_session_state("welcome", init_value=False)
 init_session_state("messages", init_value=[])
 init_session_state("images", init_value=[])
 
 
-# setup slidebar
+# ---
+# Sidebar
 st.sidebar.markdown(
     """
 # Menu
 """
 )
-if st.sidebar.button("Clear message history"):
-    print("Clearing message history")
-    st.session_state.messages = []
-    term_codeinterpreter()
-    model = (
-        st.session_state.model_name
-        if "model_name" in st.session_state
-        else "gpt-3.5-turbo"
-    )
-    init_codeinterpreter(model=model)
 
+
+_DEFAULT_SYSTEM_PROMPT = (
+    "You are a cool and smart whale with the smartest AI brain. "
+    "You love programming, coding, mathematics, Japanese "
+    "You MUST always answer in Japanese. "
+)
+
+system_prompt = st.sidebar.text_area(
+    "Custom Instructions",
+    _DEFAULT_SYSTEM_PROMPT,
+    help="Custom instructions to provide the language model to determine style, personality, etc.",
+)
+system_prompt = system_prompt.strip().replace("{", "{{").replace("}", "}}")
+chain, memory = get_chain(system_prompt, temperature=0.25)
 
 if "codeinterpreter" not in st.session_state:
     init_codeinterpreter()
@@ -74,21 +79,19 @@ model_option = st.sidebar.selectbox(
     on_change=on_change_model,
 )
 
+if st.sidebar.button("Clear message history"):
+    print("Clearing message history")
+    st.session_state.messages = []
+    term_codeinterpreter()
+    model = (
+        st.session_state.model_name
+        if "model_name" in st.session_state
+        else "gpt-3.5-turbo"
+    )
+    init_codeinterpreter(model=model)
 
-_DEFAULT_SYSTEM_PROMPT = (
-    "You are a cool and smart whale with the smartest AI brain. "
-    "You love programming, coding, mathematics, Japanese "
-    "You MUST always answer in Japanese. "
-)
 
-system_prompt = st.sidebar.text_area(
-    "Custom Instructions",
-    _DEFAULT_SYSTEM_PROMPT,
-    help="Custom instructions to provide the language model to determine style, personality, etc.",
-)
-system_prompt = system_prompt.strip().replace("{", "{{").replace("}", "}}")
-chain, memory = get_chain(system_prompt, temperature=0.25)
-
+# ---
 # Welcome Message holder
 if not st.session_state.welcome:
     welcome_message_holder = st.chat_message("assistant", avatar=ai_avatar)
@@ -167,6 +170,14 @@ if submit_button and prompt:
         with st.chat_message("assistant", avatar=ai_avatar):
             _msg_area_ai = st.empty()
             _image_area_ai = st.empty()
+            _log_area = st.empty()
+
+        def log_handler(text: str, is_code=False):
+            with _log_area:
+                if is_code:
+                    st.code(text, language="python", line_numbers=True)
+                else:
+                    st.markdown(text)
 
         files = []
         if uploaded_file:
@@ -191,6 +202,8 @@ if submit_button and prompt:
                 print(f"{user_msg=}")
 
                 cdp: CodeInterpreter = st.session_state["codeinterpreter"]
+                cdp.update_log_handler(log_handler=log_handler)
+
                 print("-" * 50)
                 print("llm:", cdp.llm.model_name)
 

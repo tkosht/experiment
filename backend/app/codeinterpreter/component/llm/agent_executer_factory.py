@@ -1,6 +1,7 @@
 from typing import Callable
 
 from langchain.agents import AgentExecutor, BaseSingleActionAgent
+from langchain.callbacks.base import BaseCallbackManager
 from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories import ChatMessageHistory
 from langchain.prompts.chat import MessagesPlaceholder
@@ -34,6 +35,7 @@ def create_agent_executor(
     tools: list[BaseTool],
     max_iterations: int = 10,
     memory: ConversationBufferMemory = None,
+    callback_manager: BaseCallbackManager = None,
     verbose: bool = False,
 ) -> AgentExecutor:
     # NOTE: no specfy the memory, then create a memory
@@ -46,8 +48,9 @@ def create_agent_executor(
         agent=_create_agent(llm, tools),
         max_iterations=max_iterations,
         tools=tools,
-        verbose=verbose,
         memory=memory,
+        callback_manager=callback_manager,
+        verbose=verbose,
     )
 
 
