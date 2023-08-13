@@ -18,7 +18,7 @@ def get_openai_type(msg):
 
 
 def get_chain(
-    system_prompt: str,
+    system_prompt: str, temperature: float = 0.7
 ) -> Tuple[Runnable, ConversationBufferMemory]:
     """Return a chain defined primarily in LangChain Expression Language"""
     memory = ConversationBufferMemory(return_messages=True)
@@ -39,6 +39,6 @@ def get_chain(
             ("human", "{input}"),
         ]
     )
-    llm = ChatOpenAI(temperature=0.7)
+    llm = ChatOpenAI(temperature=temperature)
     chain = ingress | prompt | llm
     return chain, memory

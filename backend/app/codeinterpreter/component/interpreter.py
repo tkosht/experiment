@@ -13,6 +13,8 @@ from uuid import UUID, uuid4
 
 from codeboxapi.schema import CodeBoxOutput, CodeBoxStatus
 from langchain.agents import AgentExecutor
+from langchain.memory import ConversationBufferMemory
+from langchain.memory.chat_message_histories import ChatMessageHistory
 from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import BaseTool
 from typing_extensions import Self
@@ -46,16 +48,30 @@ class CodeInterpreter:
         self.verbose = kwargs.get("verbose", False)
 
         # instances
-        self.codebox = CustomLocalBox(port=self.port)
+        self.codebox: CustomLocalBox = CustomLocalBox(port=self.port)
         self.llm: BaseLanguageModel = None
         self.agent_executor: AgentExecutor = None
         self.tools: list[BaseTool] = create_tools(self._run_handler, additional_tools)
+        self.memory = ConversationBufferMemory(
+            memory_key="chat_history",
+            return_messages=True,
+            chat_memory=ChatMessageHistory(),
+        )
+
         self.update_llm(llm=llm)
 
         # contexts
+        self.init_context()
+
+    @property
+    def session_id(self) -> Optional[UUID]:
+        return self.codebox.session_id
+
+    def init_context(self) -> Self:
         self.input_files: list[File] = []
         self.output_files: list[File] = []
         self.code_log: list[tuple[str, str]] = []
+        return self
 
     def update_llm(self, llm: BaseLanguageModel) -> Self:
         self.llm: BaseLanguageModel = llm
@@ -63,17 +79,10 @@ class CodeInterpreter:
             llm=llm,
             tools=self.tools,
             max_iterations=self.max_iterations,
+            memory=self.memory,
             verbose=self.verbose,
         )
         return self
-
-    @property
-    def session_id(self) -> Optional[UUID]:
-        return self.codebox.session_id
-
-    def start(self) -> CodeBoxStatus:
-        status = self.codebox.start()
-        return status
 
     def _input_handler(self, request: UserRequest) -> None:
         """Callback function to handle user input."""
@@ -190,8 +199,15 @@ class CodeInterpreter:
     def is_running(self) -> bool:
         return self.codebox.status() == "running"
 
+    def start(self) -> CodeBoxStatus:
+        return self.codebox.start()
+
     def stop(self) -> CodeBoxStatus:
         return self.codebox.stop()
+
+    def reconnect(self) -> None:
+        self.init_context()
+        self.codebox.connect()
 
     def __enter__(self) -> Self:
         self.start()

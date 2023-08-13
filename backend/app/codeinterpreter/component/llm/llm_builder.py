@@ -15,10 +15,12 @@ def buildup_llm(
                 "OpenAI API key missing. Set OPENAI_API_KEY env variable "
                 "or pass `openai_api_key` to session."
             )
+
         openai_api_version = getenv("OPENAI_API_VERSION")
         openai_api_base = getenv("OPENAI_API_BASE")
         deployment_name = getenv("DEPLOYMENT_NAME")
         openapi_type = getenv("OPENAI_API_TYPE")
+
         if (
             openapi_type == "azure"
             and openai_api_version

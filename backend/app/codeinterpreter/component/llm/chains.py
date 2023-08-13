@@ -11,7 +11,7 @@ from typing import List, Optional
 from langchain.base_language import BaseLanguageModel
 from langchain.schema import AIMessage, OutputParserException
 
-from app.codeinterpreter.component.llm.prompt import (
+from app.codeinterpreter.component.llm.prompts import (
     determine_modifications_prompt,
     remove_dl_link_prompt,
 )

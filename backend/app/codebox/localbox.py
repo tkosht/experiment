@@ -9,3 +9,6 @@ class CustomLocalBox(LocalBox):
     def __init__(self, port: int = 8888) -> None:
         super().__init__()
         self.port = port
+
+    def connect(self):
+        self._connect()

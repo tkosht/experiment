@@ -10,6 +10,7 @@ from app.codeinterpreter.component.interpreter import (
     CodeInterpreterResponse,
 )
 from app.codeinterpreter.component.llm.llm_builder import buildup_llm
+from app.codeinterpreter.component.llm.schema import File
 from app.codeinterpreter.component.session import (
     init_codeinterpreter,
     init_session_state,
@@ -86,7 +87,7 @@ system_prompt = st.sidebar.text_area(
     help="Custom instructions to provide the language model to determine style, personality, etc.",
 )
 system_prompt = system_prompt.strip().replace("{", "{{").replace("}", "}}")
-chain, memory = get_chain(system_prompt)
+chain, memory = get_chain(system_prompt, temperature=0.25)
 
 # Welcome Message holder
 if not st.session_state.welcome:
@@ -112,8 +113,6 @@ for msg in st.session_state.messages:
 
 latest_avatar_user = st.empty()
 latest_avatar_ai = st.empty()
-
-from app.codeinterpreter.component.llm.schema import File
 
 with st.container():
     with st.form(key="my_form", clear_on_submit=True):
@@ -175,17 +174,37 @@ if submit_button and prompt:
             files.append(fl)
 
         with _msg_area_ai:
-            with st.spinner("ちょっとまっててねー"):
+            with st.spinner("ちょっとまっててー"):
+                msg = f"""以下を英語にしてください。翻訳した結果の英語のみを返してください。
+                ```
+                {prompt}
+                ```"""
+                user_msg = "".join(
+                    [
+                        chunk.content
+                        for chunk in chain.stream(
+                            {"input": msg}, config=runnable_config
+                        )
+                    ]
+                )
+                print("-" * 50)
+                print(f"{user_msg=}")
+
                 cdp: CodeInterpreter = st.session_state["codeinterpreter"]
-                response = cdp.generate_response_sync(user_msg=prompt, files=files)
+                print("-" * 50)
+                print("llm:", cdp.llm.model_name)
+
+                cdp.reconnect()
+                print("CodeInterpreter: reconnected")
+
+                response = cdp.generate_response_sync(user_msg=user_msg, files=files)
                 _text, imgs = parse_response(response)
 
-            # NOTE: just in japanese
-            msg = f"""以下を日本語にしてください。翻訳した結果の日本語のみ返してください。
+            # NOTE: into japanese
+            msg = f"""以下を日本語にしてください。翻訳した結果の日本語のみを返してください。エラーメッセージの場合はへそのまま返してください。
             ```
             {_text}
-            ```
-            """
+            ```"""
 
             text: str = ""
             st.markdown(text + "▌")

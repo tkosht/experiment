@@ -43,7 +43,7 @@ from app.codeinterpreter.component.llm.chains import (
     get_file_modifications,
     remove_download_link,
 )
-from app.codeinterpreter.component.llm.prompt import (
+from app.codeinterpreter.component.llm.prompts import (
     CodeAgentOutputParser,
     CodeBoxChatMessageHistory,
     CodeChatAgentOutputParser,

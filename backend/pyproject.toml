@@ -132,6 +132,7 @@ tslearn = "^0.6.1"
 sktime = "^0.21.0"
 protobuf = "3.20.1"
 jupyter-kernel-gateway = "^2.5.2"
+statsmodels = "^0.14.0"
 
 
 [tool.poetry.dev-dependencies]
