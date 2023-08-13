@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from langchain.callbacks.tracers.run_collector import RunCollectorCallbackHandler
 from langchain.schema.runnable import RunnableConfig
 
-from app.codeinterpreter.component.session import (
+from app.codeinterpreter.component.interpreter import (
     CodeInterpreter,
     CodeInterpreterResponse,
 )
@@ -14,7 +14,7 @@ from app.langchain.component.chain.stream import get_chain, get_openai_type
 load_dotenv()
 
 
-user_avatar = "😄"
+user_avatar = "🧐"
 ai_avatar = "🐳"
 
 st.set_page_config(
@@ -30,6 +30,7 @@ f"# {ai_avatar}️ Whale Chat"
 def _init_session_state(key: str, init_value):
     if key not in st.session_state:
         st.session_state[key] = init_value
+    return st.session_state[key]
 
 
 # Initialize State(
@@ -39,7 +40,9 @@ _init_session_state("images", init_value=[])
 
 
 def init_codeinterpreter():
-    st.session_state["codeinterpreter"] = cdp = CodeInterpreter(local=True)
+    st.session_state["codeinterpreter"] = cdp = CodeInterpreter(
+        local=True, verbose=True
+    )
     cdp.start()
 
 
@@ -102,7 +105,7 @@ for msg in st.session_state.messages:
 latest_avatar_user = st.empty()
 latest_avatar_ai = st.empty()
 
-from app.codeinterpreter.component.schema import File
+from app.codeinterpreter.component.llm.schema import File
 
 with st.container():
     with st.form(key="my_form", clear_on_submit=True):
@@ -164,7 +167,7 @@ if submit_button and prompt:
             files.append(fl)
 
         with _msg_area_ai:
-            with st.spinner("少々お待ち下さい・・"):
+            with st.spinner("ちょっとまっててねー"):
                 cdp: CodeInterpreter = st.session_state["codeinterpreter"]
                 response = cdp.generate_response_sync(user_msg=prompt, files=files)
                 _text, imgs = parse_response(response)
@@ -197,7 +200,7 @@ if submit_button and prompt:
 if not st.session_state.welcome:
     with welcome_message_holder:
         with st.empty():
-            msg = "You have to make a welcome message to the user, politely and friendly in japanese."
+            msg = "You have to make a welcome message to the user, politely and friendly in japanese, as you were an Japanese person."
             welcome_message = ""
             for chunk in chain.stream({"input": msg}):
                 welcome_message += chunk.content

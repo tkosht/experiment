@@ -4,15 +4,15 @@ import json
 from semantic_kernel import SKContext
 from semantic_kernel.skill_definition import sk_function, sk_function_context_parameter
 
-from app.codeinterpreter.component.session import (
+from app.codeinterpreter.component.interpreter import (
+    CodeInterpreter,
     CodeInterpreterResponse,
-    CodeInterpreterSession,
 )
 
 
 class CodeInterpeterPython(object):
     def __init__(self, port=7890) -> None:
-        self.session = CodeInterpreterSession(port=port)
+        self.session = CodeInterpreter(port=port)
 
     def start(self) -> None:
         self.session.start()

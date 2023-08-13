@@ -28,19 +28,20 @@ from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import BaseTool, StructuredTool
 from typing_extensions import Self
 
-from app.codeinterpreter.component.agents import OpenAIFunctionsAgent
-from app.codeinterpreter.component.chains import (aget_file_modifications,
-                                                  aremove_download_link,
-                                                  get_file_modifications,
-                                                  remove_download_link)
-from app.codeinterpreter.component.chat import (
+from app.codebox.localbox import CustomLocalBox
+from app.codeinterpreter.component.llm.agents import OpenAIFunctionsAgent
+from app.codeinterpreter.component.llm.chains import (aget_file_modifications,
+                                                      aremove_download_link,
+                                                      get_file_modifications,
+                                                      remove_download_link)
+from app.codeinterpreter.component.llm.chat import (
     CodeAgentOutputParser, CodeBoxChatMessageHistory,
     CodeChatAgentOutputParser, code_interpreter_system_message)
-from app.codeinterpreter.component.config import settings
-from app.codeinterpreter.component.schema import (CodeInput,
-                                                  CodeInterpreterResponse,
-                                                  File, SessionStatus,
-                                                  UserRequest)
+from app.codeinterpreter.component.llm.config import settings
+from app.codeinterpreter.component.llm.schema import (CodeInput,
+                                                      CodeInterpreterResponse,
+                                                      File, SessionStatus,
+                                                      UserRequest)
 
 
 class CodeInterpreter:
@@ -50,7 +51,8 @@ class CodeInterpreter:
         additional_tools: list[BaseTool] = [],
         **kwargs,
     ) -> None:
-        self.codebox = CodeBox()
+        self.port = kwargs.get("port", 7801)
+        self.codebox = CustomLocalBox(port=self.port)
         self.verbose = kwargs.get("verbose", settings.VERBOSE)
         self.tools: list[BaseTool] = self._tools(additional_tools)
         self.llm: BaseLanguageModel = llm or self._choose_llm(**kwargs)
@@ -59,12 +61,12 @@ class CodeInterpreter:
         self.output_files: list[File] = []
         self.code_log: list[tuple[str, str]] = []
 
-    @classmethod
-    def from_id(cls, session_id: UUID, **kwargs) -> Self:
-        session = cls(**kwargs)
-        session.codebox = CodeBox.from_id(session_id)
-        session.agent_executor = session._agent_executor()
-        return session
+    # @classmethod
+    # def from_id(cls, session_id: UUID, **kwargs) -> Self:
+    #     session = cls(**kwargs)
+    #     session.codebox = CodeBox.from_id(session_id)
+    #     session.agent_executor = session._agent_executor()
+    #     return session
 
     @property
     def session_id(self) -> Optional[UUID]:
