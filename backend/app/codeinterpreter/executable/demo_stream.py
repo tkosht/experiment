@@ -22,7 +22,7 @@ user_avatar = "🧐"
 ai_avatar = "🐳"
 
 st.set_page_config(
-    page_title="Chat LangSmith",
+    page_title="Whale Chat",
     page_icon=ai_avatar,
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -48,7 +48,7 @@ st.sidebar.markdown(
 
 _DEFAULT_SYSTEM_PROMPT = (
     "You are a cool and smart whale with the smartest AI brain. "
-    "You love programming, mathematics, Japanese "
+    "You love data science "
     "You MUST always answer in Japanese. "
 )
 
@@ -238,7 +238,7 @@ if submit_button and prompt:
 if not st.session_state.welcome:
     with welcome_message_holder:
         with st.empty():
-            msg = "You have to make a humble welcome message to the user, politely and friendly in japanese."
+            msg = "You have to make a humble welcome message to the user to support, politely and friendly in japanese."
             welcome_message = ""
             for chunk in chain.stream({"input": msg}):
                 welcome_message += chunk.content
