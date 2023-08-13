@@ -9,10 +9,15 @@ from app.codeinterpreter.component.interpreter import (
     CodeInterpreter,
     CodeInterpreterResponse,
 )
+from app.codeinterpreter.component.llm.llm_builder import buildup_llm
+from app.codeinterpreter.component.session import (
+    init_codeinterpreter,
+    init_session_state,
+    term_codeinterpreter,
+)
 from app.langchain.component.chain.stream import get_chain, get_openai_type
 
 load_dotenv()
-
 
 user_avatar = "🧐"
 ai_avatar = "🐳"
@@ -27,32 +32,11 @@ st.set_page_config(
 f"# {ai_avatar}️ Whale Chat"
 
 
-def _init_session_state(key: str, init_value):
-    if key not in st.session_state:
-        st.session_state[key] = init_value
-    return st.session_state[key]
-
-
 # Initialize State(
-_init_session_state("welcome", init_value=False)
-_init_session_state("messages", init_value=[])
-_init_session_state("images", init_value=[])
+init_session_state("welcome", init_value=False)
+init_session_state("messages", init_value=[])
+init_session_state("images", init_value=[])
 
-
-def init_codeinterpreter():
-    st.session_state["codeinterpreter"] = cdp = CodeInterpreter(
-        local=True, verbose=True
-    )
-    cdp.start()
-
-
-def term_codeinterpreter():
-    cdp: CodeInterpreter = st.session_state["codeinterpreter"]
-    cdp.stop()
-
-
-if "codeinterpreter" not in st.session_state:
-    init_codeinterpreter()
 
 # setup slidebar
 st.sidebar.markdown(
@@ -64,7 +48,31 @@ if st.sidebar.button("Clear message history"):
     print("Clearing message history")
     st.session_state.messages = []
     term_codeinterpreter()
+    model = (
+        st.session_state.model_name
+        if "model_name" in st.session_state
+        else "gpt-3.5-turbo"
+    )
+    init_codeinterpreter(model=model)
+
+
+if "codeinterpreter" not in st.session_state:
     init_codeinterpreter()
+
+
+def on_change_model():
+    cdp: CodeInterpreter = st.session_state["codeinterpreter"]
+    llm = buildup_llm(model=st.session_state.model_name)
+    cdp.update_llm(llm=llm)
+
+
+model_option = st.sidebar.selectbox(
+    label="select the model",
+    options=("gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-32k"),
+    key="model_name",
+    on_change=on_change_model,
+)
+
 
 _DEFAULT_SYSTEM_PROMPT = (
     "You are a cool and smart whale with the smartest AI brain. "
