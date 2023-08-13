@@ -1,3 +1,10 @@
+"""
+このコードは `Dominic Bäumer` 氏 のプロジェクト(https://github.com/shroominic/codeinterpreter-api.git)を参考に作成しました。
+
+オリジナルのライセンス:
+- MIT License
+"""
+
 """Module implements an agent that uses OpenAI's APIs function enabled API."""
 import json
 from dataclasses import dataclass
