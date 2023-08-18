@@ -6,7 +6,7 @@ ENV TZ Asia/Tokyo
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update -y && apt-get upgrade -y \
-    && apt-get install --fix-missing -y sudo build-essential autoconf \
+    && apt-get install --fix-missing -y sudo build-essential autoconf cmake \
         vim tmux tzdata locales dialog git openssh-server bash-completion \
         jq sqlite3 curl nodejs npm default-jre \
         libgeos-dev libsnappy-dev fontconfig fonts-ipaexfont fonts-ipafont \
