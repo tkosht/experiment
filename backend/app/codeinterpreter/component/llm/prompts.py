@@ -62,6 +62,8 @@ import numpy as np
 
 t = np.arange(0.0, 4.0*np.pi, 0.1)
 s = np.sin(t)
+
+plt.clf()
 fig, ax = plt.subplots()
 ax.plot(t, s)
 ax.set(xlabel="time (s)", ylabel="sin(t)", title="Simple Sin Wave")
@@ -84,6 +86,7 @@ import numpy as np
 x = np.linspace(0, 10, 100)
 y = x**2
 
+plt.clf()
 plt.figure(figsize=(8, 6))
 plt.plot(x, y)
 plt.title("Simple Quadratic Function")

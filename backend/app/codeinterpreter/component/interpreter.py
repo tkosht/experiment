@@ -147,6 +147,7 @@ class CodeInterpreter:
         """Run code in container and send the output to the user"""
         print("code:", code)
         self.log_handler(text=code, is_code=True)
+        self.log_handler(text="コードを実行しています・・・")
 
         output: CodeBoxOutput = self.codebox.run(code)
         self.code_log.append((code, output.content))
@@ -154,6 +155,7 @@ class CodeInterpreter:
         if not isinstance(output.content, str):
             raise TypeError("Expected output.content to be a string.")
 
+        self.log_handler(text="出力ファイルを抽出しています・・・")
         content: str = self._parse_output_files(code=code, output=output)
         return content
 

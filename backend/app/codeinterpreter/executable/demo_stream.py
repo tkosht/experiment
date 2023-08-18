@@ -35,6 +35,9 @@ f"# {ai_avatar}️ Whale Chat"
 init_session_state("welcome", init_value=False)
 init_session_state("messages", init_value=[])
 init_session_state("images", init_value=[])
+init_session_state("latest_code", init_value="")
+init_session_state("code_logs", init_value=[])
+init_session_state("codes", init_value=[])
 
 
 # ---
@@ -109,6 +112,8 @@ for msg in st.session_state.messages:
             imgs = st.session_state.images[ai_idx]
             for img in imgs:
                 st.image(image=img)
+            # code = st.session_state.codes[ai_idx]
+            # st.code(code, language="python", line_numbers=True)
             ai_idx += 1
     memory.chat_memory.add_message(msg)
 
@@ -163,18 +168,23 @@ if submit_button and prompt:
         with st.chat_message("user", avatar=user_avatar):
             st.write(f"{prompt}")
 
-    # chat streaming
     with latest_avatar_ai:
         with st.chat_message("assistant", avatar=ai_avatar):
             _msg_area_ai = st.empty()
             _image_area_ai = st.empty()
-            _log_area = st.empty()
+            _status_area = st.empty()
+            _code_area = st.empty()
+
+        st.session_state.latest_code = ""
 
         def log_handler(text: str, is_code=False):
-            with _log_area:
-                if is_code:
+            if is_code:
+                with _code_area:
                     st.code(text, language="python", line_numbers=True)
-                else:
+                    st.session_state.latest_code = text
+                    st.session_state.code_logs.append(text)
+            else:
+                with _status_area:
                     st.markdown(text)
 
         files = []
@@ -183,6 +193,7 @@ if submit_button and prompt:
             files.append(fl)
 
         with _msg_area_ai:
+            log_handler("入力プロンプトを英語にしています・・・")
             with st.spinner("ちょっとまっててー"):
                 msg = f"""以下を英語にしてください。翻訳した結果の英語のみを返してください。
                 ```
@@ -208,6 +219,7 @@ if submit_button and prompt:
                 cdp.reconnect()
                 print("CodeInterpreter: reconnected")
 
+                log_handler(f"処理中です・・・ {cdp.llm.model_name}: {user_msg}")
                 response = cdp.generate_response_sync(user_msg=user_msg, files=files)
                 _text, imgs = parse_response(response)
 
@@ -216,6 +228,8 @@ if submit_button and prompt:
             ```
             {_text}
             ```"""
+
+            log_handler("完了しました")
 
             text: str = ""
             st.markdown(text + "▌")
@@ -230,9 +244,12 @@ if submit_button and prompt:
             for img in imgs:
                 st.image(image=img)
 
+        log_handler("")
+
     memory.save_context({"input": prompt}, {"output": text})
     st.session_state.messages = memory.buffer
     st.session_state.images.append(imgs)
+    st.session_state.codes.append(st.session_state.latest_code)
 
 # make welcome message
 if not st.session_state.welcome:
