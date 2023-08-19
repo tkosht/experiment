@@ -11,7 +11,10 @@ poetry:
 # ==========
 # # for app
 demo:
-	@sh bin/run_demo.sh
+	@bash -i -c 'SHELL=/usr/bin/bash poetry run bash bin/run_demo.sh'
+
+demo-stream:
+	@bash -i -c 'SHELL=/usr/bin/bash poetry run bash bin/run_demo_stream.sh'
 
 tool-maker:
 	python -m app.llm_toolmaker.tool_maker --task-name=word_sorting

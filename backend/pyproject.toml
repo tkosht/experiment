@@ -117,7 +117,7 @@ codeboxapi = "*"
 llama-cpp-python = "*"
 
 # webapp
-gradio = "*"
+gradio = "^3.21.0"
 streamlit = "^1.24.0"
 streamlit-chat = "*"
 streamlit-extras = "*"

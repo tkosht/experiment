@@ -45,13 +45,14 @@ scikit-learn の LightGBM を使ってクラス分類し精度指標値を出力
             with gr.Row():
                 with gr.Column():
                     chatbot = gr.Chatbot(
-                        [], label="assistant", elem_id="demobot"
-                    ).style(height=405)
+                        [], label="assistant", elem_id="demobot", height=405
+                    )
                     txt = gr.Textbox(
                         show_label=False,
                         placeholder=_prompt_example,
                         value=_prompt_default,
-                    ).style(container=False)
+                        container=False,
+                    )
 
                 with gr.Column():
                     log_area = gr.TextArea(
@@ -61,7 +62,8 @@ scikit-learn の LightGBM を使ってクラス分類し精度指標値を出力
                         label="log",
                         placeholder="",
                         value="",
-                    ).style(container=False)
+                        container=False,
+                    )
                     with gr.Row():
                         btn = gr.Button(value="update agent log")
                         btn.click(
@@ -78,7 +80,8 @@ scikit-learn の LightGBM を使ってクラス分類し精度指標値を出力
                         label="context",
                         placeholder="",
                         value="",
-                    ).style(container=False)
+                        container=False,
+                    )
                     with gr.Row():
                         btn = gr.Button(value="clear context")
                         btn.click(
@@ -88,7 +91,14 @@ scikit-learn の LightGBM を使ってクラス分類し精度指標値を出力
         with gr.Tab("Setting"):
             with gr.Row():
                 model_dd = gr.Dropdown(
-                    ["gpt-3.5-turbo-16k", "gpt-3.5-turbo", "gpt-4-0314", "gpt-4", "gpt-4-32k-0314", "gpt-4-32k"],
+                    [
+                        "gpt-3.5-turbo-16k",
+                        "gpt-3.5-turbo",
+                        "gpt-4-0314",
+                        "gpt-4",
+                        "gpt-4-32k-0314",
+                        "gpt-4-32k",
+                    ],
                     value="gpt-3.5-turbo-16k",
                     label="chat model",
                     info="you can choose the chat model.",
