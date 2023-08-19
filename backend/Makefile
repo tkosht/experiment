@@ -16,6 +16,9 @@ demo:
 demo-stream:
 	@bash -i -c 'SHELL=/usr/bin/bash poetry run bash bin/run_demo_stream.sh'
 
+demo-code-interpreter:
+	@bash -i -c 'SHELL=/usr/bin/bash poetry run bash bin/run_demo_code_interpreter.sh'
+
 tool-maker:
 	python -m app.llm_toolmaker.tool_maker --task-name=word_sorting
 

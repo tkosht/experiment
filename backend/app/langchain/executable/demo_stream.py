@@ -25,6 +25,7 @@ f"# {ai_avatar}️ Whale Chat"
 if "messages" not in st.session_state:
     st.session_state["messages"] = []
 
+
 # setup slidebar
 st.sidebar.markdown(
     """
@@ -35,6 +36,8 @@ if st.sidebar.button("Clear message history"):
     print("Clearing message history")
     st.session_state.messages = []
 
+
+# setup prompt
 _DEFAULT_SYSTEM_PROMPT = (
     "You are a cool and smart whale with the smartest AI brain. "
     "You love programming, coding, mathematics, Japanese, and friendship!"
@@ -49,6 +52,7 @@ system_prompt = system_prompt.strip().replace("{", "{{").replace("}", "}}")
 chain, memory = get_chain(system_prompt)
 
 
+# handler
 run_collector = RunCollectorCallbackHandler()
 runnable_config = RunnableConfig(
     callbacks=[run_collector],
