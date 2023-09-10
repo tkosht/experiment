@@ -96,11 +96,12 @@ clean-mlruns:
 	sh bin/clean_mlruns.sh
 
 clean-venv:
-	@rm -rf .venv/
-	@rm -f poetry.lock
+	rm -rf .venv/
+	rm -f poetry.lock
 
 _clean-experiment:	# if use, be carefull !!
 	rm -rf mlruns data/mlflow.db
 
 # clean: clean-result clean-mlruns clean-venv
 clean: clean-result clean-venv
+
