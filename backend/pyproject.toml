@@ -89,6 +89,7 @@ datasets = "*"
 
 # LLM relatives
 # # for langchain
+open-interpreter = "*"
 langchain = "^0.0.262"
 openai = "*"
 google-search-results = "*"
@@ -115,10 +116,12 @@ semantic-kernel = "*"
 huggingface_hub = "*"
 codeboxapi = "*"
 llama-cpp-python = "*"
+heron = {git = "https://github.com/turingmotors/heron.git"}
 
 # webapp
 gradio = "^3.21.0"
-streamlit = "^1.24.0"
+# streamlit = "^1.24.0"
+streamlit = "*"
 streamlit-chat = "*"
 streamlit-extras = "*"
 hugchat = "*"
@@ -130,7 +133,8 @@ llvmlite = "^0.40.1"
 numba = "^0.57.1"
 tslearn = "^0.6.1"
 sktime = "^0.21.0"
-protobuf = "3.20.1"
+# protobuf = "3.20.1"
+protobuf = "^4.24.2"
 jupyter-kernel-gateway = "^2.5.2"
 statsmodels = "^0.14.0"
 yfinance = "^0.2.28"
