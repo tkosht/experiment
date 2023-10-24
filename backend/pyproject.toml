@@ -25,6 +25,10 @@ pandasgui = "*"
 scikit-optimize = "*"
 optuna = "*"
 
+PyQt5 = "=5.15.2"
+lit = "^17.0.2"
+ipynb = "*"
+
 # for experiment management
 mlflow = "*"
 tensorboard = "*"
@@ -61,6 +65,7 @@ tensorflow-datasets = "*"
 # pystan = "2.19.1.1"
 # pystan = "*"
 prophet = "*"
+ruptures = "*"
 # neo4j = "*"
 # neomodel = "*"
 
