@@ -29,16 +29,50 @@ from prophet.diagnostics import cross_validation, performance_metrics
 
 
 # %%
-def build_prophet_model(is_longterm=True, **params) -> Prophet:
-    print(f"build_prophet_model: {is_longterm=} {params}")
-    model = Prophet(**params, yearly_seasonality=4)
-    model.add_seasonality(name="triennial", period=365.25 * 3, fourier_order=1)
-    model.add_seasonality(name="kitchen", period=365.25 / 12 * 40, fourier_order=1)
-    if is_longterm:
-        model.add_seasonality(name="quinquennial", period=365.25 * 5, fourier_order=1)
-        model.add_seasonality(name="decennial_09", period=365.25 * 9, fourier_order=1)
-        model.add_seasonality(name="decennial_10", period=365.25 * 10, fourier_order=1)
-    return model
+class ModelBuilder(object):
+    def __init__(self, df: pandas.DataFrame, freq: str = "W") -> None:
+        assert freq in ["D", "W", "MS", "M"] + [
+            "W-" + w for w in ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
+        ]
+        self.df: pandas.DataFrame = df
+        self.freq: str = freq
+
+    def calc_changepoints(self):
+        n_changepoints = len(self.df)
+        # NOTE: self.freq に応じて、n_changepoints を定める
+        #       - freq == "W": 1週間単位に変更
+        #       - freq == "W": 1か月単位に変更
+        #       - freq == "M": 3か月単位に変更 (そのまま)
+        if self.freq[:1] == "D":
+            n_changepoints //= 7
+        elif self.freq[:1] == "W":
+            n_changepoints //= 4
+        elif self.freq[:1] == "M":
+            n_changepoints //= 3
+        print(f"{n_changepoints=}")
+        return n_changepoints
+
+    def build_prophet_model(self, is_longterm=True, **params) -> Prophet:
+        print(f"build_prophet_model: {is_longterm=} {params}")
+
+        n_changepoints = self.calc_changepoints()
+        model = Prophet(
+            **params,
+            n_changepoints=n_changepoints,
+            changepoint_range=1.0,
+            yearly_seasonality=4,
+        )
+        model.add_seasonality(name="triennial", period=365.25 * 3, fourier_order=1)
+        model.add_seasonality(
+            name="kitchen", period=365.25 / 12 * 40, fourier_order=1
+        )  # 40 months
+        if is_longterm:
+            model.add_seasonality(
+                name="quinquennial", period=365.25 * 5, fourier_order=1
+            )
+            model.add_seasonality(name="juglar_09", period=365.25 * 9, fourier_order=1)
+            model.add_seasonality(name="juglar_10", period=365.25 * 10, fourier_order=1)
+        return model
 
 
 # %%
@@ -54,17 +88,13 @@ class Evaluator(object):
         self.n_horizon: int = n_horizon  # cv prediction range
         self.freq = freq  # cutoff freq
         self.horizon_scaler = horizon_scaler
-        self.max_changepoints = max(min(self.df.shape[0]//50, 50), 5)   # map to [5, 50]]
+        # self.max_changepoints = 30
 
     def objective_value(self, trial: optuna.Trial) -> float:
         params = {
             "growth": trial.suggest_categorical("growth", ["linear", "logistic"]),
-            "changepoint_range": trial.suggest_float("changepoint_range", 0.8, 1.0),
-            "n_changepoints": trial.suggest_int(
-                "n_changepoints", 1, self.max_changepoints
-            ),
             "changepoint_prior_scale": trial.suggest_float(
-                "changepoint_prior_scale", 0.001, 5
+                "changepoint_prior_scale", 0.001, 10
             ),
             "seasonality_prior_scale": trial.suggest_float(
                 "seasonality_prior_scale", 0.01, 10
@@ -74,7 +104,8 @@ class Evaluator(object):
             ),
         }
 
-        model: Prophet = build_prophet_model(**params)
+        mb = ModelBuilder(df=self.df)
+        model: Prophet = mb.build_prophet_model(**params)
         model.fit(self.df)
         __df_cv, df_pm = self.run_cross_validation(model=model)
         n = df_pm.shape[0]
