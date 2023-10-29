@@ -69,11 +69,15 @@ mlflow mlflow-server:
 
 mlflow-notebook:
 	mlflow server --host=0.0.0.0 \
-		--backend-store-uri sqlite:///../data/experiment.db \
+		--backend-store-uri sqlite:///./data/experiment.db \
 		--default-artifact-root=mlruns
 
 mlflow-ui:
 	mlflow ui --host=0.0.0.0
+
+sqlite-notebook:
+	sqlite_web --port=5656 --host=0.0.0.0 ./data/experiment.db
+
 
 # ==========
 # # tensorboard tasks

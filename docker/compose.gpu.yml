@@ -30,6 +30,7 @@ services:
     ports:
       - "2022:22"   # ssh
       - "5000:5000" # MLflow
+      - "5656:5656" # sqlite-web
       - "6006:6006" # tensorboard
       - "7860:7860" # gradio
       - "8501:8501" # streamlit
