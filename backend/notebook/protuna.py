@@ -40,13 +40,13 @@ class ModelBuilder(object):
     def calc_changepoints(self):
         n_changepoints = len(self.df)
         # NOTE: self.freq に応じて、n_changepoints を定める
-        #       - freq == "W": 1週間単位に変更
-        #       - freq == "W": 1か月単位に変更
+        #       - freq == "D": 1週間単位に変更
+        #       - freq == "W": 3か月単位に変更
         #       - freq == "M": 3か月単位に変更 (そのまま)
         if self.freq[:1] == "D":
             n_changepoints //= 7
         elif self.freq[:1] == "W":
-            n_changepoints //= 4
+            n_changepoints //= 3 * 4
         elif self.freq[:1] == "M":
             n_changepoints //= 3
         print(f"{n_changepoints=}")
@@ -70,7 +70,7 @@ class ModelBuilder(object):
             model.add_seasonality(
                 name="quinquennial", period=365.25 * 5, fourier_order=1
             )
-            model.add_seasonality(name="juglar_09", period=365.25 * 9, fourier_order=1)
+            # model.add_seasonality(name="juglar_09", period=365.25 * 9, fourier_order=1)
             model.add_seasonality(name="juglar_10", period=365.25 * 10, fourier_order=1)
         return model
 
