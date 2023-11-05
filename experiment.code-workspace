@@ -30,16 +30,11 @@
             "ms-python.flake8",
             "ms-python.isort",
             "ms-toolsai.jupyter",
+            "ms-vscode.live-server",
             "oderwat.indent-rainbow",
             "donjayamanne.githistory",
             "hediet.vscode-drawio",
             "bracketpaircolordlw.bracket-pair-color-dlw"
-            // "littlefoxteam.vscode-python-test-adapter",
-            // "donjayamanne.python-extension-pack",
-            // "tushortz.python-extended-snippets",
-            // "octref.vetur",
-            // "msjsdiag.debugger-for-chrome",
-            // "tabnine.tabnine-vscode",
         ]
     }
 }

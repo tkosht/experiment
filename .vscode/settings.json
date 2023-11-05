@@ -1,11 +1,10 @@
 {
   "python.pythonPath": "/usr/bin/python",
   "jupyter.jupyterServerType": "local",
-  // "docker.host":"ssh://server",
   "files.exclude": {
     "backend/**": true,
     "frontend/**": true,
-    ".pytest_cache/**": true,
+    ".pytest_cache/**": true
   },
   "files.watcherExclude": {
     "**/.git/objects/**": true,
@@ -16,7 +15,7 @@
     "**/data/**": true,
     "**/*cache*/**": true,
     "**/wk/**": true,
-    "**/bk/**": true,
+    "**/bk/**": true
   },
-  "python.formatting.provider": "black",
+  "python.formatting.provider": "black"
 }
