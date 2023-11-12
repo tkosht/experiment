@@ -44,34 +44,43 @@ class ModelBuilder(object):
         #       - freq == "W": 3か月単位に変更
         #       - freq == "M": 3か月単位に変更 (そのまま)
         if self.freq[:1] == "D":
-            n_changepoints //= 7
+            n_changepoints //= 1 * 7
         elif self.freq[:1] == "W":
             n_changepoints //= 3 * 4
         elif self.freq[:1] == "M":
-            n_changepoints //= 3
+            n_changepoints //= 3 * 1
         print(f"{n_changepoints=}")
         return n_changepoints
 
     def build_prophet_model(self, is_longterm=True, **params) -> Prophet:
         print(f"build_prophet_model: {is_longterm=} {params}")
 
+        # model
         n_changepoints = self.calc_changepoints()
         model = Prophet(
             **params,
             n_changepoints=n_changepoints,
-            changepoint_range=1.0,
+            changepoint_range=0.95,
             yearly_seasonality=4,
         )
+        model.add_regressor(name="fake")
+
+        # 3 years
         model.add_seasonality(name="triennial", period=365.25 * 3, fourier_order=1)
-        model.add_seasonality(
-            name="kitchen", period=365.25 / 12 * 40, fourier_order=1
-        )  # 40 months
+
+        # 40 months
+        model.add_seasonality(name="kitchen", period=365.25 / 12 * 40, fourier_order=1)
+
+        # long term cycles
         if is_longterm:
+            # 5 years
             model.add_seasonality(
                 name="quinquennial", period=365.25 * 5, fourier_order=1
             )
+            # juglar cycle 9-10 years
             # model.add_seasonality(name="juglar_09", period=365.25 * 9, fourier_order=1)
             model.add_seasonality(name="juglar_10", period=365.25 * 10, fourier_order=1)
+
         return model
 
 
@@ -134,7 +143,10 @@ class Evaluator(object):
 
         # run cv and metrics
         df_cv = cross_validation(
-            model, cutoffs=cutoffs, horizon=f"{n_horizon} days", parallel="processes"
+            model,
+            cutoffs=cutoffs,
+            horizon=f"{n_horizon} days",
+            parallel="processes",  # parallel=None,
         )
         df_pm = performance_metrics(df_cv)
 
@@ -144,6 +156,25 @@ class Evaluator(object):
         self.cutoffs = cutoffs
 
         return df_cv, df_pm
+
+
+# %%
+class ProphetModelAnalyser(object):
+    def __init__(self, model: Prophet, df: pandas.DataFrame) -> None:
+        self.model: Prophet = model
+        self.df: pandas.DataFrame = df
+
+    def pickup_beta(self, component: str):
+        (
+            seasonal_features,
+            _,
+            component_cols,
+            _,
+        ) = self.model.make_all_seasonality_features(self.df)
+        mask = component_cols[component].values
+        beta_c: numpy.ndarray = self.model.params["beta"] * mask
+        beta = [beta_c.ravel()[idx] for idx, v in enumerate(mask) if bool(v)][0]
+        return beta
 
 
 # %%

@@ -17,10 +17,19 @@
         "editor.codeActionsOnSave": {
             "source.organizeImports": true,
         },
+        "notebook.formatOnSave.enabled": true,
+        "notebook.formatOnCellExecution": true
         "[python]": {
-            "editor.defaultFormatter": "ms-python.black-formatter"
+            "editor.defaultFormatter": "ms-python.black-formatter",
+            "editor.codeActionsOnSave": {
+                "source.organizeImports": true
+            }
         },
-        "python.formatting.provider": "none"
+        "python.formatting.provider": "none",
+        "isort.args": [
+            "--profile",
+            "black",
+        ]
     },
     "extensions": {
         "recommendations": [

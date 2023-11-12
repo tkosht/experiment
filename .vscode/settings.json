@@ -9,6 +9,7 @@
   "files.watcherExclude": {
     "**/.git/objects/**": true,
     "**/.git/subtree-cache/**": true,
+    "**/.venv/**": true,
     "**/node_modules/*/**": true,
     "**/result/**": true,
     "**/mlruns/**": true,
