@@ -14,9 +14,6 @@
         }
     ],
     "settings": {
-        "editor.codeActionsOnSave": {
-            "source.organizeImports": true,
-        },
         "notebook.formatOnSave.enabled": true,
         "notebook.formatOnCellExecution": true
         "[python]": {
@@ -42,8 +39,8 @@
             "ms-vscode.live-server",
             "oderwat.indent-rainbow",
             "donjayamanne.githistory",
-            "hediet.vscode-drawio",
             "bracketpaircolordlw.bracket-pair-color-dlw"
+            "hediet.vscode-drawio",
         ]
     }
 }

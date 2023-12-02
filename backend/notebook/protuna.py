@@ -42,13 +42,14 @@ class ModelBuilder(object):
         # NOTE: self.freq に応じて、n_changepoints を定める
         #       - freq == "D": 1週間単位に変更
         #       - freq == "W": 3か月単位に変更
-        #       - freq == "M": 3か月単位に変更 (そのまま)
+        #       - freq == "M": 1か月単位
         if self.freq[:1] == "D":
             n_changepoints //= 1 * 7
         elif self.freq[:1] == "W":
             n_changepoints //= 3 * 4
         elif self.freq[:1] == "M":
-            n_changepoints //= 3 * 1
+            # n_changepoints //= 3 * 1
+            pass
         print(f"{n_changepoints=}")
         return n_changepoints
 
@@ -63,7 +64,6 @@ class ModelBuilder(object):
             changepoint_range=0.95,
             yearly_seasonality=4,
         )
-        model.add_regressor(name="fake")
 
         # 3 years
         model.add_seasonality(name="triennial", period=365.25 * 3, fourier_order=1)
@@ -93,11 +93,10 @@ class Evaluator(object):
         freq="3MS",
         horizon_scaler: float = 3,
     ) -> None:
-        self.df: pandas.DataFrame = df
+        self.df: pandas.DataFrame = df.copy()
         self.n_horizon: int = n_horizon  # cv prediction range
         self.freq = freq  # cutoff freq
         self.horizon_scaler = horizon_scaler
-        # self.max_changepoints = 30
 
     def objective_value(self, trial: optuna.Trial) -> float:
         params = {
@@ -112,6 +111,8 @@ class Evaluator(object):
                 "seasonality_mode", ["additive", "multiplicative"]
             ),
         }
+        cap_scaler = trial.suggest_float("cap_scaler", 0, 3)
+        self.df["cap"] = self.df.y.max() + cap_scaler * self.df.y.std()
 
         mb = ModelBuilder(df=self.df)
         model: Prophet = mb.build_prophet_model(**params)
@@ -119,13 +120,14 @@ class Evaluator(object):
         __df_cv, df_pm = self.run_cross_validation(model=model)
         n = df_pm.shape[0]
         # NOTE:
-        #     - rmse: horizon が長くなる(index が後になる)とエラー幅が増加するので、
+        #     - rmse, mae: horizon が長くなる(index が後になる)とエラー幅が増加するので、
         #             差に敏感な rmse の後半を多めに評価するように逆順で累積する
-        #     - mae : rmse と同じく、horizon が短い間も精度が高くないと困るので、
+        #     - xxx : rmse と同じく、horizon が短い間も精度が高くないと困るので、
         #             前半を多めに評価するように mae を累積する
         score = (
             numpy.cumsum(df_pm["rmse"].values[::-1]).mean()
-            + numpy.cumsum(df_pm["mae"].values).mean()
+            + numpy.cumsum(df_pm["mae"].values[::-1]).mean()
+            + numpy.cumsum(df_pm["smape"].values[::-1]).mean()
         )
         score /= n  # for intepretability of `score` in optuna.visualizaion
 
@@ -173,32 +175,12 @@ class ProphetModelAnalyser(object):
         ) = self.model.make_all_seasonality_features(self.df)
         mask = component_cols[component].values
         beta_c: numpy.ndarray = self.model.params["beta"] * mask
-        beta = [beta_c.ravel()[idx] for idx, v in enumerate(mask) if bool(v)][0]
+        beta = [beta_c.ravel()[idx] for idx, v in enumerate(mask) if bool(v)]
         return beta
 
 
 # %%
 from dataclasses import dataclass
-
-
-# %%
-@dataclass
-class Limitter(object):
-    df: pandas.DataFrame
-
-    def __post_init__(self):
-        df = self.df
-        self.floor = df.y.min() - 3 * df.y.std()
-        self.cap = df.y.max() + 3 * df.y.std()
-
-
-def setup_limit(df: pandas.DataFrame, lmt: Limitter, inplace=False) -> pandas.DataFrame:
-    _df = df
-    if not inplace:
-        _df = df.copy()
-    _df["floor"] = lmt.floor
-    _df["cap"] = lmt.cap
-    return _df
 
 
 # %%
@@ -212,14 +194,6 @@ class BestEstimator(object):
     df_pm: pandas.DataFrame | None = None
     future: pandas.DataFrame | None = None
     forecast: pandas.DataFrame | None = None
-
-
-# %%
-def setup_df_index(df: pandas.DataFrame, col="ds", do_drop: bool = True):
-    df.index = df[col]
-    if do_drop:
-        df.drop(col, axis=1, inplace=True)
-    return df
 
 
 # %%
@@ -240,3 +214,13 @@ def convert_wareki_to_seireki(wareki_date):
         raise ValueError(f"Unknown era: {era}")
 
     return f"{seireki_year}-{month:02}-{day:02}"
+
+
+# %%
+def optuna_visualization(study: optuna.Study):
+    optuna.visualization.plot_contour(study).show()
+    optuna.visualization.plot_edf(study).show()
+    optuna.visualization.plot_optimization_history(study).show()
+    optuna.visualization.plot_parallel_coordinate(study).show()
+    optuna.visualization.plot_param_importances(study).show()
+    optuna.visualization.plot_slice(study).show()
