@@ -14,6 +14,7 @@ python = ">=3.10, <3.12"        # <3.12 for sktime
 # for data science
 numpy = "*"
 pandas = "*"
+dask = {extras = ["complete"], version = "*"}
 scikit-learn = "*"
 scipy = "*"
 sympy = "*"
@@ -24,6 +25,7 @@ plotly = "*"
 pandasgui = "*"
 scikit-optimize = "*"
 optuna = "*"
+memory_profiler = "*"
 
 PyQt5 = "=5.15.2"
 lit = "^17.0.2"
@@ -44,6 +46,7 @@ notebook = "*"
 python-dotenv = "*"
 ulid-py = "*"
 typer = "*"
+simplejson = "*"
 
 # # for project
 fastapi = "*"
@@ -73,9 +76,9 @@ ruptures = "*"
 
 # # for NLP
 # unidic-lite = "*"
-# sudachidict_core = "*"
-# sudachidict_small = "*"
-# sudachidict_full = "*"
+sudachidict_core = "*"
+sudachidict_small = "*"
+sudachidict_full = "*"
 # spacy = "*"
 # spacy = {extras = ["cuda110"], version = "*"}
 # spacy-transformers = "1.1.3"
@@ -83,11 +86,12 @@ ruptures = "*"
 # fugashi = "*"
 # ipadic = "*"
 # networkx = "*"
-# gensim = "*"
-# janome = "*"
-# wordcloud = "*"
+gensim = "*"
+janome = "*"
+mecab-python3 = "*"
 sentencepiece = "*"
 einops = "*"
+# wordcloud = "*"
 
 # transformers = "*"
 # git+https://github.com/huggingface/transformers

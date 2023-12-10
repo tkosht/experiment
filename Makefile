@@ -77,7 +77,7 @@ build-no-cache:
 
 reup: down up
 
-clean: backend-clean clean-logs clean-container
+clean: clean-container backend-clean clean-logs
 
 clean-logs:
 	rm -rf log/*.log

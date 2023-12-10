@@ -78,6 +78,9 @@ mlflow-ui:
 sqlite-notebook:
 	sqlite_web --port=5656 --host=0.0.0.0 ./data/experiment.db
 
+sqlite-newsdata:
+	sqlite_web --port=5656 --host=0.0.0.0 ./data/scrapy_data/news.db
+
 
 # ==========
 # # tensorboard tasks

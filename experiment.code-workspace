@@ -36,6 +36,7 @@
             "ms-python.flake8",
             "ms-python.isort",
             "ms-toolsai.jupyter",
+            "ms-toolsai.datawrangler",
             "ms-vscode.live-server",
             "oderwat.indent-rainbow",
             "donjayamanne.githistory",
