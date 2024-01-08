@@ -11,6 +11,7 @@ export PATH="$HOME/.local/bin:$PATH"
 
 # for llama-cpp-python
 export CMAKE_ARGS="-DLLAMA_CUBLAS=ON"
+# export CMAKE_ARGS="-DLLAMA_BLAS=ON -DLLAMA_BLAS_VENDOR=OpenBLAS"
 export FORCE_CMAKE=1
 
 if [ -d ".venv" ]; then

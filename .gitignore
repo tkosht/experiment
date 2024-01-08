@@ -20,6 +20,15 @@ bkup/
 .env
 .*/
 
+# LLM
+*.gguf
+elyza/
+elyza-13b/
+elyza-codellama/
+llama.cpp/
+exllamav2/
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

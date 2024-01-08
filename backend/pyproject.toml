@@ -64,7 +64,6 @@ torch = {url = "https://download.pytorch.org/whl/cu118/torch-2.0.1%2Bcu118-cp310
 # pytorch-forecasting = "*"
 tensorflow-datasets = "*"
 
-# fastparquet = "*"
 # python-snappy = "*"
 # pyro-ppl = "*"
 # pystan = "2.19.1.1"
@@ -75,7 +74,7 @@ ruptures = "*"
 # neomodel = "*"
 
 # # for NLP
-# unidic-lite = "*"
+unidic-lite = "*"
 sudachidict_core = "*"
 sudachidict_small = "*"
 sudachidict_full = "*"
@@ -101,7 +100,8 @@ datasets = "*"
 # LLM relatives
 # # for langchain
 open-interpreter = "*"
-langchain = "^0.0.262"
+langchain = "^0.0.354"
+langchain-experimental = "*"
 openai = "*"
 google-search-results = "*"
 google-api-python-client = "*"
@@ -114,8 +114,6 @@ google-api-python-client = "*"
 
 wikipedia = "*"
 # Flask-Cors = "*"
-# accelerate = "*"
-# bitsandbytes = "*"
 
 # guidance
 guidance = "*"
@@ -128,6 +126,23 @@ huggingface_hub = "*"
 codeboxapi = "*"
 llama-cpp-python = "*"
 heron = {git = "https://github.com/turingmotors/heron.git"}
+
+# for elyza/ELYZA-japanese-Llama-2-7b-instruct
+# transformers
+# datasets
+# mecab-python3
+# unidic-lite
+# sentencepiece
+accelerate = "*"
+bitsandbytes = "*"
+pynvml = "*"
+deepspeed = "*"
+mpi4py = "*"
+peft = "*"
+trl = "*"
+gguf = "^0.1.0"
+exllamav2 = "*"
+fastparquet = "*"
 
 # webapp
 gradio = "^3.21.0"

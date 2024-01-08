@@ -5,7 +5,7 @@ from pydantic import root_validator
 
 
 class LlamaCppCustom(LlamaCpp):
-    n_gqa: Optional[int] = 1
+    n_gqa: Optional[int] = 1  # added
 
     @root_validator()
     def validate_environment(cls, values: dict) -> dict:
@@ -25,7 +25,7 @@ class LlamaCppCustom(LlamaCpp):
             "use_mmap",
             "last_n_tokens_size",
             "verbose",
-            "n_gqa",
+            "n_gqa",  # added
         ]
         model_params = {k: values[k] for k in model_param_names}
         # For backwards compatibility, only include if non-null.
