@@ -1,6 +1,6 @@
 from typing import Optional
 
-from langchain.llms import LlamaCpp
+from langchain_community.llms.llamacpp import LlamaCpp
 from pydantic import root_validator
 
 

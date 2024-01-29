@@ -19,6 +19,7 @@ bkup/
 ?.sh
 .env
 .*/
+*logs/
 
 # LLM
 *.gguf
