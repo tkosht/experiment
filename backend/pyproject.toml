@@ -26,6 +26,7 @@ pandasgui = "*"
 scikit-optimize = "*"
 optuna = "*"
 memory_profiler = "*"
+scrapy = "*"
 selenium = "*"
 
 PyQt5 = "=5.15.2"
