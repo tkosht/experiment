@@ -1,6 +1,11 @@
 import pathlib
 from datetime import datetime
 
+import lightgbm
+from sklearn.decomposition import PCA  # , KernelPCA
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.pipeline import FeatureUnion, Pipeline
+
 try:
     import MeCab
 except Exception:
@@ -45,7 +50,7 @@ g_stop_poses = ["BOS/EOS", "助詞", "助動詞", "接続詞", "記号", "補助
 
 
 class JpTokenizer(Transer):
-    def transform(self, X, **kwargs):
+    def transform(self, X: list[list[str]], **kwargs):
         docs = []
         for lines in X:
             doc = []
@@ -93,14 +98,18 @@ class JpTokenizerMeCab(JpTokenizer):
 
 class JpTokenizerJanome(JpTokenizer):
     def __init__(self):
-        char_filters = [janome.charfilter.UnicodeNormalizeCharFilter()]
-        tokenizer = janome.tokenizer.Tokenizer()
-        token_filters = [janome.tokenfilter.POSStopFilter(g_stop_poses)]
-        self.aly = janome.analyzer.Analyzer(char_filters, tokenizer, token_filters)
+        self.char_filters = [janome.charfilter.UnicodeNormalizeCharFilter()]
+        self.tokenizer = janome.tokenizer.Tokenizer()
+        self.token_filters = [janome.tokenfilter.POSStopFilter(g_stop_poses)]
+        self.analyzer = janome.analyzer.Analyzer(
+            char_filters=self.char_filters,
+            tokenizer=self.tokenizer,
+            token_filters=self.token_filters,
+        )
 
     def tokenize(self, line):
         sentence = []
-        for token in self.aly.analyze(line):
+        for token in self.analyzer.analyze(line):
             sentence.append(token.base_form)
         return sentence
 
@@ -226,7 +235,7 @@ def ident_tokener(sentence):
     return sentence
 
 
-def build_pipleline_simple(tokener):
+def build_pipleline_with_tfidf(tokener: JpTokenizer, n_classes: int):
     tfidf = TfidfVectorizer(tokenizer=ident_tokener, lowercase=False)
 
     embedders = [
@@ -236,7 +245,7 @@ def build_pipleline_simple(tokener):
 
     lgbmclf = lightgbm.LGBMClassifier(
         objective="softmax",
-        num_class=len(dataset.labelset),
+        num_class=n_classes,
         importance_type="gain",
     )
 
@@ -329,13 +338,9 @@ if __name__ == "__main__":
     import time
 
     import joblib
-    import lightgbm
     from aozoraset import DatasetAozora
     from ldccset import DatasetLdcc
-    from sklearn.decomposition import PCA  # , KernelPCA
-    from sklearn.feature_extraction.text import TfidfVectorizer
     from sklearn.metrics import accuracy_score
-    from sklearn.pipeline import FeatureUnion, Pipeline
 
     args = get_args()
 
@@ -382,9 +387,9 @@ if __name__ == "__main__":
         for tokener in tokenizers:
             print(tokener.__class__.__name__, "Processing ...", file=sys.stderr)
 
-            build_pipleline = build_pipleline_simple
+            build_pipleline = build_pipleline_with_tfidf
             # build_pipleline = build_pipleline_with_doc2vec
-            pipe = build_pipleline(tokener)
+            pipe = build_pipleline(tokener, n_classes=len(dataset.labelset))
 
             tps = time.perf_counter()
             tcs = time.process_time()

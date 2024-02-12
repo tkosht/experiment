@@ -6,7 +6,7 @@ ENV TZ Asia/Tokyo
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update -y && apt-get upgrade -y \
-    && apt-get install --fix-missing -y sudo build-essential autoconf cmake \
+    && apt-get --fix-missing install -y sudo build-essential autoconf cmake \
         vim tmux tzdata locales dialog git openssh-server bash-completion \
         jq sqlite3 curl nodejs npm default-jre unzip \
         libgeos-dev libsnappy-dev fontconfig fonts-ipaexfont fonts-ipafont \
@@ -14,10 +14,18 @@ RUN apt-get update -y && apt-get upgrade -y \
         libmecab-dev mecab mecab-ipadic-utf8 mecab-utils file \
     && localedef -f UTF-8 -i ja_JP ja_JP.UTF-8
 
-RUN CHROMEDRIVER_VERSION=`curl -sS https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_STABLE` \
-  && curl -sS -o /tmp/chromedriver-linux64.zip https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/$CHROMEDRIVER_VERSION/linux64/chromedriver-linux64.zip  && cd /tmp && unzip chromedriver-linux64.zip && mv chromedriver-linux64/chromedriver /usr/local/bin/
+# for google-chrome
+# # driver and chrome browser
+RUN apt-get install -y libgbm-dev x11vnc xvfb \
+    && CHROMEDRIVER_VERSION=$(curl -sS https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_STABLE) \
+    && curl -sSL -o /tmp/chromedriver-linux64.zip https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/$CHROMEDRIVER_VERSION/linux64/chromedriver-linux64.zip \
+    && cd /tmp && unzip chromedriver-linux64.zip && mv chromedriver-linux64/chromedriver /usr/local/bin/ \
+    && curl -sSL -o /tmp/chrome-linux64.zip https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/$CHROMEDRIVER_VERSION/linux64/chrome-linux64.zip \
+    && cd /tmp && unzip chrome-linux64.zip && mv chrome-linux64 /opt
 
-RUN apt-get install -y --fix-missing --no-install-recommends \
+ENV PATH $PATH:/opt/chrome-linux64
+
+RUN apt-get --fix-missing install -y --no-install-recommends \
         python3.10 \
         python3.10-dev \
         python3-pip \
@@ -34,10 +42,9 @@ ENV LANG="ja_JP.UTF-8" \
     TERM="xterm"
 
 # ======================== #
-# # Install for Tokenizers
+# MeCab
 WORKDIR /tmp
 
-# MeCab
 RUN git config --global http.postBuffer 1048576000 \
     && git clone https://github.com/neologd/mecab-ipadic-neologd.git \
     && cd mecab-ipadic-neologd && bin/install-mecab-ipadic-neologd -n -a -y

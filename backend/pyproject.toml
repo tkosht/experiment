@@ -14,6 +14,7 @@ python = ">=3.10, <3.12"        # <3.12 for sktime
 # for data science
 numpy = "*"
 pandas = "*"
+fireducks = "*"
 dask = {extras = ["complete"], version = "*"}
 scikit-learn = "*"
 scipy = "*"
@@ -23,11 +24,12 @@ matplotlib = "*"
 seaborn = "*"
 plotly = "*"
 pandasgui = "*"
+pandas-profiling = "*"
 scikit-optimize = "*"
 optuna = "*"
 memory_profiler = "*"
-scrapy = "*"
-selenium = "*"
+lime = "*"
+shap = "*"
 
 PyQt5 = "=5.15.2"
 lit = "^17.0.2"
@@ -42,6 +44,11 @@ hydra-core = "*"
 sqlite-web = "*"
 evidently = "*"
 
+# crawler
+scrapy = "*"
+selenium = "*"
+webdriver_manager = "*"
+
 # other tools
 omegaconf = "*"
 notebook = "*"
@@ -49,6 +56,7 @@ python-dotenv = "*"
 ulid-py = "*"
 typer = "*"
 simplejson = "*"
+
 
 # # for project
 fastapi = "*"
