@@ -166,6 +166,7 @@ gradio = "^3.21.0"
 streamlit = "*"
 streamlit-chat = "*"
 streamlit-extras = "*"
+streamsync = {extras = ["ds"], version = "*"}
 hugchat = "*"
 
 # datascience

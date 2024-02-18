@@ -67,7 +67,7 @@ active:
 ps images down:
 	docker compose $@
 
-im:images
+im: images
 
 build:
 	docker compose build

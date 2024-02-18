@@ -51,7 +51,7 @@ RUN git config --global http.postBuffer 1048576000 \
     && cd mecab-ipadic-neologd && bin/install-mecab-ipadic-neologd -n -a -y
 RUN ln -s /etc/mecabrc /usr/local/etc/mecabrc
 
-RUN python -m pip install --upgrade pip==21.0.1
+RUN python -m pip install --upgrade pip     # pip==21.0.1
 
 # upgrade system
 RUN apt-get upgrade -y \
