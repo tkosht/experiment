@@ -13,7 +13,7 @@ services:
     tty: true
     init: true
     privileged: true
-    network_mode: "host"
+    # network_mode: "host"
     deploy:
       resources:
         reservations:
@@ -32,7 +32,7 @@ services:
     environment:
       - STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
       - NVIDIA_DRIVER_CAPABILITIES=all
-      - DISPLAY=localhost:10.0
+       #- DISPLAY=localhost:10.0
       - DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
     # sysctls:
     #   - net.core.somaxconn=$somaxconn
@@ -48,3 +48,15 @@ services:
     #   - "8080:8080" # vue
     #   - "9229:9229" # node debugger
 
+  postgresql:
+    image: postgres:latest
+    container_name: $pj_name.postgresql
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=campfire_db
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"     # postgresql

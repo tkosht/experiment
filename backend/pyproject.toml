@@ -49,6 +49,10 @@ scrapy = "*"
 selenium = "*"
 webdriver_manager = "*"
 
+# Database
+# psycopg2 = "*"
+psycopg2-binary = "*"
+
 # other tools
 omegaconf = "*"
 notebook = "*"
