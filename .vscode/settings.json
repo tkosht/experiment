@@ -1,6 +1,4 @@
 {
-  "python.pythonPath": "/usr/bin/python",
-  "jupyter.jupyterServerType": "local",
   "files.exclude": {
     "backend/**": true,
     "frontend/**": true,
@@ -18,5 +16,4 @@
     "**/wk/**": true,
     "**/bk/**": true
   },
-  "python.formatting.provider": "black"
 }

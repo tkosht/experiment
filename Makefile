@@ -51,10 +51,6 @@ load:
 
 # ==========
 # docker compose aliases
-# up: _up ssh
-# 
-# _up:
-# 	docker compose up -d app
 up:
 	docker compose up -d
 
@@ -79,8 +75,13 @@ reup: down up
 
 clean: clean-container backend-clean clean-logs
 
+clean-all: clean clean-database
+
 clean-logs:
 	rm -rf log/*.log
+
+clean-database:
+	rm -rf data/postgres
 
 clean-container:
 	docker compose down --rmi all

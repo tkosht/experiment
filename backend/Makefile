@@ -31,6 +31,9 @@ summary-semantic-memory:
 demo-semantic-memory:
 	python -m app.semantic_kernel.executable.demo
 
+download-campfire:
+	python -m app.business.campfire.downloader
+
 
 # ==========
 # # webapi tasks

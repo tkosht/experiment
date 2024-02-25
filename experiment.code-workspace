@@ -22,7 +22,7 @@
                 "source.organizeImports": "explicit"
             }
         },
-        "python.formatting.provider": "none",
+        // "python.formatting.provider": "none",
         "isort.args": [
             "--profile",
             "black",
