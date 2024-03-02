@@ -23,6 +23,10 @@ cpu gpu:
 	@rm -f compose.yml
 	@ln -s docker/compose.$@.yml compose.yml
 
+db:
+	@rm -f compose.override.yml
+	@ln -s docker/compose.override.$@.yml compose.override.yml
+
 mode:
 	@echo $$(ls -l compose.yml | awk -F. '{print $$(NF-1)}')
 
