@@ -1,11 +1,8 @@
 import datetime
 import re
 import time
-from collections import namedtuple
 from inspect import signature
 
-import psycopg2
-import psycopg2.extensions
 import typer
 from omegaconf import DictConfig
 from retry import retry
@@ -18,6 +15,9 @@ from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
 
+from app.business.campfire.graphdb import GraphDb
+from app.business.campfire.project import ProjectDetails, ProjectRecord
+
 
 def now() -> str:
     return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -25,38 +25,6 @@ def now() -> str:
 
 def pickup_numbers(text: str) -> int:
     return int(re.sub(r"\D", "", text))
-
-
-ProjectRecord = namedtuple(
-    "ProjectRecord",
-    [
-        "img_url",
-        "detail_url",
-        "area",
-        "title",
-        "meter",
-        "category",
-        "owner",
-        "current_funding",
-        "supporters",
-        "remaining_days",
-        "status",
-    ],
-)
-
-ProjectDetails = namedtuple(
-    "ProjectDetails",
-    [
-        "detail_url",
-        "description",
-        "goal_amount",
-        "start_date",
-        "end_date",
-        "location",
-        "category",
-        "tags",
-    ],
-)
 
 
 class CampfireFetcher(object):
@@ -166,7 +134,7 @@ class CampfireFetcher(object):
                 page=n_page, sortby=params.sortby
             )
             project_records: list[ProjectRecord] = [
-                self.fetch_project(bx) for bx in project_boxes
+                self.fetch_project(n_page, bx) for bx in project_boxes
             ]
             print(f"{now()} {n_page=} {len(project_records)} projects fetched.")
             projects += project_records
@@ -174,7 +142,7 @@ class CampfireFetcher(object):
         print(f"{now()} total is {len(projects)} projects fetched.")
         return projects
 
-    def fetch_project(self, bx: WebElement) -> ProjectRecord:
+    def fetch_project(self, page: int, bx: WebElement) -> ProjectRecord:
         """
         Fetches project information from a web element.
 
@@ -232,6 +200,7 @@ class CampfireFetcher(object):
 
         return ProjectRecord(
             img_url,
+            page,
             detail_url,
             area,
             title,
@@ -244,7 +213,7 @@ class CampfireFetcher(object):
             status,
         )
 
-    def fetch_project_detail(self, detail_url: str) -> ProjectRecord:
+    def fetch_project_detail(self, detail_url: str) -> ProjectDetails:
         """
         Fetches the detailed information of a project from the given URL.
 
@@ -254,7 +223,19 @@ class CampfireFetcher(object):
         Returns:
             ProjectRecord: An instance of the ProjectRecord class containing the fetched project information.
         """
-        pass
+        elms: list[WebElement] = self._fetch(
+            url=detail_url,
+            elm_path='//label[@class="project-name"]',
+            wait_path='//*[@id="fb-root"]',
+        )
+        title = elms[0].text
+        print(title)
+
+        elms: list[WebElement] = self._fetch(
+            url=detail_url,
+            elm_path="//",
+            wait_path='//*[@id="fb-root"]',
+        )
 
     def quit_driver(self):
         """
@@ -264,115 +245,6 @@ class CampfireFetcher(object):
         self.driver = None
 
 
-class PostgresConnector:
-    def __init__(self, host, port, database, user, password):
-        self.host = host
-        self.port = port
-        self.database = database
-        self.user = user
-        self.password = password
-
-    def connect(self) -> psycopg2.extensions.connection:
-        conn = psycopg2.connect(
-            host=self.host,
-            port=self.port,
-            database=self.database,
-            user=self.user,
-            password=self.password,
-        )
-        return conn
-
-    def create_tables(self):
-        self.create_table_campfire_list()
-
-    def create_table_campfire_list(self):
-        """
-        Creates a table named 'campfire_list' if it does not already exist in the database.
-        The table has the following columns:
-        - id: SERIAL PRIMARY KEY
-        - img_url: TEXT
-        - detail_url: TEXT
-        - area: TEXT
-        - title: TEXT
-        - meter: INTEGER
-        - category: TEXT
-        - owner: TEXT
-        - current_funding: INTEGER
-        - supporters: INTEGER
-        - remaining_days: INTEGER
-        - status: TEXT
-        """
-
-        cnn = cur = None
-        try:
-            cnn = self.connect()
-            cur = cnn.cursor()
-            cur.execute(
-                """
-                CREATE TABLE IF NOT EXISTS campfire_list (
-                    id SERIAL PRIMARY KEY,
-                    img_url TEXT,
-                    detail_url TEXT,
-                    area TEXT,
-                    title TEXT,
-                    meter INTEGER,
-                    category TEXT,
-                    owner TEXT,
-                    current_funding INTEGER,
-                    supporters INTEGER,
-                    remaining_days INTEGER,
-                    status TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-                """
-            )
-            cur.execute(
-                """
-                CREATE INDEX IF NOT EXISTS idx_campfire_list_created_at ON campfire_list (created_at)
-                """
-            )
-            cnn.commit()
-        finally:
-            if cur is not None:
-                cur.close()
-            if cnn is not None:
-                cnn.rollback()
-                cnn.close()
-
-    def insert_project_records(self, records: list[ProjectRecord]):
-        """
-        Inserts the given records into the campfire_list table.
-
-        Args:
-            records (list): A list of records to be inserted into the table.
-
-        Returns:
-            None
-        """
-
-        cnn = cur = None
-        try:
-            cnn = self.connect()
-            cur = cnn.cursor()
-            cur.executemany(
-                """
-                INSERT INTO campfire_list (
-                    img_url, detail_url, area, title, meter, category, owner, current_funding, supporters, remaining_days, status
-                )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """,
-                records,
-            )
-            cnn.commit()
-        finally:
-            if cur is not None:
-                cur.close()
-            if cnn is not None:
-                cnn.rollback()
-                cnn.close()
-
-
 # TODO: Campfire のサイトから クラウドファンディングの情報一覧を取得する処理を関数にする
 # TODO: Campfire のサイトから クラウドファンディングの情報一覧に対応する情報詳細を取得する処理を関数にする
 
@@ -380,25 +252,32 @@ class PostgresConnector:
 def _main(params: DictConfig):
     # Campfire のサイトから クラウドファンディングの情報一覧を取得する
     cfr = CampfireFetcher()
-    project_records = cfr.fetch_projects(params)
-    cfr.quit_driver()
+    project_records: list[ProjectRecord] = cfr.fetch_projects(params)
 
-    # Save the data to Postgres
-
-    # # Connect to the Postgres database
-    pgc = PostgresConnector(
-        host="postgresql",
-        port="5432",  # default port of Postgres
-        database="campfire_db",
-        user="postgres",
-        password="postgres",
-    )
-
-    # # Create the table
-    pgc.create_tables()
-
-    # # Insert the records into the table
-    pgc.insert_project_records(project_records)
+    # GraphDb に取得した情報を保存する
+    g = GraphDb()
+    try:
+        for pr in project_records:
+            # g.add_node(
+            #     label="Project",
+            #     img_url=pr.img_url,
+            #     page=pr.page,
+            #     detail_url=pr.detail_url,
+            #     area=pr.area,
+            #     title=pr.title,
+            #     meter=pr.meter,
+            #     category=pr.category,
+            #     owner=pr.owner,
+            #     current_funding=pr.current_funding,
+            #     supporters=pr.supporters,
+            #     remaining_days=pr.remaining_days,
+            #     status=pr.status,
+            # )
+            cfr.fetch_project_detail(pr.detail_url)
+        print(f"{now()} {len(project_records)} projects saved to the graph database.")
+    finally:
+        g.close()
+        cfr.quit_driver()
 
 
 def config():
@@ -407,7 +286,7 @@ def config():
 
 
 def main(
-    max_pages: int = 100,
+    max_pages: int = 1,
     sortby: str = "popular",
 ):
     s = signature(main)
