@@ -30,6 +30,9 @@ db:
 mode:
 	@echo $$(ls -l compose.yml | awk -F. '{print $$(NF-1)}')
 
+mode-nooverride:
+	@rm -f compose.override.yml
+
 
 # ==========
 # general tasks
