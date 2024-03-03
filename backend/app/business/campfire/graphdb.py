@@ -35,33 +35,44 @@ class GraphDb(object):
         with self.driver.session() as session:
             session.execute_write(_add_node, label, **props)
 
+    def create_index(self, label: str, keys: list[str]):
+        def _create_index(tx, label: str, keys: list[str]):
+            # make csv text with `n.key_name`
+            keys_text = ", ".join([f"n.{key}" for key in keys])
+            index_name = f"index_node_{label.lower()}_{keys_text.replace(', ', '_').replace('n.', '')}"
+            query = f"CREATE INDEX {index_name} IF NOT EXISTS FOR (n: {label}) ON ({keys_text})"
+            tx.run(query)
+
+        with self.driver.session() as session:
+            session.execute_write(_create_index, label, keys)
+
     def add_edge(
-        self, label: str = "Edge", node_keys1: dict = {}, node_keys2: dict = {}
+        self, label: str = "Edge", node_keys_src: dict = {}, node_keys_trg: dict = {}
     ):
         """
         Adds an edge between two nodes in the graph.
 
         Args:
-            label (str): The label of the edge. defaults to "Edge".
-            node_keys1 (dict): The properties of the first node. if no label is provided, it defaults to "Node".
-            node_keys2 (dict): The properties of the second node. if no label is provided, it defaults to "Node".
+            label (str): The label of the edge. Defaults to "Edge".
+            node_keys_src (dict): The properties of the source node. If no label is provided, it defaults to "Node".
+            node_keys_trg (dict): The properties of the target node. If no label is provided, it defaults to "Node".
         """
 
-        def _add_edge(tx, label: str, node_keys1: dict, node_keys2: dict):
-            node_label1 = node_keys1.pop("label", "Node")
-            node_label2 = node_keys2.pop("label", "Node")
-            node_cond1 = to_cypher_string(node_keys1, suffix="1")
-            node_cond2 = to_cypher_string(node_keys2, suffix="2")
+        def _add_edge(tx, label: str, node_keys_src: dict, node_keys_trg: dict):
+            node_label_src = node_keys_src.pop("label", "Node")
+            node_label_trg = node_keys_trg.pop("label", "Node")
+            node_cond_src = to_cypher_string(node_keys_src, suffix="_src")
+            node_cond_trg = to_cypher_string(node_keys_trg, suffix="_trg")
             query = f"""
-            MATCH (n1:{node_label1} {node_cond1}), (n2:{node_label2} {node_cond2})
-            CREATE (n1)-[r:{label}]->(n2)
+            MATCH (node_src:{node_label_src} {node_cond_src}), (node_trg:{node_label_trg} {node_cond_trg})
+            CREATE (node_src)-[r:{label}]->(node_trg)
             """
-            _node_keys1 = to_cypher_params(node_keys1, suffix="1")
-            _node_keys2 = to_cypher_params(node_keys2, suffix="2")
-            tx.run(query, **_node_keys1, **_node_keys2)
+            _node_keys_src = to_cypher_params(node_keys_src, suffix="_src")
+            _node_keys_trg = to_cypher_params(node_keys_trg, suffix="_trg")
+            tx.run(query, **_node_keys_src, **_node_keys_trg)
 
         with self.driver.session() as session:
-            session.execute_write(_add_edge, label, node_keys1, node_keys2)
+            session.execute_write(_add_edge, label, node_keys_src, node_keys_trg)
 
     def close(self):
         self.driver.close()
@@ -86,8 +97,8 @@ if __name__ == "__main__":
 
     g.add_edge(
         label="RELATION",
-        node_keys1={"label": "TestLabel", "name": "test1"},
-        node_keys2={"label": "TestLabel", "name": "test2"},
+        node_keys_src={"label": "TestLabel", "name": "test1"},
+        node_keys_trg={"label": "TestLabel", "name": "test2"},
     )
     g.close()
     print("done!")

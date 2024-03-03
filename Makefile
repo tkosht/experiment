@@ -90,6 +90,9 @@ clean-logs:
 clean-database:
 	rm -rf data/postgres
 
+clean-graphdb:
+	sudo rm -rf data/neo4j
+
 clean-container:
 	docker compose down --rmi all
 	sudo rm -rf app/__pycache__
