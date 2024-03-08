@@ -13,7 +13,7 @@ services:
     tty: true
     init: true
     privileged: true
-    # network_mode: "host"  # for X / chrome driver
+    # network_mode: "host"  # for X / chrome browser to visible
     deploy:
       resources:
         reservations:
@@ -35,9 +35,9 @@ services:
       - NVIDIA_DRIVER_CAPABILITIES=all
       - DISPLAY=localhost:10.0
       - DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
-    sysctls:
-      - net.core.somaxconn=$somaxconn
-      - net.ipv4.tcp_syncookies=0
+    # sysctls:
+    #   - net.core.somaxconn=$somaxconn
+    #   - net.ipv4.tcp_syncookies=0
     ports:
       - "3006:3006"     # for Streamsync
       - "7860:7860"     # gradio

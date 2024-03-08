@@ -11,10 +11,12 @@ from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.support.ui import WebDriverWait
+from tqdm import tqdm
 from typing_extensions import Annotated
 
 from app.base.component.ulid import build_ulid
@@ -42,6 +44,19 @@ def pickup_url(text: str) -> str:
     return re.sub(r"url\((.*)\)", r"\1", text)
 
 
+def _cleanup_url(url: str) -> str:
+    """
+    Cleans up the given URL by removing any query parameters.
+
+    Args:
+        url (str): The URL to be cleaned up.
+
+    Returns:
+        str: The cleaned up URL without any query parameters.
+    """
+    return url.split("?")[0]
+
+
 class CampfireFetcher(object):
     """
     A class for automating web scraping using Selenium.
@@ -59,13 +74,15 @@ class CampfireFetcher(object):
         Returns:
             driver (webdriver.Chrome): The created WebDriver instance.
         """
+
         options = Options()
         options.binary_location = "/opt/chrome-linux64/chrome"
         options.add_argument("--headless")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("--enable-chrome-browser-cloud-management")
+        options.add_argument("--disable-chrome-browser-cloud-management")
         options.add_argument("--enable-javascript")
+        options.add_argument('--args --js-flags="--max_old_space_size=16384"')
         service = Service("/usr/local/bin/chromedriver")
         driver = webdriver.Chrome(service=service, options=options)
         return driver
@@ -78,7 +95,9 @@ class CampfireFetcher(object):
         wait_path: str = None,
         max_wait: int = 1,  # secs
         do_scroll: bool = False,
-        scroll_wait: float = 0.25,
+        scroll_size: int = 300,
+        scroll_wait: float = 0.10,
+        wait_after_scroll: float = 0.10,
     ) -> list[WebElement]:
         """
         Fetches elements from a web page using the specified URL and element paths.
@@ -111,7 +130,7 @@ class CampfireFetcher(object):
 
             # 画面の最下部まで少しずつスクロールする
             # # lazy loading で追加される要素を取得するため
-            scroll_size = 200
+            scroll_size = max(last_height // 5, scroll_size)
             for offset in range(0, last_height, scroll_size):
                 # lazy loading で追加される要素を取得する
                 self.driver.execute_script(
@@ -121,8 +140,13 @@ class CampfireFetcher(object):
                 # scroll が終わるまで待つ
                 time.sleep(scroll_wait)
 
+        time.sleep(wait_after_scroll)
         elms: list[WebElement] = self.driver.find_elements(by=By.XPATH, value=elm_path)
         return elms
+
+    def get_project_url(self, page: int, sortby: SortBy = SortBy.popular):
+        project_url = f"https://camp-fire.jp/projects?page={page}&sort={sortby}"
+        return project_url
 
     def fetch_project_list_boxes(
         self, page: int = 1, sortby: SortBy = SortBy.popular
@@ -137,7 +161,8 @@ class CampfireFetcher(object):
         Returns:
             list: A list of project boxes fetched from the page.
         """
-        url = f"https://camp-fire.jp/projects?page={page}&sort={sortby}"
+
+        url = self.get_project_url(page, sortby)
         container: list[WebElement] = self._fetch(
             url=url,
             elm_path='//div[@class="container"]',
@@ -161,6 +186,7 @@ class CampfireFetcher(object):
         Returns:
             list[ProjectRecord]: A list of ProjectRecord objects representing the fetched project records.
         """
+
         projects = []
         for n_page in range(1, params.max_pages + 1):
             print(f"{now()} Fetching page {n_page} ...")
@@ -187,15 +213,17 @@ class CampfireFetcher(object):
         Returns:
             ProjectRecord: An instance of the ProjectRecord class containing the fetched project information.
         """
+
         # NOTE: ファンディング情報を取得する
         thumnail_elm: WebElement = bx.find_element(
             By.XPATH, './/div[@class="box-thumbnail"]'
         )
         img_url = thumnail_elm.find_element(By.XPATH, ".//img").get_attribute("src")
-        # detail_url like 'https://camp-fire.jp/projects/view/736020?list=projects_popular_page1'
-        detail_url = thumnail_elm.find_elements(By.XPATH, ".//a")[-1].get_attribute(
+        # project_url like 'https://camp-fire.jp/projects/view/736020?list=projects_popular_page1'
+        project_url = thumnail_elm.find_elements(By.XPATH, ".//a")[-1].get_attribute(
             "href"
         )  # first or second element in the <a> tag list
+        project_url = _cleanup_url(project_url)
         try:
             area: str = bx.find_element(By.XPATH, './/*[@class="area"]').text
         except NoSuchElementException:
@@ -256,7 +284,7 @@ class CampfireFetcher(object):
             box_idx,
             img_url,
             page,
-            detail_url,
+            project_url,
             area,
             title,
             meter,
@@ -278,21 +306,24 @@ class CampfireFetcher(object):
         Returns:
             list[WebElement]: A list of web elements matching the given path.
         """
+
         elms: list[WebElement] = self._fetch(
             url=None,  # use opened page
             elm_path=elm_path,
         )
         return elms
 
-    def _fetch_details_community(self, detail_url: str) -> ProjectDetails:
+    def _fetch_details_community(self, project_url: str) -> ProjectDetails:
         def _get_text(xpath: str) -> str | None:
-            elms: list[WebElement] = self._fetch_simply(xpath)
+            try:
+                elms: list[WebElement] = self._fetch_simply(xpath)
+            except TimeoutException:
+                return None
             text: str = elms[0].text if elms else None
             return text
 
         # プロジェクトが取れない場合、コミュニティのページかもしれないので、コミュニティの情報を取得する
         title: str = _get_text('//*[@class="community-name"]')
-        elms: list[WebElement] = self._fetch_simply('//div[@class="flicking-panel"]')
         img_url: str = _get_text('//*[@class="flicking-panel"]')
         backer_amount: str = _get_text('//*[@class="category-and-amount"]')
         abstract: str = _get_text('//*[@class="community-description"]')
@@ -329,7 +360,7 @@ class CampfireFetcher(object):
 
         return ProjectDetails(
             type="community",
-            detail_url=detail_url,
+            project_url=project_url,
             title=title,
             img_url=img_url,
             backer_amount=backer_amount,
@@ -346,7 +377,79 @@ class CampfireFetcher(object):
             return_boxes=return_boxes,
         )
 
-    def _fetch_details_project(self, detail_url: str) -> ProjectDetails:
+    def _fetch_details_furusato(self, project_url: str) -> ProjectDetails:
+        def _get_text(xpath: str) -> str | None:
+            try:
+                elms: list[WebElement] = self._fetch_simply(xpath)
+            except TimeoutException:
+                return None
+            text: str = elms[0].text if elms else None
+            return text
+
+        title: str = _get_text('//h2[@class="header_top__title"]')
+        elms: list[WebElement] = self._fetch_simply(
+            '//div[contains(@class, "slide-item")]/img'
+        )
+        img_url: str = elms[0].get_attribute("src")
+
+        elms: list[WebElement] = self._fetch_simply(
+            '//div[@class="project_status"]//div[@class="status"]'
+        )
+        backer_amount: str = elms[0].text
+        abstract: str = _get_text('//div[@class="header_bottom__cap"]')
+
+        elms: list[WebElement] = self._fetch_simply('//div[@class="column_main"]')
+        article_text: str = elms[0].text
+        article_html: str = elms[0].get_attribute("innerHTML")
+
+        profile_text: str = _get_text('//div[@class="column_side"]')
+        profile_url: str = None
+        elms: list[WebElement] = self._fetch_simply('//div[@class="author__img"]')
+        icon_url: str = elms[0].get_attribute("src") if elms else None
+        user_name: str = _get_text('//div[@class="author__name"]')
+        prefecture: str = _get_text('//span[@class="address"]')
+
+        # リターン情報を取得する
+        elms: list[WebElement] = self._fetch_simply(
+            '//div[contains(@class, "return-box")]'
+        )
+        return_boxes = []
+        for return_idx, elm in enumerate(elms):
+            try:
+                return_img_url: str = elm.find_element(
+                    By.XPATH, ".//img"
+                ).get_attribute("data-src")
+            except NoSuchElementException:
+                return_img_url = None
+
+            price: str = elm.find_element(
+                By.XPATH, './/div[contains(@class, "return__price")]'
+            ).text
+            desc: str = elm.get_attribute("innerHTML")
+
+            rbx = ReturnBox(return_idx, return_img_url, price, desc)
+            return_boxes.append(rbx)
+
+        return ProjectDetails(
+            type="furusato",
+            project_url=project_url,
+            title=title,
+            img_url=img_url,
+            backer_amount=backer_amount,
+            abstract=abstract,
+            article_text=article_text,
+            article_html=article_html,
+            profile_text=profile_text,
+            profile_url=profile_url,
+            icon_url=icon_url,
+            user_name=user_name,
+            prefecture=prefecture,
+            project_exprience=None,
+            readmore=None,
+            return_boxes=return_boxes,
+        )
+
+    def _fetch_details_project(self, project_url: str) -> ProjectDetails:
         # ヘッダ情報
         # # タイトルを取得する
         title: str = self._fetch_simply('//label[@class="project-name"]')[0].text
@@ -377,9 +480,22 @@ class CampfireFetcher(object):
 
         # プロフィールを取得する
         elms: list[WebElement] = self._fetch_simply(
-            '//section[contains(@class, "profile")]'
+            '//section[contains(@class, "profile")]',
         )
-        profile_text = elms[0].text
+        try:
+            # 「もっと見る」リンクがある場合は、クリックして全文を取得する
+            # 特に、「もっと見る」リンクがない場合はエラーになり、その場合は、そのまま取得する
+            readmore_link = elms[0].find_element(By.LINK_TEXT, "もっと見る")
+            actions = ActionChains(self.driver)
+            actions.move_to_element(readmore_link).perform()
+            readmore_link.click()
+            self.driver.implicitly_wait(3)
+        except NoSuchElementException:
+            # raise しないようにキャッチしておく
+            pass
+        finally:
+            profile_text = elms[0].text
+
         elms: list[WebElement] = self._fetch_simply(
             '//section[contains(@class, "profile")]/div[@class="icon"]/a'
         )
@@ -434,7 +550,7 @@ class CampfireFetcher(object):
 
         return ProjectDetails(
             type="project",
-            detail_url=detail_url,
+            project_url=project_url,
             title=title,
             img_url=img_url,
             backer_amount=backer_amount,
@@ -451,12 +567,12 @@ class CampfireFetcher(object):
             return_boxes=return_boxes,
         )
 
-    def fetch_project_details(self, detail_url: str) -> ProjectDetails:
+    def fetch_project_details(self, project_url: str) -> ProjectDetails:
         """
         Fetches the detailed information of a project from the given URL.
 
         Args:
-            detail_url (str): The URL of the project detail page.
+            project_url (str): The URL of the project detail page.
 
         Returns:
             ProjectRecord: An instance of the ProjectRecord class containing the fetched project information.
@@ -464,18 +580,37 @@ class CampfireFetcher(object):
 
         # プロジェクト名を取得する
         elms: list[WebElement] = self._fetch(
-            url=detail_url,
+            url=project_url,
             elm_path='//label[@class="project-name"]',
             wait_path="//*[@id='fb-root']",
+            max_wait=10,
             do_scroll=True,
+            scroll_size=100,
+            scroll_wait=0.5,
+            wait_after_scroll=3,
         )
 
         # 詳細ページでプロジェクト名が取得できた場合は、プロジェクト詳細情報を取得する
         if elms:
-            return self._fetch_details_project(detail_url)
+            return self._fetch_details_project(project_url)
 
         # 詳細ページでプロジェクト名が取得できなかった場合は、コミュニティ詳細情報を取得する
-        return self._fetch_details_community(detail_url)
+        elms: list[WebElement] = self._fetch(
+            url=project_url,
+            elm_path='//*[@class="community-name"]',
+            wait_path="//*[@id='fb-root']",
+            max_wait=10,
+            do_scroll=True,
+            scroll_size=100,
+            scroll_wait=0.5,
+            wait_after_scroll=3,
+        )
+        # コミュニティ名を取得できたら、コミュニティ詳細情報を取得する
+        if elms:
+            return self._fetch_details_community(project_url)
+
+        # その他は、ふるさと納税の情報を取得する
+        return self._fetch_details_furusato(project_url)
 
     def quit_driver(self):
         """
@@ -494,9 +629,9 @@ def _main(params: DictConfig):
 
     # リスト毎にプロジェクトの詳細情報を取得
     print(f"{now()} Fetching project details ...")
-    details_records = []
-    for pr in project_records:
-        details_record: ProjectDetails = cfr.fetch_project_details(pr.detail_url)
+    details_records: list[ProjectDetails] = []
+    for pr in tqdm(project_records):
+        details_record: ProjectDetails = cfr.fetch_project_details(pr.project_url)
         details_records.append(details_record)
 
     # GraphDb に取得した情報を保存する
@@ -505,7 +640,7 @@ def _main(params: DictConfig):
     # 全てのプロジェクトに共通のキー情報を、ループの外で生成・設定する
     fetch_id: str = build_ulid("FCH")
     created_at: str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    sortby = params.sortby
+    sortby: SortBy = params.sortby
     source_id: str = "Campfire"
 
     # プロジェクト毎に保存する
@@ -513,6 +648,15 @@ def _main(params: DictConfig):
     try:
         for pr, dr in zip(project_records, details_records):
             project_id: str = build_ulid("PRJ")
+
+            # # URL をプロジェクトルートノードとして保存する
+            g.merge_node(
+                label="ProjectRoot",
+                source_id=source_id,
+                project_url=pr.project_url,
+            )
+            g.create_index("ProjectRoot", keys=["project_url"])
+
             # # プロジェクト情報をノードとして保存する
             g.add_node(
                 label="Project",
@@ -527,6 +671,13 @@ def _main(params: DictConfig):
             g.create_index("Project", keys=["fetch_id"])
             g.create_index("Project", keys=["sortby"])
             g.create_index("Project", keys=["created_at", "sortby"])
+
+            # # プロジェクトルートとプロジェクト情報を紐付ける
+            g.merge_edge(
+                label="Project",
+                node_keys_src={"label": "ProjectRoot", "project_url": pr.project_url},
+                node_keys_trg={"label": "Project", "project_id": project_id},
+            )
 
             # # プロジェクト詳細情報をノードとして保存する
             details: dict = dr._asdict()
@@ -568,7 +719,11 @@ def _main(params: DictConfig):
                 g.add_edge(
                     label="ReturnBox",
                     node_keys_src={"label": "ProjectDetails", "project_id": project_id},
-                    node_keys_trg={"label": "ReturnBox", "return_idx": rbx.return_idx},
+                    node_keys_trg={
+                        "label": "ReturnBox",
+                        "project_id": project_id,
+                        "return_idx": rbx.return_idx,
+                    },
                 )
             g.create_index("ReturnBox", keys=["project_id", "return_idx"])
             g.create_index("ReturnBox", keys=["fetch_id"])

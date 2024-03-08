@@ -18,12 +18,13 @@ RUN apt-get update -y && apt-get upgrade -y \
 
 # for google-chrome
 # # driver and chrome browser
-RUN apt-get install -y libgbm-dev x11vnc xvfb \
+RUN apt-get install -y libgbm-dev x11vnc xvfb fonts-noto-color-emoji \
     && CHROMEDRIVER_VERSION=$(curl -sS https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_STABLE) \
     && curl -sSL -o /tmp/chromedriver-linux64.zip https://storage.googleapis.com/chrome-for-testing-public/$CHROMEDRIVER_VERSION/linux64/chromedriver-linux64.zip \
     && cd /tmp && unzip chromedriver-linux64.zip && mv chromedriver-linux64/chromedriver /usr/local/bin/ \
     && curl -sSL -o /tmp/chrome-linux64.zip https://storage.googleapis.com/chrome-for-testing-public/$CHROMEDRIVER_VERSION/linux64/chrome-linux64.zip \
-    && cd /tmp && unzip chrome-linux64.zip && mv chrome-linux64 /opt
+    && cd /tmp && unzip chrome-linux64.zip && mv chrome-linux64 /opt \
+    && fc-cache -f -v
 
 ENV PATH $PATH:/opt/chrome-linux64
 

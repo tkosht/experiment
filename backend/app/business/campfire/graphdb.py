@@ -35,6 +35,15 @@ class GraphDb(object):
         with self.driver.session() as session:
             session.execute_write(_add_node, label, **props)
 
+    def merge_node(self, label: str, **props):
+        def _merge_node(tx, label, **props):
+            properties = to_cypher_string(props)
+            query = f"MERGE (n: {label} {properties})"
+            tx.run(query, **props)
+
+        with self.driver.session() as session:
+            session.execute_write(_merge_node, label, **props)
+
     def create_index(self, label: str, keys: list[str]):
         def _create_index(tx, label: str, keys: list[str]):
             # make csv text with `n.key_name`
@@ -73,6 +82,34 @@ class GraphDb(object):
 
         with self.driver.session() as session:
             session.execute_write(_add_edge, label, node_keys_src, node_keys_trg)
+
+    def merge_edge(
+        self, label: str = "Edge", node_keys_src: dict = {}, node_keys_trg: dict = {}
+    ):
+        """
+        Merges an edge between two nodes in the graph.
+
+        Args:
+            label (str): The label of the edge. Defaults to "Edge".
+            node_keys_src (dict): The properties of the source node. If no label is provided, it defaults to "Node".
+            node_keys_trg (dict): The properties of the target node. If no label is provided, it defaults to "Node".
+        """
+
+        def _merge_edge(tx, label: str, node_keys_src: dict, node_keys_trg: dict):
+            node_label_src = node_keys_src.pop("label", "Node")
+            node_label_trg = node_keys_trg.pop("label", "Node")
+            node_cond_src = to_cypher_string(node_keys_src, suffix="_src")
+            node_cond_trg = to_cypher_string(node_keys_trg, suffix="_trg")
+            query = f"""
+            MATCH (node_src:{node_label_src} {node_cond_src}), (node_trg:{node_label_trg} {node_cond_trg})
+            MERGE (node_src)-[r:{label}]->(node_trg)
+            """
+            _node_keys_src = to_cypher_params(node_keys_src, suffix="_src")
+            _node_keys_trg = to_cypher_params(node_keys_trg, suffix="_trg")
+            tx.run(query, **_node_keys_src, **_node_keys_trg)
+
+        with self.driver.session() as session:
+            session.execute_write(_merge_edge, label, node_keys_src, node_keys_trg)
 
     def close(self):
         self.driver.close()

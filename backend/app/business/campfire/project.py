@@ -6,7 +6,7 @@ ProjectRecord = namedtuple(
         "box_idx",
         "img_url",
         "page",
-        "detail_url",
+        "project_url",
         "area",
         "title",
         "meter",
@@ -24,7 +24,7 @@ ProjectDetails = namedtuple(
     "ProjectDetails",
     [
         "type",
-        "detail_url",
+        "project_url",
         "title",
         "img_url",
         "backer_amount",

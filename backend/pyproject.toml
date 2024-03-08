@@ -31,6 +31,7 @@ optuna = "*"
 memory_profiler = "*"
 lime = "*"
 shap = "*"
+pyyaml = "5.3.1"
 
 PyQt5 = "=5.15.2"
 lit = "^17.0.2"
@@ -148,7 +149,7 @@ semantic-kernel = "*"
 huggingface_hub = "*"
 codeboxapi = "*"
 llama-cpp-python = "*"
-heron = {git = "https://github.com/turingmotors/heron.git"}
+# heron = {git = "https://github.com/turingmotors/heron.git"}
 
 # for elyza/ELYZA-japanese-Llama-2-7b-instruct
 # transformers
