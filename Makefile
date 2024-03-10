@@ -9,7 +9,7 @@ install: backend-poetry-install
 bash:
 	docker compose exec app bash
 
-poetry demo demo-stream demo-code-interpreter:
+poetry demo demo-stream demo-code-interpreter campfire-data:
 	@make backend-$@
 
 python: up
@@ -109,7 +109,7 @@ frontend-restore: frontend-ci
 
 # ==========
 # backend tasks
-backend-demo backend-poetry-install backend-poetry backend-demo-stream backend-demo-code-interpreter: up
+backend-demo backend-poetry-install backend-poetry backend-demo-stream backend-demo-code-interpreter backend-campfire-data: up
 	$(eval task_name=$(shell echo "$@" | perl -pe 's/backend-//'))
 	@echo "runnning task @ backend: $(task_name)"
 	docker compose exec app bash -c "cd backend && make $(task_name)"

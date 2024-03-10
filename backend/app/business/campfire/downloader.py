@@ -36,8 +36,11 @@ def now() -> str:
     return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
-def pickup_numbers(text: str) -> int:
-    return int(re.sub(r"\D", "", text))
+def pickup_numbers(text: str, null_value: int = 0) -> int | None:
+    n = re.sub(r"\D", "", text)
+    if n:
+        return int(n)
+    return null_value
 
 
 def pickup_url(text: str) -> str:
@@ -270,15 +273,14 @@ class CampfireFetcher(object):
         # - current_funding:  現在\n30,270,000円 -> 30270000: int
         # - supporters:  支援者\n450人 -> 450: int
         # - remaining_days:  残り\n7日 -> 7: int
-        meter = int(pickup_numbers(meter))
-        current_funding = int(pickup_numbers(current_funding))
-        supporters = int(pickup_numbers(supporters))
-
+        meter = pickup_numbers(meter)
+        current_funding = pickup_numbers(current_funding)
+        supporters = pickup_numbers(supporters)
         if remaining_days is not None:
             if "終了" in remaining_days:
                 remaining_days = 0
             else:
-                remaining_days = int(pickup_numbers(remaining_days))
+                remaining_days = pickup_numbers(remaining_days, null_value=None)
 
         return ProjectRecord(
             box_idx,
@@ -330,16 +332,19 @@ class CampfireFetcher(object):
         elms: list[WebElement] = self._fetch_simply('//section[@id="project-body"]')
         article_text: str = elms[0].text
         article_html: str = elms[0].get_attribute("innerHTML")
-        rewards: list[WebElement] = self._fetch_simply('//div[@class="reward"]')
+        returns: list[WebElement] = self._fetch_simply('//div[@class="reward"]')
         return_boxes = []
-        for idx, rwd in enumerate(rewards):
-            img_url: str = rwd.find_element(By.XPATH, ".//div[@index=0]").get_attribute(
-                "style"
-            )
+        for idx, rwd in enumerate(returns):
+            try:
+                return_img_url: str = rwd.find_element(
+                    By.XPATH, ".//img"
+                ).get_attribute("src")
+            except NoSuchElementException:
+                return_img_url: str = None
             price: str = rwd.find_element(By.XPATH, './/div[@class="price"]').text
             rbx = ReturnBox(
                 return_idx=idx,
-                return_img_url=img_url,
+                return_img_url=return_img_url,
                 price=price,
                 desc=rwd.text,
             )
@@ -377,7 +382,7 @@ class CampfireFetcher(object):
             return_boxes=return_boxes,
         )
 
-    def _fetch_details_furusato(self, project_url: str) -> ProjectDetails:
+    def _fetch_details_others(self, project_url: str) -> ProjectDetails:
         def _get_text(xpath: str) -> str | None:
             try:
                 elms: list[WebElement] = self._fetch_simply(xpath)
@@ -410,28 +415,51 @@ class CampfireFetcher(object):
         prefecture: str = _get_text('//span[@class="address"]')
 
         # リターン情報を取得する
-        elms: list[WebElement] = self._fetch_simply(
-            '//div[contains(@class, "return-box")]'
-        )
-        return_boxes = []
-        for return_idx, elm in enumerate(elms):
-            try:
-                return_img_url: str = elm.find_element(
-                    By.XPATH, ".//img"
-                ).get_attribute("data-src")
-            except NoSuchElementException:
-                return_img_url = None
+        try:
+            elms: list[WebElement] = self._fetch_simply(
+                '//div[contains(@class, "return-box") and not(contains(@class, "return-box-inner"))]'
+            )
+            return_boxes = []
+            for return_idx, elm in enumerate(elms):
+                try:
+                    return_img_url: str = elm.find_element(
+                        By.XPATH, ".//img"
+                    ).get_attribute("data-src")
+                except NoSuchElementException:
+                    return_img_url = None
 
-            price: str = elm.find_element(
-                By.XPATH, './/div[contains(@class, "return__price")]'
-            ).text
-            desc: str = elm.get_attribute("innerHTML")
+                price: str = elm.find_element(
+                    By.XPATH, './/div[contains(@class, "return__price")]'
+                ).text
+                desc: str = elm.get_attribute("innerHTML")
 
-            rbx = ReturnBox(return_idx, return_img_url, price, desc)
-            return_boxes.append(rbx)
+                rbx = ReturnBox(return_idx, return_img_url, price, desc)
+                return_boxes.append(rbx)
+        except TimeoutException:
+            price: str = _get_text('//div[@class="return__price"]')
+            elms: list[WebElement] = self._fetch_simply(
+                '//div[contains(@class, "return__img")]'
+            )
+            return_img_url: str = (
+                elms[0].find_element(By.XPATH, ".//img").get_attribute("src")
+            )
+
+            elms: list[WebElement] = self._fetch_simply(
+                '//p[contains(@class, "return__list") and contains(@class, "readmore")]'
+            )
+            readmore_link = elms[0].find_element(By.LINK_TEXT, "もっと見る")
+            actions = ActionChains(self.driver)
+            actions.move_to_element(readmore_link).perform()
+            readmore_link.click()
+            self.driver.implicitly_wait(3)
+            desc: str = _get_text(
+                '//p[contains(@class, "return__list") and contains(@class, "readmore")]'
+            )
+            rbx = ReturnBox(0, return_img_url, price, desc)
+            return_boxes = [rbx]
 
         return ProjectDetails(
-            type="furusato",
+            type="others",  # furusato, support, etc.
             project_url=project_url,
             title=title,
             img_url=img_url,
@@ -496,14 +524,21 @@ class CampfireFetcher(object):
         finally:
             profile_text = elms[0].text
 
-        elms: list[WebElement] = self._fetch_simply(
-            '//section[contains(@class, "profile")]/div[@class="icon"]/a'
-        )
-        profile_url: str = elms[0].get_attribute("href")
-        elms: list[WebElement] = self._fetch_simply(
-            '//section[contains(@class, "profile")]/div[@class="icon"]/a/img'
-        )
-        icon_url: str = elms[0].get_attribute("src")
+        try:
+            elms: list[WebElement] = self._fetch_simply(
+                '//section[contains(@class, "profile")]/div[@class="icon"]/a'
+            )
+            profile_url: str = elms[0].get_attribute("href")
+        except TimeoutException:
+            profile_url: str = None
+
+        try:
+            elms: list[WebElement] = self._fetch_simply(
+                '//section[contains(@class, "profile")]/div[@class="icon"]/*/img'
+            )
+            icon_url: str = elms[0].get_attribute("src")
+        except TimeoutException:
+            icon_url: str = None
 
         # ユーザ名を取得する
         elms: list[WebElement] = self._fetch_simply('//div[@class="username"]')
@@ -514,8 +549,13 @@ class CampfireFetcher(object):
         prefecture: str = elms[0].text if elms else None
 
         # プロジェクトの経験情報を取得する
-        elms: list[WebElement] = self._fetch_simply('//div[@class="projects-count"]')
-        project_exprience: str = elms[0].text
+        try:
+            elms: list[WebElement] = self._fetch_simply(
+                '//div[@class="projects-count"]'
+            )
+            project_exprience: str = elms[0].text
+        except TimeoutException:
+            project_exprience: str = None
 
         # プロフィールの追加情報を取得する
         try:
@@ -526,7 +566,7 @@ class CampfireFetcher(object):
 
         # リターン情報を取得する
         elms: list[WebElement] = self._fetch_simply(
-            '//div[contains(@class, "return-box")]'
+            '//div[contains(@class, "return-box") and not(contains(@class, "return-box-inner"))]'
         )
 
         return_boxes = []
@@ -541,9 +581,13 @@ class CampfireFetcher(object):
             price: str = elm.find_element(
                 By.XPATH, './/div[contains(@class, "price")]'
             ).text
-            desc: str = elm.find_element(
-                By.XPATH, './/div[@class="abbreviated-description"]'
-            ).get_attribute("innerHTML")
+
+            try:
+                desc: str = elm.find_element(
+                    By.XPATH, './/div[@class="abbreviated-description"]'
+                ).get_attribute("innerHTML")
+            except NoSuchElementException:
+                desc: str = None
 
             rbx = ReturnBox(return_idx, return_img_url, price, desc)
             return_boxes.append(rbx)
@@ -585,8 +629,8 @@ class CampfireFetcher(object):
             wait_path="//*[@id='fb-root']",
             max_wait=10,
             do_scroll=True,
-            scroll_size=100,
-            scroll_wait=0.5,
+            scroll_size=500,
+            scroll_wait=0.15,
             wait_after_scroll=3,
         )
 
@@ -599,18 +643,13 @@ class CampfireFetcher(object):
             url=project_url,
             elm_path='//*[@class="community-name"]',
             wait_path="//*[@id='fb-root']",
-            max_wait=10,
-            do_scroll=True,
-            scroll_size=100,
-            scroll_wait=0.5,
-            wait_after_scroll=3,
         )
         # コミュニティ名を取得できたら、コミュニティ詳細情報を取得する
         if elms:
             return self._fetch_details_community(project_url)
 
-        # その他は、ふるさと納税の情報を取得する
-        return self._fetch_details_furusato(project_url)
+        # ふるさと納税等の他の情報を取得する
+        return self._fetch_details_others(project_url)
 
     def quit_driver(self):
         """
