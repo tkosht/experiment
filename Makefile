@@ -109,10 +109,16 @@ frontend-restore: frontend-ci
 
 # ==========
 # backend tasks
-backend-demo backend-poetry-install backend-poetry backend-demo-stream backend-demo-code-interpreter backend-campfire-data: up
+backend-demo backend-poetry-install backend-poetry backend-demo-stream backend-demo-code-interpreter: up
 	$(eval task_name=$(shell echo "$@" | perl -pe 's/backend-//'))
 	@echo "runnning task @ backend: $(task_name)"
 	docker compose exec app bash -c "cd backend && make $(task_name)"
+
+backend-campfire-data backend-ls: up
+	$(eval task_name=$(shell echo "$@" | perl -pe 's/backend-//'))
+	@echo "runnning task @ backend: $(task_name) with poetry"
+	docker compose exec app bash -c 'cd backend && $$HOME/.local/bin/poetry run make $(task_name)'
+
 
 backend-clean:
 	$(eval task_name=$(shell echo "$@" | perl -pe 's/backend-//'))

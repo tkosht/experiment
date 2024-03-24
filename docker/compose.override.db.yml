@@ -22,6 +22,7 @@ services:
       dockerfile: docker/Dockerfile.neo4j
     environment:
       - NEO4J_AUTH=$neo4j_user/$neo4j_pswd
+      - NEO4JLABS_PLUGINS=["apoc"]
     volumes:
       - ./data/neo4j/data:/data
       - ./data/neo4j/logs:/logs

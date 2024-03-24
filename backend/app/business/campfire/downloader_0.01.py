@@ -39,9 +39,6 @@ def now() -> str:
 
 
 def pickup_numbers(text: str, null_value: int = 0) -> int | None:
-    if text is None:
-        return None
-
     n = re.sub(r"\D", "", text)
     if n:
         return int(n)
@@ -49,7 +46,7 @@ def pickup_numbers(text: str, null_value: int = 0) -> int | None:
 
 
 def pickup_url(text: str) -> str:
-    return re.sub(r'.*url\("?([^"]+)"?\);?', r"\1", text)
+    return re.sub(r"url\((.*)\)", r"\1", text)
 
 
 def _cleanup_url(url: str) -> str:
@@ -175,30 +172,33 @@ class CampfireFetcher(object):
         project_url = f"https://camp-fire.jp/projects?page={page}&sort={sortby}"
         return project_url
 
-    def fetch_project_cards(
+    def fetch_project_list_boxes(
         self, page: int = 1, sortby: SortBy = SortBy.popular
     ) -> list[WebElement]:
         """
-        Fetches the project cards from the Campfire website.
+        Fetches the project list boxes from Campfire website.
 
         Args:
             page (int): The page number to fetch (default is 1).
-            sortby (SortBy): The sorting option for the projects (default is SortBy.popular).
+            sortby (str): The sorting option for the projects (default is "popular").
 
         Returns:
-            list[WebElement]: A list of project cards from the page.
+            list: A list of project boxes fetched from the page.
         """
 
         url = self.get_project_url(page, sortby)
-        cards: list[WebElement] = self._fetch(
+        container: list[WebElement] = self._fetch(
             url=url,
-            elm_path='//a[contains(@class, "card") and contains(@class, "svelte")]',
+            elm_path='//div[@class="container"]',
             wait_path='//*[@id="fb-root"]',
             do_scroll=True,
         )
-        assert cards, f"no project cards found in {url}"
+        boxes: list[WebElement] = container[0].find_elements(
+            by=By.XPATH, value='.//div[@class="box"]'
+        )
+        assert boxes, f"no project boxes found in {url}"
 
-        return cards
+        return boxes
 
     def fetch_projects(self, params: DictConfig) -> list[ProjectRecord]:
         """
@@ -214,12 +214,12 @@ class CampfireFetcher(object):
         projects = []
         for n_page in range(1, params.max_pages + 1):
             print(f"{now()} Fetching page {n_page} ...")
-            project_cards: list[WebElement] = self.fetch_project_cards(
+            project_boxes: list[WebElement] = self.fetch_project_list_boxes(
                 page=n_page, sortby=params.sortby
             )
             project_records: list[ProjectRecord] = [
                 self.fetch_project(box_idx, n_page, bx)
-                for box_idx, bx in enumerate(project_cards)
+                for box_idx, bx in enumerate(project_boxes)
             ]
             print(f"{now()} {n_page=} {len(project_records)} projects fetched.")
             projects += project_records
@@ -227,7 +227,7 @@ class CampfireFetcher(object):
         print(f"{now()} total is {len(projects)} projects fetched.")
         return projects
 
-    def fetch_project(self, card_idx: int, page: int, crd: WebElement) -> ProjectRecord:
+    def fetch_project(self, box_idx: int, page: int, bx: WebElement) -> ProjectRecord:
         """
         Fetches project information from a web element.
 
@@ -238,104 +238,85 @@ class CampfireFetcher(object):
             ProjectRecord: An instance of the ProjectRecord class containing the fetched project information.
         """
 
-        project_id: str = crd.get_attribute("data_project_id")
-
-        project_url: str = crd.get_attribute("data-href")
-        project_url = "https://camp-fire.jp" + _cleanup_url(project_url)
-
-        title: str = crd.find_element(By.XPATH, ".//h3").text
-
-        data_dimension: str = crd.get_attribute("data-gtm-data-dimension8")
-        data_brand: str = crd.get_attribute("data-gtm-data-brand")
-        data_category: str = crd.get_attribute("data-gtm-data-category")
-        data_position: str = crd.get_attribute("data-gtm-data-position")
-        data_list: str = crd.get_attribute(
-            "data-gtm-data-list"
-        )  # e.g. "projects_fresh"
-
-        img_url: str = crd.find_element(By.XPATH, ".//img").get_attribute("src")
-
+        # NOTE: ファンディング情報を取得する
+        thumnail_elm: WebElement = bx.find_element(
+            By.XPATH, './/div[@class="box-thumbnail"]'
+        )
+        img_url = thumnail_elm.find_element(By.XPATH, ".//img").get_attribute("src")
+        # project_url like 'https://camp-fire.jp/projects/view/736020?list=projects_popular_page1'
+        project_url = thumnail_elm.find_elements(By.XPATH, ".//a")[-1].get_attribute(
+            "href"
+        )  # first or second element in the <a> tag list
+        project_url = _cleanup_url(project_url)
         try:
-            prefecture: str = crd.find_element(
-                By.XPATH, './/div[contains(@class, "prefecture")]'
+            area: str = bx.find_element(By.XPATH, './/*[@class="area"]').text
+        except NoSuchElementException:
+            # NOTE: 一部のプロジェクトは、エリア情報がない場合がある
+            area = None
+
+        title: str = bx.find_element(By.XPATH, './/*[@class="box-title"]').text
+        status: str = "OPEN"
+        try:
+            meter: str = bx.find_element(By.XPATH, './/*[@class="meter"]').text
+        except NoSuchElementException:
+            # NOTE: 100% になっている場合があるので、その場合は、success-summary から取得する
+            try:
+                elm = bx.find_element(By.XPATH, './/*[@class="success-summary"]')
+                meter: str = "100%"
+                status: str = elm.text
+            except NoSuchElementException:
+                # 新規プロジェクトの場合、meter がない場合がある
+                meter = "0%"
+                assert status == "OPEN"
+
+        category: str = bx.find_element(By.XPATH, './/*[@class="category"]').text
+        owner: str = bx.find_element(By.XPATH, './/*[@class="owner"]').text
+        try:
+            current_funding: str = bx.find_element(
+                By.XPATH, './/*[@class="total"]'
             ).text
         except NoSuchElementException:
-            prefecture: str = None
-
-        tags: list[WebElement] = crd.find_elements(
-            By.XPATH,
-            './/div[contains(@class, "tag") and not(contains(@class, "tags-area"))]',
-        )
-        if tags:
-            project_type: str = (
-                tags[0].find_element(By.XPATH, './/span[contains(@class, "text")]').text
-            )
-
-            user_id: str = (
-                tags[1].find_element(By.XPATH, './/span[contains(@class, "text")]').text
-            )
-        else:
-            project_type: str = None
-            user_id: str = None
-
+            # 新規プロジェクトの場合、current_funding がない場合がある
+            current_funding: str = "0"
         try:
-            success_rate: str = crd.find_element(
-                By.XPATH, './/p[contains(@class, "success-rate")]'
-            ).get_attribute("innerHTML")
+            supporters: str = bx.find_element(By.XPATH, './/*[@class="rest"]').text
         except NoSuchElementException:
-            success_rate: str = None
-
+            # 新規プロジェクトの場合、supporters がない場合がある
+            supporters: str = "0"
         try:
-            member: str = crd.find_element(
-                By.XPATH, './/p[contains(@class, "member")]'
-            ).get_attribute("innerHTML")
+            remaining_days: str = bx.find_element(By.XPATH, './/*[@class="per"]').text
         except NoSuchElementException:
-            member: str = None
-
-        footer_items: list[WebElement] = crd.find_elements(
-            By.XPATH, './/div[contains(@class, "footer-item")]'
-        )
-
-        if footer_items:
-            current_funding: str = footer_items[0].text
-            current_supporters: str = footer_items[1].text
-            remaining_days: str = footer_items[2].text
-        else:
-            current_funding: str = None
-            current_supporters: str = None
+            # 新規プロジェクトの場合、remaining_days がない場合がある
             remaining_days: str = None
 
         # NOTE: 形式が以下のようになっているので、整形する
-        # - success_rate:  1009% -> 1009: int
+        # - meter:  1009% -> 1009: int
         # - current_funding:  現在\n30,270,000円 -> 30270000: int
         # - supporters:  支援者\n450人 -> 450: int
         # - remaining_days:  残り\n7日 -> 7: int
-        success_rate: int = pickup_numbers(success_rate, null_value=None)
-        current_funding: int = pickup_numbers(current_funding, null_value=None)
-        current_supporters: int = pickup_numbers(current_supporters, null_value=None)
-        remaining_days: int = pickup_numbers(remaining_days, null_value=None)
-        member: int = pickup_numbers(member, null_value=None)
-        status: str = "CLOSED" if remaining_days == 0 else "OPEN"
+        meter = pickup_numbers(meter)
+        current_funding = pickup_numbers(current_funding)
+        supporters = pickup_numbers(supporters)
+        if remaining_days is not None:
+            if "終了" in remaining_days:
+                remaining_days = 0
+            else:
+                remaining_days = pickup_numbers(remaining_days, null_value=None)
 
         return ProjectRecord(
-            project_id=project_id,
-            title=title,
-            project_url=project_url,
-            data_dimension=data_dimension,
-            data_brand=data_brand,
-            data_category=data_category,
-            data_position=data_position,
-            data_list=data_list,
-            img_url=img_url,
-            prefecture=prefecture,
-            project_type=project_type,
-            user_id=user_id,
-            success_rate=success_rate,
-            current_funding=current_funding,
-            current_supporters=current_supporters,
-            remaining_days=remaining_days,
-            member=member,
-            status=status,
+            box_idx,
+            img_url,
+            page,
+            project_url,
+            area,
+            title,
+            meter,
+            category,
+            owner,
+            current_funding,
+            supporters,
+            remaining_days,
+            status,
         )
 
     def _fetch_simply(self, elm_path: str) -> list[WebElement]:
@@ -432,16 +413,10 @@ class CampfireFetcher(object):
             return text
 
         title: str = _get_text('//h2[@class="header_top__title"]')
-        try:
-            elms: list[WebElement] = self._fetch_simply(
-                '//div[contains(@class, "slide-item")]/img'
-            )
-            img_url: str = elms[0].get_attribute("src")
-        except TimeoutException:
-            elms: list[WebElement] = self._fetch_simply(
-                '//div[contains(@class, "thumbnail")]/.//img'
-            )
-            img_url: str = elms[0].get_attribute("src")
+        elms: list[WebElement] = self._fetch_simply(
+            '//div[contains(@class, "slide-item")]/img'
+        )
+        img_url: str = elms[0].get_attribute("src")
 
         elms: list[WebElement] = self._fetch_simply(
             '//div[@class="project_status"]//div[@class="status"]'
@@ -529,31 +504,20 @@ class CampfireFetcher(object):
         title: str = self._fetch_simply('//label[@class="project-name"]')[0].text
 
         # # サムネイル画像を取得する
-        try:
-            elms: list[WebElement] = self._fetch_simply(
-                '//div[contains(@class, "slide-item")]/img'
-            )
-            img_url: str = elms[0].get_attribute("src")
-        except TimeoutException:
-            elms: list[WebElement] = self._fetch_simply(
-                '//section[contains(@class, "header-in")]'
-            )
-            # 'background-image: url("https://static.camp-fire.jp/uploads/custom_page/image/2722/WechatIMG813.png");'
-            style_url: str = elms[0].get_attribute("style")
-            img_url: str = pickup_url(style_url)
+        elms: list[WebElement] = self._fetch_simply(
+            '//div[contains(@class, "slide-item")]/img'
+        )
+        img_url: str = elms[0].get_attribute("src")
 
         # 現在の支援総額を取得する
         elms: list[WebElement] = self._fetch_simply('//div[@class="backer-amount"]')
         backer_amount: str = elms[0].text
 
         # # 概要を取得する
-        try:
-            elms: list[WebElement] = self._fetch_simply(
-                '//section[contains(@class, "caption") and contains(@class, "sp-none")]'
-            )
-            abstract: str = elms[0].text
-        except TimeoutException:
-            abstract: str = None
+        elms: list[WebElement] = self._fetch_simply(
+            '//section[contains(@class, "caption") and contains(@class, "sp-none")]'
+        )
+        abstract: str = elms[0].text
 
         # メイン情報
         # # 記事内容を取得する
@@ -733,10 +697,9 @@ def _main(params: DictConfig):
     # GraphDb に取得した情報を保存する
     g = GraphDb()
 
-    # 全てのプロジェクトに共通のキー情報を、ループの外で設定・生成する
-    execution_id: str = params.execution_id
+    # 全てのプロジェクトに共通のキー情報を、ループの外で生成・設定する
     fetch_id: str = build_ulid("FCH")
-    created_at: str = datetime.datetime.now().strftime("%Y-%m-%d")
+    created_at: str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     sortby: SortBy = params.sortby
     source_id: str = "Campfire"
 
@@ -744,55 +707,27 @@ def _main(params: DictConfig):
     print(f"{now()} Saving projects to the graph database ...")
     try:
         for pr, dr in zip(project_records, details_records):
-            # project_id: search for this project
-            # project_data_id: search for this project data nodes with relation tree which means fetched web page
-            project_id: str = pr.project_id
-            project_data_id: str = build_ulid("PRJ")
+            project_id: str = build_ulid("PRJ")
 
             # # URL をプロジェクトルートノードとして保存する
             g.merge_node(
                 label="ProjectRoot",
                 source_id=source_id,
-                project_id=project_id,
                 project_url=pr.project_url,
             )
-            g.create_index("ProjectRoot", keys=["source_id"])
-            g.create_index("ProjectRoot", keys=["project_id"])
-
-            g.merge_node(
-                label="ProjectDataRoot",
-                project_id=project_id,
-                execution_id=execution_id,
-            )
-            g.create_index("ProjectDataRoot", keys=["execution_id"])
-            g.create_index("ProjectDataRoot", keys=["project_id", "execution_id"])
-
-            # # プロジェクトルートとプロジェクトデータルートを紐付ける
-            g.merge_edge(
-                label="ProjectDataRoot",
-                node_keys_src={
-                    "label": "ProjectRoot",
-                    "project_id": project_id,
-                },
-                node_keys_trg={
-                    "label": "ProjectDataRoot",
-                    "project_id": project_id,
-                    "execution_id": execution_id,
-                },
-            )
+            g.create_index("ProjectRoot", keys=["project_url"])
 
             # # プロジェクト情報をノードとして保存する
             g.add_node(
                 label="Project",
-                **pr._asdict(),  # project_id を含む
-                project_data_id=project_data_id,
+                project_id=project_id,
                 fetch_id=fetch_id,
-                execution_id=execution_id,
                 source_id=source_id,
                 sortby=sortby,
+                **pr._asdict(),
                 created_at=created_at,
             )
-            g.create_index("Project", keys=["project_id", "project_data_id"])
+            g.create_index("Project", keys=["project_id"])
             g.create_index("Project", keys=["fetch_id"])
             g.create_index("Project", keys=["sortby"])
             g.create_index("Project", keys=["created_at", "sortby"])
@@ -800,16 +735,8 @@ def _main(params: DictConfig):
             # # プロジェクトルートとプロジェクト情報を紐付ける
             g.merge_edge(
                 label="Project",
-                node_keys_src={
-                    "label": "ProjectDataRoot",
-                    "project_id": project_id,
-                    "execution_id": execution_id,
-                },
-                node_keys_trg={
-                    "label": "Project",
-                    "project_id": project_id,
-                    "project_data_id": project_data_id,
-                },
+                node_keys_src={"label": "ProjectRoot", "project_url": pr.project_url},
+                node_keys_trg={"label": "Project", "project_id": project_id},
             )
 
             # # プロジェクト詳細情報をノードとして保存する
@@ -818,33 +745,22 @@ def _main(params: DictConfig):
             g.add_node(
                 label="ProjectDetails",
                 project_id=project_id,
-                project_data_id=project_data_id,
                 fetch_id=fetch_id,
-                execution_id=execution_id,
                 source_id=source_id,
                 sortby=sortby,
                 **details,
                 created_at=created_at,
             )
-            g.create_index("ProjectDetails", keys=["project_id", "project_data_id"])
-            g.create_index("ProjectDetails", keys=["fetch_id"])
+            g.create_index("ProjectDetails", keys=["project_id"])
+            g.create_index("ProjectDetails", keys=["fetch_id", "type"])
             g.create_index("ProjectDetails", keys=["sortby"])
-            g.create_index("ProjectDetails", keys=["type"])
             g.create_index("ProjectDetails", keys=["created_at", "sortby", "type"])
 
             # # プロジェクト情報とプロジェクト詳細情報を紐付ける
             g.add_edge(
                 label="Details",
-                node_keys_src={
-                    "label": "Project",
-                    "project_id": project_id,
-                    "project_data_id": project_data_id,
-                },
-                node_keys_trg={
-                    "label": "ProjectDetails",
-                    "project_id": project_id,
-                    "project_data_id": project_data_id,
-                },
+                node_keys_src={"label": "Project", "project_id": project_id},
+                node_keys_trg={"label": "ProjectDetails", "project_id": project_id},
             )
 
             # # リターン情報毎に保存する
@@ -853,9 +769,7 @@ def _main(params: DictConfig):
                 g.add_node(
                     label="ReturnBox",
                     project_id=project_id,
-                    project_data_id=project_data_id,
                     fetch_id=fetch_id,
-                    execution_id=execution_id,
                     source_id=source_id,
                     sortby=sortby,
                     **rbx._asdict(),
@@ -864,21 +778,14 @@ def _main(params: DictConfig):
                 # # # プロジェクト詳細情報とリターン情報を紐付ける
                 g.add_edge(
                     label="ReturnBox",
-                    node_keys_src={
-                        "label": "ProjectDetails",
-                        "project_id": project_id,
-                        "project_data_id": project_data_id,
-                    },
+                    node_keys_src={"label": "ProjectDetails", "project_id": project_id},
                     node_keys_trg={
                         "label": "ReturnBox",
                         "project_id": project_id,
-                        "project_data_id": project_data_id,
                         "return_idx": rbx.return_idx,
                     },
                 )
-            g.create_index(
-                "ReturnBox", keys=["project_id", "project_data_id", "return_idx"]
-            )
+            g.create_index("ReturnBox", keys=["project_id", "return_idx"])
             g.create_index("ReturnBox", keys=["fetch_id"])
             g.create_index("ReturnBox", keys=["sortby"])
             g.create_index("ReturnBox", keys=["created_at", "sortby"])
@@ -896,7 +803,6 @@ def config():
 
 
 def main(
-    execution_id: str = "20240301000000",
     max_pages: int = 1,
     sortby: Annotated[SortBy, typer.Option(case_sensitive=False)] = SortBy.fresh,
 ):

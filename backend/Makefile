@@ -1,4 +1,6 @@
 # backend tasks
+exec_date := $(shell date '+%Y%m%d%H%M%S')
+
 
 # ==========
 # environments
@@ -7,6 +9,9 @@ poetry-install:
 
 poetry:
 	@bash -i -c 'SHELL=/usr/bin/bash poetry shell'
+
+ls:
+	ls
 
 # ==========
 # # for app
@@ -34,19 +39,19 @@ demo-semantic-memory:
 campfire-data: campfire-data-popular campfire-data-fresh campfire-data-last_spurt campfire-data-most_funded campfire-data-density
 
 campfire-data-popular:
-	python -m app.business.campfire.downloader --max-pages=10 --sortby=popular
+	python -m app.business.campfire.downloader --execution-id=$(exec_date) --max-pages=5 --sortby=popular
 
 campfire-data-fresh:
-	python -m app.business.campfire.downloader --max-pages=10 --sortby=fresh
+	python -m app.business.campfire.downloader --execution-id=$(exec_date) --max-pages=5 --sortby=fresh
 
 campfire-data-last_spurt:
-	python -m app.business.campfire.downloader --max-pages=10 --sortby=last_spurt
+	python -m app.business.campfire.downloader --execution-id=$(exec_date) --max-pages=5 --sortby=last_spurt
 
 campfire-data-most_funded:
-	python -m app.business.campfire.downloader --max-pages=10 --sortby=most_funded
+	python -m app.business.campfire.downloader --execution-id=$(exec_date) --max-pages=5 --sortby=most_funded
 
 campfire-data-density:
-	python -m app.business.campfire.downloader --max-pages=10 --sortby=density
+	python -m app.business.campfire.downloader --execution-id=$(exec_date) --max-pages=5 --sortby=density
 
 
 
