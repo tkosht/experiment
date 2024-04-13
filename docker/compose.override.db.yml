@@ -30,6 +30,23 @@ services:
       - ./data/neo4j/plugins:/var/lib/neo4j/plugins
       # - ./conf:/var/lib/neo4j/conf
     ports:
-      - "7474:7474"   # for HTTP
-      - "7687:7687"   # for Bolt
+      - "7474:7474"     # for HTTP
+      - "7687:7687"     # for Bolt
+
+#   metabase:
+#     image: metabase/metabase
+#     ports:
+#       - "3000:3000"     # for Metabase
+#     volumes:
+#       - ./data/metabase:/metabase-data
+#     # restart: always
+#     # environment:
+#     #   MB_DB_TYPE: postgres
+#     #   MB_DB_DBNAME: campfire_db
+#     #   MB_DB_PORT: 5432
+#     #   MB_DB_USER: postgres
+#     #   MB_DB_PASS: postgres
+#     #   MB_DB_HOST: postgresql
+#     depends_on:
+#       - postgresql
 

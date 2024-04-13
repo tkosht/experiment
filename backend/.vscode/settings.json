@@ -12,6 +12,14 @@
         "**/.git/subtree-cache/**": true,
         "**/result/*/**": true,
         "**/mlruns/*/**": true,
+        "**/.venv/**": true,
+        "**/node_modules/*/**": true,
+        "**/result/**": true,
+        "**/mlruns/**": true,
+        "**/data/**": true,
+        "**/*cache*/**": true,
+        "**/wk/**": true,
+        "**/bk/**": true
         "**/.*/*/**": true
     },
     "python.testing.pytestArgs": [

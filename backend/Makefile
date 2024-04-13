@@ -53,6 +53,9 @@ campfire-data-most_funded:
 campfire-data-density:
 	python -m app.business.campfire.downloader --execution-id=$(exec_date) --max-pages=5 --sortby=density
 
+campfire-data-to-rdb:
+	python -m app.business.campfire.to_rdb
+
 
 
 # ==========
