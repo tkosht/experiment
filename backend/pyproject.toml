@@ -117,6 +117,7 @@ datasets = "^2.15.0"
 
 # LLM relatives
 # # for langchain
+numexpr = "*"
 langchain = "^0.0.354"
 langchain-experimental = "*"
 langgraph="*"
@@ -169,7 +170,8 @@ exllamav2 = "*"
 fastparquet = "*"
 
 # webapp
-gradio = "^3.21.0"
+# gradio = "^3.21.0"
+gradio = "*"
 # streamlit = "^1.24.0"
 streamlit = "*"
 streamlit-chat = "*"

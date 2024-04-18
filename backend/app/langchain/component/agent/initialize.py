@@ -10,7 +10,7 @@ from langchain.base_language import BaseLanguageModel
 from langchain.callbacks.base import BaseCallbackManager
 from langchain.tools.base import BaseTool
 
-from app.langchain.component.agent.agent_executor import CustomAgentExecutor
+from app.langchain.component.agent.agent_executor import CustomAgentExecutor, AgentExecutor
 
 
 def initialize_agent(
@@ -20,7 +20,7 @@ def initialize_agent(
     callback_manager: Optional[BaseCallbackManager] = None,
     agent_kwargs: Optional[dict] = None,
     **kwargs: Any,
-) -> CustomAgentExecutor:
+) -> AgentExecutor:
     """Load an agent executor given tools and LLM.
 
     Args:
@@ -50,7 +50,7 @@ def initialize_agent(
         agent_obj = agent_cls.from_llm_and_tools(
             llm, tools, callback_manager=callback_manager, **agent_kwargs
         )
-    return CustomAgentExecutor.from_agent_and_tools(
+    return CustomAgentExecutor(
         agent=agent_obj,
         tools=tools,
         callback_manager=callback_manager,

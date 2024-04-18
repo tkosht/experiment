@@ -6,7 +6,7 @@
     "configurations": [
         {
             "name": "Streamlit",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "module": "streamlit",
             "console": "integratedTerminal",
@@ -27,7 +27,7 @@
         },
         {
             "name": "Python: Current File",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
@@ -47,7 +47,7 @@
         },
         {
             "name": "Python: demo.py",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "app/langchain/executable/demo.py",
             "console": "integratedTerminal",
@@ -60,7 +60,7 @@
         },
         {
             "name": "Python: Flask",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "module": "flask",
             "cwd": "${workspaceFolder}",
@@ -83,7 +83,7 @@
         },
         {
             "name": "webapi: fastapi",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "module": "webapi",
             "justMyCode": false

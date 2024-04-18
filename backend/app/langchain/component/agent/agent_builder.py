@@ -5,7 +5,8 @@ from typing import Union
 from dotenv import load_dotenv
 from langchain.agents import AgentOutputParser, AgentType, Tool, load_tools
 from langchain.chains import ConversationChain
-from langchain.chat_models import ChatOpenAI
+# from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts import (
     ChatPromptTemplate,
@@ -15,7 +16,7 @@ from langchain.prompts import (
 )
 from langchain.schema import AgentAction, AgentFinish
 
-from app.langchain.component.agent.agent_executor import CustomAgentExecutor
+from app.langchain.component.agent.agent_executor import CustomAgentExecutor, AgentExecutor
 from app.langchain.component.agent.initialize import initialize_agent
 from app.langchain.component.agent.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from app.langchain.component.tools.custom_python import CustomPythonREPL
@@ -83,9 +84,11 @@ class CustomOutputParser(AgentOutputParser):
             actions.append(agent_action)
         return actions
 
+def init():
+    load_dotenv()
 
 def build_agent(
-    model_name="gpt-3.5-turbo", temperature: float = 0, max_iterations: int = 15
+    model_name="gpt-3.5-turbo", temperature: float = 0, max_iterations: int = 15, memory: ConversationBufferMemory = None
 ) -> CustomAgentExecutor:
     load_dotenv()
     llm = ChatOpenAI(temperature=temperature, model_name=model_name)
@@ -105,11 +108,12 @@ def build_agent(
         func=python_repl.run,
     )
 
-    memory = ConversationBufferMemory(return_messages=True)
+    if memory is None:
+        memory = ConversationBufferMemory(return_messages=True)
 
-    def exec_llm(msg: str):
+    def exec_llm(msg: str) -> str:
         system_template = (
-            "SYSTEM: Thougt step-by-step precisely, and exact summary at last"
+            "SYSTEM: Thougt step-by-step precisely, and make the exact summary items like logic-tree at last"
         )
         human_template = "HUMAN: {input}"
         prompt = ChatPromptTemplate.from_messages(
@@ -121,7 +125,7 @@ def build_agent(
         )
 
         conversation = ConversationChain(memory=memory, prompt=prompt, llm=llm)
-        guess = conversation.predict(input=msg)
+        guess: str = conversation.predict(input=msg)
         return guess
 
     trans_tool = Tool(
@@ -154,18 +158,23 @@ def build_agent(
         func=exec_llm,
     )
 
-    # def fake(msg: str):
-    #     return msg
+    def analyze_image(msg: str) -> str:
+        system_template = (
+            "SYSTEM: Thougt step-by-step precisely, and make the exact summary items like logic-tree at last"
+        )
+        human_template = "HUMAN: {input}"
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                SystemMessagePromptTemplate.from_template(system_template),
+                MessagesPlaceholder(variable_name="history"),
+                HumanMessagePromptTemplate.from_template(human_template),
+            ]
+        )
 
-    # no_action = Tool(
-    #     name="no_tools",
-    #     description="No Action/No need to use any tools. Use this to respond your answer which you THOUGHT directly "
-    #                 "Input should be a string.",
-    #     func=fake
-    # )
+        conversation = ConversationChain(memory=memory, prompt=prompt, llm=llm)
+        guess: str = conversation.predict(input=msg)
+        return guess
 
-    # tools = load_tools(["serpapi", "llm-math", "wikipedia", "requests_all"], llm=llm)   # , "terminal"
-    # tools += [python_tool, shell_tool, trans_tool, summary_tool, error_analyzation_tool, no_action]
     tools = load_tools(
         ["google-search", "llm-math", "wikipedia"], llm=llm
     )  # , "terminal"

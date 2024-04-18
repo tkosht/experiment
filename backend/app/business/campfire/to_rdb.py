@@ -10,6 +10,7 @@ from neo4j import Driver, GraphDatabase, Record
 # from neo4j.graph import Node
 from omegaconf import DictConfig
 from sqlalchemy import Engine, create_engine, text
+from typing_extensions import Self
 
 load_dotenv()
 
@@ -64,6 +65,11 @@ class PostgresProvider(object):
             df = pd.read_sql(sql=text(query), con=cnn, **props)
         return df
 
+    def execute(self, sql: str, **props):
+        with self.engine.connect() as cnn:
+            results = cnn.execution_options().execute(text(sql), **props)
+        return results
+
     def do_import(self, table_name: str, index_keys: list[str], records: list[dict]):
         df = pd.DataFrame(records)
         df.index = [df[k] for k in index_keys]
@@ -86,6 +92,11 @@ def nvl(val, default):
 def _main(params: DictConfig):
     neo4j_provider = Neo4jProvider()
     postgres_provider = PostgresProvider()
+
+    # drop tables
+    tables = ["projects", "project_details"]
+    for tbl in tables:
+        postgres_provider.execute(f"drop table if exists {tbl} cascade")
 
     # 1. projects
     print(f"{now()} start select projects...")
@@ -141,6 +152,9 @@ def _main(params: DictConfig):
     for idx, rec in enumerate(results):
         record = {}
         [record.update(d) for d in rec.data("pr", "dr", "pj", "pjd").values()]
+        record["created_at"] = datetime.datetime.strptime(
+            record["created_at"], "%Y-%m-%d"
+        )
         records.append(record)
 
     postgres_provider.do_import(
