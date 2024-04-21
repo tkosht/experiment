@@ -11,6 +11,7 @@ packages = [{include = "app"}]
 [tool.poetry.dependencies]
 python = ">=3.10, <3.12"        # <3.12 for sktime
 
+
 # for data science
 numpy = "*"
 pandas = "*"
@@ -31,7 +32,8 @@ optuna = "*"
 memory_profiler = "*"
 lime = "*"
 shap = "*"
-pyyaml = "5.3.1"
+# pyyaml = "5.3.1"
+pyyaml = "*"
 
 PyQt5 = "=5.15.2"
 lit = "^17.0.2"
@@ -71,9 +73,10 @@ uvicorn = "*"
 # aiofiles = "*"
 # python-multipart = "*"
 
-# torch = "*"
-# torch==1.13.1
-torch = {url = "https://download.pytorch.org/whl/cu118/torch-2.0.1%2Bcu118-cp310-cp310-linux_x86_64.whl"}
+# for being faster torch dependency resolving
+torch = {url = "https://download.pytorch.org/whl/cu118/torch-2.2.2%2Bcu118-cp310-cp310-linux_x86_64.whl"}
+
+
 # torchvision = "*"
 # torchmetrics = "*"
 # nltk = "*"
@@ -127,7 +130,7 @@ openai = "*"
 # open-interpreter = "*"
 google-search-results = "*"
 google-api-python-client = "*"
-# chromadb = "*"
+chromadb = "*"
 tiktoken = "*"
 pypdf = "*"
 # pycryptodome = "*"
@@ -135,6 +138,13 @@ pypdf = "*"
 sentence_transformers = "*"
 faiss-gpu = "*"
 trafilatura = "*"
+llama-index = "*"
+llama-index-embeddings-huggingface = "*"
+llama-index-embeddings-langchain = "*"
+llama-index-llms-anthropic = "*"
+llama-index-readers-notion = "*"
+llama-index-packs-sentence-window-retriever = "*"
+llama-index-vector-stores-faiss = "*"
 
 
 wikipedia = "*"
@@ -208,6 +218,7 @@ pytest-xdist = "*"
 pytest-html = "*"
 # docutils==0.15
 Sphinx = "*"
+
 
 [build-system]
 requires = ["poetry-core"]

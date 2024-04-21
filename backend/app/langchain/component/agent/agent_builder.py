@@ -2,12 +2,18 @@ import json
 import re
 from typing import Union
 
+import langchain
 from dotenv import load_dotenv
-from langchain.agents import AgentOutputParser, AgentType, Tool, load_tools
+from langchain.agents import (
+    AgentExecutor,
+    AgentOutputParser,
+    AgentType,
+    Tool,
+    create_react_agent,
+    load_tools,
+)
 from langchain.chains import ConversationChain
-# from langchain.chat_models import ChatOpenAI
-from langchain_openai import ChatOpenAI
-from langchain.memory import ConversationBufferMemory
+from langchain.memory import ConversationBufferMemory  # ChatMessageHistory
 from langchain.prompts import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
@@ -15,12 +21,15 @@ from langchain.prompts import (
     SystemMessagePromptTemplate,
 )
 from langchain.schema import AgentAction, AgentFinish
+from langchain_openai import ChatOpenAI
+from llama_index.core.indices.vector_store import VectorStoreIndex
 
-from app.langchain.component.agent.agent_executor import CustomAgentExecutor, AgentExecutor
+from app.langchain.component.agent.agent_executor import CustomAgentExecutor
 from app.langchain.component.agent.initialize import initialize_agent
 from app.langchain.component.agent.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 from app.langchain.component.tools.custom_python import CustomPythonREPL
 from app.langchain.component.tools.custom_shell import CustomShellTool
+from app.llama_index.loader import load_index
 
 # from langchain.agents.chat.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
 # from app.langchain.component.llms.redpajama import RedPajamaLLM
@@ -37,9 +46,7 @@ class CustomOutputParser(AgentOutputParser):
 
     def parse(self, text: str) -> Union[list[AgentAction], AgentFinish]:
         if FINAL_ANSWER_ACTION in text or "最終回答:" in text:
-            return AgentFinish(
-                {"output": text.split(FINAL_ANSWER_ACTION)[-1].strip()}, text
-            )
+            return AgentFinish({"output": text.split(FINAL_ANSWER_ACTION)[-1].strip()}, text)
         try:
             actions = self._parse_action(text)
             return actions
@@ -78,21 +85,28 @@ class CustomOutputParser(AgentOutputParser):
             except Exception:
                 response = dict(action="python_repl", action_input=action)
 
-            agent_action = AgentAction(
-                response["action"], response["action_input"], text
-            )
+            agent_action = AgentAction(response["action"], response["action_input"], text)
             actions.append(agent_action)
         return actions
 
-def init():
-    load_dotenv()
+
+def create_llama_index_tool(index: VectorStoreIndex, similarity_top_k: int = 5):
+    return Tool(
+        name="DX白書検索",
+        func=lambda q: str(index.as_query_engine(similarity_top_k=similarity_top_k).query(q)),
+        description="DXに関する情報を検索したり見つけるときに有効です。",
+        return_direct=False,
+    )
+
 
 def build_agent(
-    model_name="gpt-3.5-turbo", temperature: float = 0, max_iterations: int = 15, memory: ConversationBufferMemory = None
+    model_name="gpt-3.5-turbo",
+    temperature: float = 0,
+    max_iterations: int = 15,
+    memory: ConversationBufferMemory = None,
 ) -> CustomAgentExecutor:
     load_dotenv()
-    llm = ChatOpenAI(temperature=temperature, model_name=model_name)
-    # llm = RedPajamaLLM()
+    llm = ChatOpenAI(temperature=temperature, model_name=model_name, max_tokens=2048)
 
     shell_tool = CustomShellTool()
 
@@ -110,6 +124,7 @@ def build_agent(
 
     if memory is None:
         memory = ConversationBufferMemory(return_messages=True)
+        # memory = ChatMessageHistory(return_messages=True)
 
     def exec_llm(msg: str) -> str:
         system_template = (
@@ -133,7 +148,7 @@ def build_agent(
         description="A translation LLM. Use this to translate in japanese, "
         "Input should be a short string or summary which you have to know exactly "
         "and which with `Question` content and your `Thought` content in an Input sentence/statement. "
-        "NEVER input the url only",
+        "NEVER input the url only. 日本語で回答しましょう。",
         func=exec_llm,
     )
     summary_tool = Tool(
@@ -143,13 +158,13 @@ def build_agent(
         "but NEVER use this tool for parsing contents like HTML or XML"
         "Input should be a short string or summary which you have to know exactly "
         "and which with `Question` content and your `Thought` content in an Input sentence/statement. "
-        "NEVER input the url only",
+        "NEVER input the url only. 日本語で回答しましょう。",
         func=exec_llm,
     )
     error_analyzation_tool = Tool(
         name="error_analyzing_tool",
         description="An error analyzation LLM. Use this to analyze to fix the error results of the tools "
-        "like 'python_reple' or 'terminal, "
+        "like 'python_repl' or 'terminal, "
         "if invalid format error, advise the $JSON_BLOB format, surely. "
         "Especially, if being thought as execution is impossible, you advise to just an answer using Aciton: with $JSON_BLOB. "  # noqa
         "Input should be a short string or summary which you have to know exactly "
@@ -158,30 +173,15 @@ def build_agent(
         func=exec_llm,
     )
 
-    def analyze_image(msg: str) -> str:
-        system_template = (
-            "SYSTEM: Thougt step-by-step precisely, and make the exact summary items like logic-tree at last"
-        )
-        human_template = "HUMAN: {input}"
-        prompt = ChatPromptTemplate.from_messages(
-            [
-                SystemMessagePromptTemplate.from_template(system_template),
-                MessagesPlaceholder(variable_name="history"),
-                HumanMessagePromptTemplate.from_template(human_template),
-            ]
-        )
-
-        conversation = ConversationChain(memory=memory, prompt=prompt, llm=llm)
-        guess: str = conversation.predict(input=msg)
-        return guess
-
-    tools = load_tools(
-        ["google-search", "llm-math", "wikipedia"], llm=llm
-    )  # , "terminal"
+    tools = load_tools(["google-search", "llm-math", "wikipedia"], llm=llm)  # , "terminal"
     tools += [python_tool, shell_tool, trans_tool, summary_tool, error_analyzation_tool]
 
-    kwargs = dict(memory=memory, return_intermediate_steps=True)
+    index = load_index(data_dir_="data/llama_faiss")
+    tools += [create_llama_index_tool(index, similarity_top_k=5)]
 
+    kwargs = dict(return_intermediate_steps=True)
+
+    langchain.debug = True  # for using `verbose` in AgentExecutor argments
     agent_executor: CustomAgentExecutor = initialize_agent(
         tools,
         llm,
@@ -199,5 +199,7 @@ def build_agent(
         ),
         **kwargs,
     )
+    # agent = create_react_agent(llm, tools, prompt)
+    # agent_executor = AgentExecutor(agent=agent, tools=tools)
     assert agent_executor.return_intermediate_steps
     return agent_executor

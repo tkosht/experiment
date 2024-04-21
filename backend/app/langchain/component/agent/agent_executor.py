@@ -4,11 +4,13 @@ from typing import Any, Optional
 from langchain.agents.agent import AgentExecutor
 from langchain.callbacks.manager import CallbackManagerForChainRun, Callbacks
 from langchain.input import get_color_mapping
+from langchain.memory import ChatMessageHistory, ConversationBufferMemory
 from langchain.schema import AgentAction, AgentFinish
 
 
 class CustomAgentExecutor(AgentExecutor):
     intermediate_steps: list = []
+    memory: ChatMessageHistory = None
 
     def prep_outputs(
         self,
@@ -37,9 +39,7 @@ class CustomAgentExecutor(AgentExecutor):
         # Construct a mapping of tool name to tool for easy lookup
         name_to_tool_map = {tool.name: tool for tool in self.tools}
         # We construct a mapping from each tool to a color, used for logging.
-        color_mapping = get_color_mapping(
-            [tool.name for tool in self.tools], excluded_colors=["green"]
-        )
+        color_mapping = get_color_mapping([tool.name for tool in self.tools], excluded_colors=["green"])
         self.intermediate_steps = inputs.pop("intermediate_steps", [])
         intermediate_steps: list[tuple[AgentAction, str]] = self.intermediate_steps
         # Let's start tracking the number of iterations and time elapsed
@@ -56,9 +56,7 @@ class CustomAgentExecutor(AgentExecutor):
                 run_manager=run_manager,
             )
             if isinstance(next_step_output, AgentFinish):
-                return self._return(
-                    next_step_output, intermediate_steps, run_manager=run_manager
-                )
+                return self._return(next_step_output, intermediate_steps, run_manager=run_manager)
 
             intermediate_steps.extend(next_step_output)
             self.check_action_repeating()
@@ -71,9 +69,7 @@ class CustomAgentExecutor(AgentExecutor):
                     return self._return(tool_return, intermediate_steps)
             iterations += 1
             time_elapsed = time.time() - start_time
-        output = self.agent.return_stopped_response(
-            self.early_stopping_method, intermediate_steps, **inputs
-        )
+        output = self.agent.return_stopped_response(self.early_stopping_method, intermediate_steps, **inputs)
         return self._return(output, intermediate_steps)
 
     def check_action_repeating(self, repeating_threshold: int = 3) -> None:
@@ -100,6 +96,7 @@ class CustomAgentExecutor(AgentExecutor):
                 print(f"{self.intermediate_steps[-1]}")
             print("-" * 80)
             raise e
+
 
 # NOTE: cf. part of https://github.com/hwchase17/langchain/blob/master/langchain/agents/agent.py AgentExecutor
 # add member variable: intermediate_steps

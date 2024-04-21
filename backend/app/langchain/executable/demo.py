@@ -1,8 +1,8 @@
 from inspect import signature
 
 import gradio as gr
-from gradio import Brush
 import typer
+from gradio import Brush
 from omegaconf import DictConfig
 
 from app.langchain.component.agent_bot import SimpleBot
@@ -49,6 +49,7 @@ titanic dataset に対して、scikit-learn の LightGBM を使ってクラス�
     1-1. 必要に応じて、Web 上でエラーメッセージを検索し、解決策を探してください
 
 """  # noqa
+    _prompt_default = ""
 
     bot = SimpleBot()
 
@@ -56,31 +57,32 @@ titanic dataset に対して、scikit-learn の LightGBM を使ってクラス�
         with gr.Tab("Conversation"):
             with gr.Row():
                 with gr.Column():
-                    chatbot = gr.Chatbot(
-                        [], label="assistant", elem_id="demobot", height=405
-                    )
-                    txt = gr.TextArea(
-                        show_label=False,
-                        placeholder=_prompt_example,
-                        value=_prompt_default,
-                        container=False,
-                        lines=10,
-                    )
+                    chatbot = gr.Chatbot([], label="assistant", elem_id="demobot", height=900)
+
                 with gr.Column():
                     image_area = gr.ImageEditor(
                         value=None,
                         type="pil",
-                        height=800, width=800,
+                        height=708,  # width=400,
                         label="image",
                         brush=Brush(default_color="red", default_size=10),
                         # crop_size="2:3",
                     )
                     image_hidden = gr.Image(visible=False, type="pil")
+
                     def on_change(im: dict):
                         assert "composite" in im, "composite not found in im"
                         return im["composite"]
+
                     image_area.change(on_change, inputs=[image_area], outputs=[image_hidden])
 
+                    txt = gr.TextArea(
+                        show_label=False,
+                        placeholder=_prompt_example,
+                        value=_prompt_default,
+                        container=False,
+                        lines=7,
+                    )
                 # with gr.Column():
                 #     log_area = gr.TextArea(
                 #         lines=21,
@@ -96,24 +98,6 @@ titanic dataset に対して、scikit-learn の LightGBM を使ってクラス�
                 #         btn.click(
                 #             bot.gr_update_text, inputs=[log_area], outputs=[log_area]
                 #         )
-
-        with gr.Tab("Context"):
-            with gr.Row():
-                with gr.Column():
-                    ctx_area = gr.TextArea(
-                        lines=21,
-                        max_lines=21,
-                        show_label=False,
-                        label="context",
-                        placeholder="",
-                        value="",
-                        container=False,
-                    )
-                    with gr.Row():
-                        btn = gr.Button(value="clear context")
-                        btn.click(
-                            bot.gr_clear_context, inputs=[ctx_area], outputs=[ctx_area]
-                        )
 
         with gr.Tab("Setting"):
             with gr.Row():
@@ -146,10 +130,9 @@ titanic dataset に対して、scikit-learn の LightGBM を使ってクラス�
                 model_dd,
                 temperature_sl,
                 max_iterations_sl,
-                ctx_area,
                 image_hidden,
             ],
-            [chatbot, ctx_area],
+            [chatbot],
         )
 
     if params.do_share:
