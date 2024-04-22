@@ -10,8 +10,15 @@ from langchain.agents import (
     AgentType,
     Tool,
     create_react_agent,
-    load_tools,
 )
+from langchain.agents import initialize_agent as initialize_agent_org
+from langchain.agents import load_tools
+
+# from langchain.agents.chat.prompt import (
+#     FORMAT_INSTRUCTIONS,
+#     SYSTEM_MESSAGE_PREFIX,
+#     SYSTEM_MESSAGE_SUFFIX,
+# )
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferMemory  # ChatMessageHistory
 from langchain.prompts import (
@@ -26,7 +33,11 @@ from llama_index.core.indices.vector_store import VectorStoreIndex
 
 from app.langchain.component.agent.agent_executor import CustomAgentExecutor
 from app.langchain.component.agent.initialize import initialize_agent
-from app.langchain.component.agent.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
+from app.langchain.component.agent.prompt import (
+    FORMAT_INSTRUCTIONS,
+    SYSTEM_MESSAGE_PREFIX,
+    SYSTEM_MESSAGE_SUFFIX,
+)
 from app.langchain.component.tools.custom_python import CustomPythonREPL
 from app.langchain.component.tools.custom_shell import CustomShellTool
 from app.llama_index.loader import load_index
@@ -151,14 +162,15 @@ def build_agent(
         "NEVER input the url only. 日本語で回答しましょう。",
         func=exec_llm,
     )
-    summary_tool = Tool(
-        name="summary_tool",
-        description="A summarization LLM. Use this to summarize the result of the tools "
-        "like 'wikipedia' or 'serpapi', 'google-search', "
-        "but NEVER use this tool for parsing contents like HTML or XML"
-        "Input should be a short string or summary which you have to know exactly "
-        "and which with `Question` content and your `Thought` content in an Input sentence/statement. "
-        "NEVER input the url only. 日本語で回答しましょう。",
+    arrange_tool = Tool(
+        name="arrange_tool",
+        description="An arrangement LLM. ツールの出力結果を整形するために使用します。"
+        "Use this to arrange the result of the tools like 'wikipedia' or 'serpapi', 'google-search', "
+        "ツールの出力を正確に整形します。日本語で回答しましょう。"
+        "but NEVER use this tool for parsing contents like HTML or XML",
+        # "Input should be a short string or summary which you have to know exactly "
+        # "and which with `Question` content and your `Thought` content in an Input sentence/statement. "
+        # "NEVER input the url only. 日本語で回答しましょう。",
         func=exec_llm,
     )
     error_analyzation_tool = Tool(
@@ -166,15 +178,15 @@ def build_agent(
         description="An error analyzation LLM. Use this to analyze to fix the error results of the tools "
         "like 'python_repl' or 'terminal, "
         "if invalid format error, advise the $JSON_BLOB format, surely. "
-        "Especially, if being thought as execution is impossible, you advise to just an answer using Aciton: with $JSON_BLOB. "  # noqa
-        "Input should be a short string or summary which you have to know exactly "
-        "and which with `Question` content and your `Thought` content in an Input sentence/statement. "
-        "NEVER input the url only",
+        "Especially, if being thought as execution is impossible, you advise to just an answer using Aciton: with $JSON_BLOB. ",  # noqa
+        # "Input should be a short string or summary which you have to know exactly "
+        # "and which with `Question` content and your `Thought` content in an Input sentence/statement. "
+        # "NEVER input the url only",
         func=exec_llm,
     )
 
     tools = load_tools(["google-search", "llm-math", "wikipedia"], llm=llm)  # , "terminal"
-    tools += [python_tool, shell_tool, trans_tool, summary_tool, error_analyzation_tool]
+    tools += [python_tool, shell_tool, trans_tool, arrange_tool, error_analyzation_tool]
 
     index = load_index(data_dir_="data/llama_faiss")
     tools += [create_llama_index_tool(index, similarity_top_k=5)]
@@ -188,8 +200,8 @@ def build_agent(
         agent=AgentType.CHAT_ZERO_SHOT_REACT_DESCRIPTION,
         verbose=True,
         agent_kwargs=dict(
-            prefix=PREFIX,
-            suffix=SUFFIX,
+            prefix=SYSTEM_MESSAGE_PREFIX,
+            suffix=SYSTEM_MESSAGE_SUFFIX,
             format_instructions=FORMAT_INSTRUCTIONS,
             output_parser=CustomOutputParser(),
             max_iterations=max_iterations,
@@ -199,7 +211,15 @@ def build_agent(
         ),
         **kwargs,
     )
+    assert agent_executor.return_intermediate_steps
+    # agent_executor = initialize_agent_org(
+    #     tools,
+    #     llm,
+    #     agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+    #     verbose=True,
+    #     agent_kwargs=dict(format_instructions=FORMAT_INSTRUCTIONS + " " + "最後の回答は日本語で回答します。"),
+    # )
+
     # agent = create_react_agent(llm, tools, prompt)
     # agent_executor = AgentExecutor(agent=agent, tools=tools)
-    assert agent_executor.return_intermediate_steps
     return agent_executor

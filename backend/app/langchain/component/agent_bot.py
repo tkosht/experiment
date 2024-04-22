@@ -64,9 +64,9 @@ class SimpleBot(object):
     ):
         query = history[-1][0]
         is_initial_qa = len(history) == 1
-        n_context: int = 5
+        n_context: int = 10
 
-        context = "\n".join([f"Q: [{q}]\nA: [{a}]" for q, a in history[:-1]])
+        context = "\n".join([f"Q: [{q}]\nA: [{a}]" for q, a in history[:-1][-n_context:]])
         if context:
             _query = f"""'これまでのQA' (特に直前のA: の結果と直前のA: に関連するQA)を踏まえた上で、'今回の依頼' を5W1H に即して具体的かつ正確な質問や依頼になるように書き直してくれませんか？
 特に、番号や記号、単語は直前の A: に関連するものとして扱ってください。
@@ -129,7 +129,7 @@ class SimpleBot(object):
         model_name: str,
         temperature_percent: int,
         max_iterations: int,
-        max_retries: int = 10,
+        max_retries: int = 7,
     ) -> str:
         agent_executor: CustomAgentExecutor = build_agent(
             model_name,
@@ -143,12 +143,14 @@ class SimpleBot(object):
 
         for _ in range(max_retries):
             try:
-
-                answer = agent_executor.run(
+                params = dict(
                     input=query_,
-                    intermediate_steps=intermediate_steps,
                     callbacks=[self._callback],
                 )
+                if hasattr(agent_executor, "intermediate_steps"):
+                    params.update(dict(intermediate_steps=intermediate_steps))
+
+                answer = agent_executor.run(**params)
                 break
             except Exception as e:
                 print("-" * 80)
@@ -157,6 +159,8 @@ class SimpleBot(object):
                 answer = f"Error Occured: '{e}' / couldn't be fixed."
                 query_ = f"Observation: \nERROR: {str(e)}\n\nwith fix this Error in other way, "
                 f"\n\nHUMAN: {query_org}\nThougt:"
+                if not hasattr(agent_executor, "intermediate_steps"):
+                    continue
                 if "This model's maximum context length is" in str(e):
                     n_context = 1
                     if len(agent_executor.intermediate_steps) <= n_context:
@@ -173,12 +177,13 @@ class SimpleBot(object):
                     agent_executor.intermediate_steps = []
 
             finally:
-                intermediate_steps = agent_executor.intermediate_steps
                 print("<" * 80)
                 print("Next:")
                 print(f"{query_=}")
                 print("-" * 20)
-                print(f"{len(agent_executor.intermediate_steps)=}")
+                if hasattr(agent_executor, "intermediate_steps"):
+                    intermediate_steps = agent_executor.intermediate_steps
+                    print(f"{len(agent_executor.intermediate_steps)=}")
                 print(">" * 80)
             print("waiting retrying ... (a little sleeping)")
             time.sleep(1)
@@ -198,6 +203,7 @@ class SimpleBot(object):
         self.temperature_percent = temperature_percent
         self.max_iterations = max_iterations
 
+        answer = "(Nothing)"
         try:
             if is_initial_qa and img is not None:
                 answer = self.chat_with_image(query, img)

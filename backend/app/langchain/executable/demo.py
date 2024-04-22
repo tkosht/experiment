@@ -117,7 +117,7 @@ titanic dataset に対して、scikit-learn の LightGBM を使ってクラス�
                     info="you can choose the chat model.",
                 )
                 temperature_sl = gr.Slider(0, 100, 10, step=1, label="temperature (%)")
-                max_iterations_sl = gr.Slider(0, 50, 30, step=1, label="max_iterations")
+                max_iterations_sl = gr.Slider(0, 50, 5, step=1, label="max_iterations")
 
         txt.submit(_init, [chatbot, txt], [chatbot, txt]).then(
             bot.gr_clear_text,
