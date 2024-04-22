@@ -27,9 +27,7 @@ class Neo4jProvider(object):
     def neo4j_driver(self) -> Driver:
         neo4j_user = os.environ["neo4j_user"]
         neo4j_pswd = os.environ["neo4j_pswd"]
-        driver: Driver = GraphDatabase.driver(
-            uri="bolt://neo4j", auth=(neo4j_user, neo4j_pswd), database=self.database
-        )
+        driver: Driver = GraphDatabase.driver(uri="bolt://neo4j", auth=(neo4j_user, neo4j_pswd), database=self.database)
         return driver
 
     def select_query(self, query: str, **props):
@@ -44,9 +42,7 @@ class Neo4jProvider(object):
 
 
 class PostgresProvider(object):
-    def __init__(
-        self, host: str = "postgresql", port: int = 5432, dbname: str = "campfire_db"
-    ) -> None:
+    def __init__(self, host: str = "postgresql", port: int = 5432, dbname: str = "campfire_db") -> None:
         self.host: str = host
         self.port: int = port
         self.dbname: str = dbname
@@ -67,7 +63,9 @@ class PostgresProvider(object):
 
     def execute(self, sql: str, **props):
         with self.engine.connect() as cnn:
-            results = cnn.execution_options().execute(text(sql), **props)
+            # results = cnn.execution_options(autocommit=True).execute(text(sql), **props)
+            results = cnn.exec_driver_sql(sql, **props)
+            cnn.commit()
         return results
 
     def do_import(self, table_name: str, index_keys: list[str], records: list[dict]):
@@ -84,6 +82,13 @@ class PostgresProvider(object):
         )
         return self
 
+    def create_views(self, sql_dir: str = "conf/sql") -> Self:
+        for sql_file in os.listdir(sql_dir):
+            if sql_file.endswith(".sql"):
+                with open(os.path.join(sql_dir, sql_file)) as f:
+                    sql = f.read()
+                self.execute(sql)
+
 
 def nvl(val, default):
     return val if val is not None else default
@@ -99,7 +104,7 @@ def _main(params: DictConfig):
         postgres_provider.execute(f"drop table if exists {tbl} cascade")
 
     # 1. projects
-    print(f"{now()} start select projects...")
+    print(f"{now()} start selecting projects...")
     query = """
     match (pr:ProjectRoot)--(dr:ProjectDataRoot) 
     with pr, count(dr.execution_id) as cnt
@@ -139,10 +144,10 @@ def _main(params: DictConfig):
         index_keys=["project_id", "execution_id", "sortby"],
         records=records,
     )
-    print(f"{now()} end select projects...")
+    print(f"{now()} end selecting projects")
 
     # 2. project_details
-    print(f"{now()} start select project_details...")
+    print(f"{now()} start selecting project_details...")
     query = """
     match (pr: ProjectRoot) --> (dr: ProjectDataRoot) --> (pj:Project) --> (pjd:ProjectDetails)
     return pr, dr, pj, pjd
@@ -152,9 +157,7 @@ def _main(params: DictConfig):
     for idx, rec in enumerate(results):
         record = {}
         [record.update(d) for d in rec.data("pr", "dr", "pj", "pjd").values()]
-        record["created_at"] = datetime.datetime.strptime(
-            record["created_at"], "%Y-%m-%d"
-        )
+        record["created_at"] = datetime.datetime.strptime(record["created_at"], "%Y-%m-%d")
         records.append(record)
 
     postgres_provider.do_import(
@@ -162,7 +165,11 @@ def _main(params: DictConfig):
         index_keys=["project_id", "execution_id", "sortby", "project_data_id"],
         records=records,
     )
-    print(f"{now()} end select project_details...")
+    print(f"{now()} end selecting project_details")
+
+    print(f"{now()} start creating views...")
+    postgres_provider.create_views()
+    print(f"{now()} end creating views")
 
     print("done.")
 

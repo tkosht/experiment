@@ -66,7 +66,6 @@ titanic dataset に対して、scikit-learn の LightGBM を使ってクラス�
                         height=708,  # width=400,
                         label="image",
                         brush=Brush(default_color="red", default_size=10),
-                        # crop_size="2:3",
                     )
                     image_hidden = gr.Image(visible=False, type="pil")
 

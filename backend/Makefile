@@ -36,7 +36,7 @@ summary-semantic-memory:
 demo-semantic-memory:
 	python -m app.semantic_kernel.executable.demo
 
-campfire-data: campfire-data-popular campfire-data-fresh campfire-data-last_spurt campfire-data-most_funded campfire-data-density
+campfire-data: campfire-data-popular campfire-data-fresh campfire-data-last_spurt campfire-data-most_funded campfire-data-density campfire-data-to-rdb
 
 campfire-data-popular:
 	python -m app.business.campfire.downloader --execution-id=$(exec_date) --max-pages=5 --sortby=popular
