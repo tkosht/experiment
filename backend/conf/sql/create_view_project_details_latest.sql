@@ -8,4 +8,3 @@ where (pd.project_id, pd.created_at) in
 		group by project_id
 	)
 order by project_id
-

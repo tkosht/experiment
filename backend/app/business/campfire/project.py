@@ -9,6 +9,7 @@ ProjectRecord = namedtuple(
         "data_dimension",
         "data_brand",
         "data_category",
+        "page",
         "data_position",
         "data_list",
         "img_url",

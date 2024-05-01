@@ -73,12 +73,22 @@ class PostgresProvider(object):
         df.index = [df[k] for k in index_keys]
         df.drop(columns=index_keys, inplace=True)
 
+        from sqlalchemy import types  # import Date, Float, Integer, String
+
+        dtypes = {col: types.Date() for col in df.select_dtypes(include=["datetime"]).columns}
+        dtypes.update({col: types.Integer() for col in df.select_dtypes(include=["int", "integer"]).columns})
+        dtypes.update(
+            {col: types.Float() for col in set(df.select_dtypes(include=["number"]).columns) - set(dtypes.keys())}
+        )
+        dtypes.update({col: types.String() for col in set(df.columns) - set(dtypes.keys())})
+
         df.to_sql(
             table_name,  # like "projects"
             self.engine,
             if_exists="replace",
             index=True,
             index_label=index_keys,
+            dtype=dtypes,
         )
         return self
 
@@ -108,11 +118,11 @@ def _main(params: DictConfig):
     query = """
     match (pr:ProjectRoot)--(dr:ProjectDataRoot) 
     with pr, count(dr.execution_id) as cnt
-    where cnt >= 10
     match (pr)-[*]->(pj:Project)-->(pjd:ProjectDetails)
     return cnt, pr, pj, pjd
     order by cnt desc, pj.project_id, pj.sortby
     """
+    # where cnt >= 10
 
     results: list[Record] = neo4j_provider.select_query(query)
 
@@ -135,7 +145,7 @@ def _main(params: DictConfig):
             current_supporters=int(nvl(pj["current_supporters"], 0)),
             success_rate=int(nvl(pj["success_rate"], 0)),  # %
             remaining_days=int(nvl(pj["remaining_days"], -1)),
-            created_at=created_at,
+            created_at=created_at,  # already `datetime` type
         )
         records.append(record)
 
@@ -157,6 +167,11 @@ def _main(params: DictConfig):
     for idx, rec in enumerate(results):
         record = {}
         [record.update(d) for d in rec.data("pr", "dr", "pj", "pjd").values()]
+        record["data_position"] = int(pj["data_position"])
+        record["current_funding"] = int(nvl(pj["current_funding"], 0))
+        record["current_supporters"] = int(nvl(pj["current_supporters"], 0))
+        record["success_rate"] = int(nvl(pj["success_rate"], 0))  # %
+        record["remaining_days"] = int(nvl(pj["remaining_days"], -1))
         record["created_at"] = datetime.datetime.strptime(record["created_at"], "%Y-%m-%d")
         records.append(record)
 

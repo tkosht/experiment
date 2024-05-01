@@ -137,9 +137,7 @@ class CampfireFetcher(object):
                     "robots.txt での許可がないため、取得をスキップします。",
                     url,
                 )
-                raise Exception(
-                    f"robots.txt での許可がないため、取得をスキップします。{url}"
-                )
+                raise Exception(f"robots.txt での許可がないため、取得をスキップします。{url}")
             self.driver.get(url)
 
         # wait for the element to be present
@@ -151,18 +149,14 @@ class CampfireFetcher(object):
 
         if do_scroll:
             # scroll の高さ高さを取得する
-            last_height = self.driver.execute_script(
-                "return document.body.scrollHeight"
-            )
+            last_height = self.driver.execute_script("return document.body.scrollHeight")
 
             # 画面の最下部まで少しずつスクロールする
             # # lazy loading で追加される要素を取得するため
             scroll_size = max(last_height // 5, scroll_size)
             for offset in range(0, last_height, scroll_size):
                 # lazy loading で追加される要素を取得する
-                self.driver.execute_script(
-                    f"window.scrollTo({offset}, {offset+scroll_size});"
-                )
+                self.driver.execute_script(f"window.scrollTo({offset}, {offset+scroll_size});")
 
                 # scroll が終わるまで待つ
                 time.sleep(scroll_wait)
@@ -175,9 +169,7 @@ class CampfireFetcher(object):
         project_url = f"https://camp-fire.jp/projects?page={page}&sort={sortby}"
         return project_url
 
-    def fetch_project_cards(
-        self, page: int = 1, sortby: SortBy = SortBy.popular
-    ) -> list[WebElement]:
+    def fetch_project_cards(self, page: int = 1, sortby: SortBy = SortBy.popular) -> list[WebElement]:
         """
         Fetches the project cards from the Campfire website.
 
@@ -214,12 +206,9 @@ class CampfireFetcher(object):
         projects = []
         for n_page in range(1, params.max_pages + 1):
             print(f"{now()} Fetching page {n_page} ...")
-            project_cards: list[WebElement] = self.fetch_project_cards(
-                page=n_page, sortby=params.sortby
-            )
+            project_cards: list[WebElement] = self.fetch_project_cards(page=n_page, sortby=params.sortby)
             project_records: list[ProjectRecord] = [
-                self.fetch_project(box_idx, n_page, bx)
-                for box_idx, bx in enumerate(project_cards)
+                self.fetch_project(box_idx, n_page, bx) for box_idx, bx in enumerate(project_cards)
             ]
             print(f"{now()} {n_page=} {len(project_records)} projects fetched.")
             projects += project_records
@@ -249,16 +238,12 @@ class CampfireFetcher(object):
         data_brand: str = crd.get_attribute("data-gtm-data-brand")
         data_category: str = crd.get_attribute("data-gtm-data-category")
         data_position: str = crd.get_attribute("data-gtm-data-position")
-        data_list: str = crd.get_attribute(
-            "data-gtm-data-list"
-        )  # e.g. "projects_fresh"
+        data_list: str = crd.get_attribute("data-gtm-data-list")  # e.g. "projects_fresh"
 
         img_url: str = crd.find_element(By.XPATH, ".//img").get_attribute("src")
 
         try:
-            prefecture: str = crd.find_element(
-                By.XPATH, './/div[contains(@class, "prefecture")]'
-            ).text
+            prefecture: str = crd.find_element(By.XPATH, './/div[contains(@class, "prefecture")]').text
         except NoSuchElementException:
             prefecture: str = None
 
@@ -267,34 +252,26 @@ class CampfireFetcher(object):
             './/div[contains(@class, "tag") and not(contains(@class, "tags-area"))]',
         )
         if tags:
-            project_type: str = (
-                tags[0].find_element(By.XPATH, './/span[contains(@class, "text")]').text
-            )
+            project_type: str = tags[0].find_element(By.XPATH, './/span[contains(@class, "text")]').text
 
-            user_id: str = (
-                tags[1].find_element(By.XPATH, './/span[contains(@class, "text")]').text
-            )
+            user_id: str = tags[1].find_element(By.XPATH, './/span[contains(@class, "text")]').text
         else:
             project_type: str = None
             user_id: str = None
 
         try:
-            success_rate: str = crd.find_element(
-                By.XPATH, './/p[contains(@class, "success-rate")]'
-            ).get_attribute("innerHTML")
+            success_rate: str = crd.find_element(By.XPATH, './/p[contains(@class, "success-rate")]').get_attribute(
+                "innerHTML"
+            )
         except NoSuchElementException:
             success_rate: str = None
 
         try:
-            member: str = crd.find_element(
-                By.XPATH, './/p[contains(@class, "member")]'
-            ).get_attribute("innerHTML")
+            member: str = crd.find_element(By.XPATH, './/p[contains(@class, "member")]').get_attribute("innerHTML")
         except NoSuchElementException:
             member: str = None
 
-        footer_items: list[WebElement] = crd.find_elements(
-            By.XPATH, './/div[contains(@class, "footer-item")]'
-        )
+        footer_items: list[WebElement] = crd.find_elements(By.XPATH, './/div[contains(@class, "footer-item")]')
 
         if footer_items:
             current_funding: str = footer_items[0].text
@@ -324,6 +301,7 @@ class CampfireFetcher(object):
             data_dimension=data_dimension,
             data_brand=data_brand,
             data_category=data_category,
+            page=page,
             data_position=data_position,
             data_list=data_list,
             img_url=img_url,
@@ -376,9 +354,7 @@ class CampfireFetcher(object):
         return_boxes = []
         for idx, rwd in enumerate(returns):
             try:
-                return_img_url: str = rwd.find_element(
-                    By.XPATH, ".//img"
-                ).get_attribute("src")
+                return_img_url: str = rwd.find_element(By.XPATH, ".//img").get_attribute("src")
             except NoSuchElementException:
                 return_img_url: str = None
             price: str = rwd.find_element(By.XPATH, './/div[@class="price"]').text
@@ -390,16 +366,10 @@ class CampfireFetcher(object):
             )
             return_boxes.append(rbx)
         user_name: str = _get_text('//*[@class="owner-name"]')
-        elms: list[WebElement] = self._fetch_simply(
-            '//div[@class="owner-profile"]/*/img'
-        )
+        elms: list[WebElement] = self._fetch_simply('//div[@class="owner-profile"]/*/img')
         icon_url: str = elms[0].get_attribute("src")
-        prefecture: str = _get_text(
-            '//div[@class="owner-profile"]/div[@class="owner-name"]/p[@class="prefecture"]'
-        )
-        profile_text: str = _get_text(
-            '//div[@class="owner-profile"]/*/*[@class="profile-body"]'
-        )
+        prefecture: str = _get_text('//div[@class="owner-profile"]/div[@class="owner-name"]/p[@class="prefecture"]')
+        profile_text: str = _get_text('//div[@class="owner-profile"]/*/*[@class="profile-body"]')
         elms: list[WebElement] = self._fetch_simply('//div[@class="owner-profile"]')
         profile_url: str = elms[0].find_element(By.XPATH, ".//a").get_attribute("href")
 
@@ -433,19 +403,13 @@ class CampfireFetcher(object):
 
         title: str = _get_text('//h2[@class="header_top__title"]')
         try:
-            elms: list[WebElement] = self._fetch_simply(
-                '//div[contains(@class, "slide-item")]/img'
-            )
+            elms: list[WebElement] = self._fetch_simply('//div[contains(@class, "slide-item")]/img')
             img_url: str = elms[0].get_attribute("src")
         except TimeoutException:
-            elms: list[WebElement] = self._fetch_simply(
-                '//div[contains(@class, "thumbnail")]/.//img'
-            )
+            elms: list[WebElement] = self._fetch_simply('//div[contains(@class, "thumbnail")]/.//img')
             img_url: str = elms[0].get_attribute("src")
 
-        elms: list[WebElement] = self._fetch_simply(
-            '//div[@class="project_status"]//div[@class="status"]'
-        )
+        elms: list[WebElement] = self._fetch_simply('//div[@class="project_status"]//div[@class="status"]')
         backer_amount: str = elms[0].text
         abstract: str = _get_text('//div[@class="header_bottom__cap"]')
 
@@ -468,27 +432,19 @@ class CampfireFetcher(object):
             return_boxes = []
             for return_idx, elm in enumerate(elms):
                 try:
-                    return_img_url: str = elm.find_element(
-                        By.XPATH, ".//img"
-                    ).get_attribute("data-src")
+                    return_img_url: str = elm.find_element(By.XPATH, ".//img").get_attribute("data-src")
                 except NoSuchElementException:
                     return_img_url = None
 
-                price: str = elm.find_element(
-                    By.XPATH, './/div[contains(@class, "return__price")]'
-                ).text
+                price: str = elm.find_element(By.XPATH, './/div[contains(@class, "return__price")]').text
                 desc: str = elm.get_attribute("innerHTML")
 
                 rbx = ReturnBox(return_idx, return_img_url, price, desc)
                 return_boxes.append(rbx)
         except TimeoutException:
             price: str = _get_text('//div[@class="return__price"]')
-            elms: list[WebElement] = self._fetch_simply(
-                '//div[contains(@class, "return__img")]'
-            )
-            return_img_url: str = (
-                elms[0].find_element(By.XPATH, ".//img").get_attribute("src")
-            )
+            elms: list[WebElement] = self._fetch_simply('//div[contains(@class, "return__img")]')
+            return_img_url: str = elms[0].find_element(By.XPATH, ".//img").get_attribute("src")
 
             elms: list[WebElement] = self._fetch_simply(
                 '//p[contains(@class, "return__list") and contains(@class, "readmore")]'
@@ -498,9 +454,7 @@ class CampfireFetcher(object):
             actions.move_to_element(readmore_link).perform()
             readmore_link.click()
             self.driver.implicitly_wait(3)
-            desc: str = _get_text(
-                '//p[contains(@class, "return__list") and contains(@class, "readmore")]'
-            )
+            desc: str = _get_text('//p[contains(@class, "return__list") and contains(@class, "readmore")]')
             rbx = ReturnBox(0, return_img_url, price, desc)
             return_boxes = [rbx]
 
@@ -530,14 +484,10 @@ class CampfireFetcher(object):
 
         # # サムネイル画像を取得する
         try:
-            elms: list[WebElement] = self._fetch_simply(
-                '//div[contains(@class, "slide-item")]/img'
-            )
+            elms: list[WebElement] = self._fetch_simply('//div[contains(@class, "slide-item")]/img')
             img_url: str = elms[0].get_attribute("src")
         except TimeoutException:
-            elms: list[WebElement] = self._fetch_simply(
-                '//section[contains(@class, "header-in")]'
-            )
+            elms: list[WebElement] = self._fetch_simply('//section[contains(@class, "header-in")]')
             # 'background-image: url("https://static.camp-fire.jp/uploads/custom_page/image/2722/WechatIMG813.png");'
             style_url: str = elms[0].get_attribute("style")
             img_url: str = pickup_url(style_url)
@@ -582,9 +532,7 @@ class CampfireFetcher(object):
             profile_text = elms[0].text
 
         try:
-            elms: list[WebElement] = self._fetch_simply(
-                '//section[contains(@class, "profile")]/div[@class="icon"]/a'
-            )
+            elms: list[WebElement] = self._fetch_simply('//section[contains(@class, "profile")]/div[@class="icon"]/a')
             profile_url: str = elms[0].get_attribute("href")
         except TimeoutException:
             profile_url: str = None
@@ -607,9 +555,7 @@ class CampfireFetcher(object):
 
         # プロジェクトの経験情報を取得する
         try:
-            elms: list[WebElement] = self._fetch_simply(
-                '//div[@class="projects-count"]'
-            )
+            elms: list[WebElement] = self._fetch_simply('//div[@class="projects-count"]')
             project_exprience: str = elms[0].text
         except TimeoutException:
             project_exprience: str = None
@@ -629,20 +575,16 @@ class CampfireFetcher(object):
         return_boxes = []
         for return_idx, elm in enumerate(elms):
             try:
-                return_img_url: str = elm.find_element(
-                    By.XPATH, ".//img"
-                ).get_attribute("data-src")
+                return_img_url: str = elm.find_element(By.XPATH, ".//img").get_attribute("data-src")
             except NoSuchElementException:
                 return_img_url = None
 
-            price: str = elm.find_element(
-                By.XPATH, './/div[contains(@class, "price")]'
-            ).text
+            price: str = elm.find_element(By.XPATH, './/div[contains(@class, "price")]').text
 
             try:
-                desc: str = elm.find_element(
-                    By.XPATH, './/div[@class="abbreviated-description"]'
-                ).get_attribute("innerHTML")
+                desc: str = elm.find_element(By.XPATH, './/div[@class="abbreviated-description"]').get_attribute(
+                    "innerHTML"
+                )
             except NoSuchElementException:
                 desc: str = None
 
@@ -876,9 +818,7 @@ def _main(params: DictConfig):
                         "return_idx": rbx.return_idx,
                     },
                 )
-            g.create_index(
-                "ReturnBox", keys=["project_id", "project_data_id", "return_idx"]
-            )
+            g.create_index("ReturnBox", keys=["project_id", "project_data_id", "return_idx"])
             g.create_index("ReturnBox", keys=["fetch_id"])
             g.create_index("ReturnBox", keys=["sortby"])
             g.create_index("ReturnBox", keys=["created_at", "sortby"])
