@@ -131,6 +131,9 @@ def _main(params: DictConfig):
         # return の順番で取得 ('*' の場合は、アルファベット順)
         n_dates, pr, pj, pjd = rec.values()
         created_at = datetime.datetime.strptime(pj["created_at"], "%Y-%m-%d")
+        page: int = int(pj["page"]) if pj["page"] is not None else None
+        data_position: int = int(pj["data_position"])
+        ranking: int = data_position + page * 20 if page is not None else None
         record = dict(
             execution_id=pj["execution_id"],
             project_id=pj["project_id"],
@@ -140,7 +143,9 @@ def _main(params: DictConfig):
             data_category=pj["data_category"],
             data_dimension=pj["data_dimension"],
             sortby=pj["sortby"],
-            data_position=int(pj["data_position"]),
+            page=page,
+            data_position=data_position,
+            ranking=ranking,
             current_funding=int(nvl(pj["current_funding"], 0)),
             current_supporters=int(nvl(pj["current_supporters"], 0)),
             success_rate=int(nvl(pj["success_rate"], 0)),  # %

@@ -40,7 +40,7 @@ services:
       - "3006:3006"     # for Streamsync
       - "7860:7860"     # gradio
       - "8501:8501"     # streamlit
-    #   - "5000:5000"   # MLflow
+      - "5000:5000"     # MLflow
     #   - "5656:5656"   # sqlite-web
     #   - "6006:6006"   # tensorboard
     #   - "8000:8000"   # webapi

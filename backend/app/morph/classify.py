@@ -35,7 +35,7 @@ try:
 except Exception:
     spm = None
 
-from gensim.models.doc2vec import Doc2Vec, TaggedDocument
+# from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 
 
 class Transer(object):
@@ -97,10 +97,12 @@ class JpTokenizerMeCab(JpTokenizer):
 
 
 class JpTokenizerJanome(JpTokenizer):
-    def __init__(self):
-        self.char_filters = [janome.charfilter.UnicodeNormalizeCharFilter()]
+    def __init__(self, use_filter=True, use_baseform=False):
+        self.use_filter = use_filter
+        self.use_baseform = use_baseform
+        self.char_filters = [janome.charfilter.UnicodeNormalizeCharFilter()] if use_filter else []
         self.tokenizer = janome.tokenizer.Tokenizer()
-        self.token_filters = [janome.tokenfilter.POSStopFilter(g_stop_poses)]
+        self.token_filters = [janome.tokenfilter.POSStopFilter(g_stop_poses)] if use_filter else []
         self.analyzer = janome.analyzer.Analyzer(
             char_filters=self.char_filters,
             tokenizer=self.tokenizer,
@@ -110,7 +112,7 @@ class JpTokenizerJanome(JpTokenizer):
     def tokenize(self, line):
         sentence = []
         for token in self.analyzer.analyze(line):
-            sentence.append(token.base_form)
+            sentence.append(token.base_form if self.use_baseform else token.surface)
         return sentence
 
     def __getstate__(self):
@@ -191,44 +193,44 @@ class SparsetoDense(Transer):
         return X.toarray()
 
 
-class TagDocMaker(Transer):
-    def transform(self, X, **kwargs):
-        return [
-            TaggedDocument(words=sentences, tags=[n]) for n, sentences in enumerate(X)
-        ]
+# class TagDocMaker(Transer):
+#     def transform(self, X, **kwargs):
+#         return [
+#             TaggedDocument(words=sentences, tags=[n]) for n, sentences in enumerate(X)
+#         ]
 
 
-class Doc2Vectorizer(Transer):
-    def __init__(self, n_components, window=7, min_count=1, workers=3):
-        super().__init__()
-        self.model = None
-        self.vector_size = n_components
-        self.window = window
-        self.min_count = min_count
-        self.workers = workers
+# class Doc2Vectorizer(Transer):
+#     def __init__(self, n_components, window=7, min_count=1, workers=3):
+#         super().__init__()
+#         self.model = None
+#         self.vector_size = n_components
+#         self.window = window
+#         self.min_count = min_count
+#         self.workers = workers
 
-    def transform(self, X, **kwargs):
-        embedded = []
-        for tagdoc in X:
-            v = self.model.infer_vector(tagdoc.words)
-            embedded.append(v)
-        return embedded
+#     def transform(self, X, **kwargs):
+#         embedded = []
+#         for tagdoc in X:
+#             v = self.model.infer_vector(tagdoc.words)
+#             embedded.append(v)
+#         return embedded
 
-    def fit(self, X, y, **kwargs):
-        assert isinstance(X, list)
-        assert isinstance(X[0], TaggedDocument)
-        params = dict(
-            vector_size=self.vector_size,
-            window=self.window,
-            min_count=self.min_count,
-            workers=self.workers,
-            dm=0,
-            dbow_words=0,
-            negative=0,
-            hs=1,
-        )
-        self.model = Doc2Vec(X, **params)
-        return self
+#     def fit(self, X, y, **kwargs):
+#         assert isinstance(X, list)
+#         assert isinstance(X[0], TaggedDocument)
+#         params = dict(
+#             vector_size=self.vector_size,
+#             window=self.window,
+#             min_count=self.min_count,
+#             workers=self.workers,
+#             dm=0,
+#             dbow_words=0,
+#             negative=0,
+#             hs=1,
+#         )
+#         self.model = Doc2Vec(X, **params)
+#         return self
 
 
 def ident_tokener(sentence):
@@ -262,47 +264,47 @@ def build_pipleline_with_tfidf(tokener: JpTokenizer, n_classes: int):
     return pipe
 
 
-def build_pipleline_with_doc2vec(tokener):
-    tfidf = TfidfVectorizer(tokenizer=ident_tokener, lowercase=False)
+# def build_pipleline_with_doc2vec(tokener):
+#     tfidf = TfidfVectorizer(tokenizer=ident_tokener, lowercase=False)
 
-    embedders = [
-        ("pca", PCA(n_components=32)),
-        ("identity", Transer()),  # means tfidf to tfidf
-    ]
+#     embedders = [
+#         ("pca", PCA(n_components=32)),
+#         ("identity", Transer()),  # means tfidf to tfidf
+#     ]
 
-    pipe_embedder_1 = Pipeline(
-        steps=[
-            ("vectorizer", tfidf),
-            ("to_dence", SparsetoDense()),
-            ("embedder", FeatureUnion(embedders)),
-        ]
-    )
-    pipe_embedder_2 = Pipeline(
-        steps=[
-            ("doctagger", TagDocMaker()),
-            ("doc2vec", Doc2Vectorizer(n_components=128, min_count=1)),
-        ]
-    )
-    pipe_embeds = [
-        ("pipe1", pipe_embedder_1),
-        ("pipe2", pipe_embedder_2),
-    ]
+#     pipe_embedder_1 = Pipeline(
+#         steps=[
+#             ("vectorizer", tfidf),
+#             ("to_dence", SparsetoDense()),
+#             ("embedder", FeatureUnion(embedders)),
+#         ]
+#     )
+#     pipe_embedder_2 = Pipeline(
+#         steps=[
+#             ("doctagger", TagDocMaker()),
+#             ("doc2vec", Doc2Vectorizer(n_components=128, min_count=1)),
+#         ]
+#     )
+#     pipe_embeds = [
+#         ("pipe1", pipe_embedder_1),
+#         ("pipe2", pipe_embedder_2),
+#     ]
 
-    lgbmclf = lightgbm.LGBMClassifier(
-        objective="softmax",
-        num_class=len(dataset.labelset),
-        importance_type="gain",
-    )
+#     lgbmclf = lightgbm.LGBMClassifier(
+#         objective="softmax",
+#         num_class=len(dataset.labelset),
+#         importance_type="gain",
+#     )
 
-    pipe = Pipeline(
-        steps=[
-            ("tokenizer", tokener),
-            ("embedders", FeatureUnion(pipe_embeds)),
-            ("classifier", lgbmclf),
-        ]
-    )
+#     pipe = Pipeline(
+#         steps=[
+#             ("tokenizer", tokener),
+#             ("embedders", FeatureUnion(pipe_embeds)),
+#             ("classifier", lgbmclf),
+#         ]
+#     )
 
-    return pipe
+#     return pipe
 
 
 def get_args():
@@ -317,8 +319,7 @@ def get_args():
         "--iter",
         type=int,
         default=3,
-        help="positive integer of the iteration "
-        "for train and validation (default: 10)",
+        help="positive integer of the iteration " "for train and validation (default: 10)",
     )
     args = parser.parse_args()
     return args
@@ -410,11 +411,7 @@ if __name__ == "__main__":
             elapsed_time = tpe - tps
             cpu_time = tce - tcs
 
-            print(
-                f"{tokener.__class__.__name__}, "
-                f"{train_acc}, {valid_acc}, "
-                f"{elapsed_time}, {cpu_time}"
-            )
+            print(f"{tokener.__class__.__name__}, " f"{train_acc}, {valid_acc}, " f"{elapsed_time}, {cpu_time}")
 
         # save model
         print(f"Saving model for {tokener.__class__.__name__.lower()} ...")
