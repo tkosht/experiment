@@ -145,6 +145,7 @@ llama-index-llms-anthropic = "*"
 llama-index-readers-notion = "*"
 llama-index-packs-sentence-window-retriever = "*"
 llama-index-vector-stores-faiss = "*"
+dify-client = "*"
 
 
 wikipedia = "*"

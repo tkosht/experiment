@@ -187,6 +187,29 @@ def _main(params: DictConfig):
     )
     print(f"{now()} end selecting project_details")
 
+    # 3. return_boxes
+    # records = []
+    # for rec in results:  # rec in details
+    #     project_data_id = rec.data("pjd")["pjd"]["project_data_id"]
+    #     query = f"""
+    #     match (rbx:ReturnBox {{project_data_id: "{project_data_id}"}})
+    #     return rbx
+    #     """
+    #     boxes: list[Record] = neo4j_provider.select_query(query)
+    #     for bx in boxes:
+    #         record = {}
+    #         [record.update(bx.data()["rbx"])]
+    #         record["return_idx"] = int(nvl(record["return_idx"], -1))
+    #         record["created_at"] = datetime.datetime.strptime(record["created_at"], "%Y-%m-%d")
+    #         records.append(record)
+
+    # postgres_provider.do_import(
+    #     table_name="return_boxes",
+    #     index_keys=["project_id", "execution_id", "sortby", "project_data_id", "return_idx"],
+    #     records=records,
+    # )
+
+    # last. create views
     print(f"{now()} start creating views...")
     postgres_provider.create_views()
     print(f"{now()} end creating views")
