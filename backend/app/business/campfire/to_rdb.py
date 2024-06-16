@@ -69,6 +69,7 @@ class PostgresProvider(object):
         return results
 
     def do_import(self, table_name: str, index_keys: list[str], records: list[dict]):
+        print(f"{now()} start importing...", table_name, len(records))
         df = pd.DataFrame(records)
         df.index = [df[k] for k in index_keys]
         df.drop(columns=index_keys, inplace=True)
@@ -90,6 +91,7 @@ class PostgresProvider(object):
             index_label=index_keys,
             dtype=dtypes,
         )
+        print(f"{now()} end importing...", table_name, len(records))
         return self
 
     def create_views(self, sql_dir: str = "conf/sql") -> Self:
@@ -114,7 +116,6 @@ def _main(params: DictConfig):
         postgres_provider.execute(f"drop table if exists {tbl} cascade")
 
     # 1. projects
-    print(f"{now()} start selecting projects...")
     query = """
     match (pr:ProjectRoot)--(dr:ProjectDataRoot) 
     with pr, count(dr.execution_id) as cnt
@@ -122,9 +123,10 @@ def _main(params: DictConfig):
     return cnt, pr, pj, pjd
     order by cnt desc, pj.project_id, pj.sortby
     """
-    # where cnt >= 10
 
+    print(f"{now()} start selecting projects...")
     results: list[Record] = neo4j_provider.select_query(query)
+    print(f"{now()} end selecting projects")
 
     records = []
     for rec in results:
@@ -159,15 +161,16 @@ def _main(params: DictConfig):
         index_keys=["project_id", "execution_id", "sortby"],
         records=records,
     )
-    print(f"{now()} end selecting projects")
 
     # 2. project_details
-    print(f"{now()} start selecting project_details...")
     query = """
     match (pr: ProjectRoot) --> (dr: ProjectDataRoot) --> (pj:Project) --> (pjd:ProjectDetails)
     return pr, dr, pj, pjd
     """
+    print(f"{now()} start selecting project_details...")
     results: list[Record] = neo4j_provider.select_query(query)
+    print(f"{now()} end selecting project_details")
+
     records = []
     for idx, rec in enumerate(results):
         record = {}
@@ -185,29 +188,32 @@ def _main(params: DictConfig):
         index_keys=["project_id", "execution_id", "sortby", "project_data_id"],
         records=records,
     )
-    print(f"{now()} end selecting project_details")
 
     # 3. return_boxes
-    # records = []
-    # for rec in results:  # rec in details
-    #     project_data_id = rec.data("pjd")["pjd"]["project_data_id"]
-    #     query = f"""
-    #     match (rbx:ReturnBox {{project_data_id: "{project_data_id}"}})
-    #     return rbx
-    #     """
-    #     boxes: list[Record] = neo4j_provider.select_query(query)
-    #     for bx in boxes:
-    #         record = {}
-    #         [record.update(bx.data()["rbx"])]
-    #         record["return_idx"] = int(nvl(record["return_idx"], -1))
-    #         record["created_at"] = datetime.datetime.strptime(record["created_at"], "%Y-%m-%d")
-    #         records.append(record)
+    records = []
+    query = """
+    match(r:ReturnBox)
+    with r.project_id as project_id, max(r.created_at) as latest
+    match (rbx:ReturnBox {project_id: project_id, created_at: latest})
+    return rbx
+    """
 
-    # postgres_provider.do_import(
-    #     table_name="return_boxes",
-    #     index_keys=["project_id", "execution_id", "sortby", "project_data_id", "return_idx"],
-    #     records=records,
-    # )
+    print(f"{now()} start selecting return_boxes ...")
+    boxes: list[Record] = neo4j_provider.select_query(query)
+    print(f"{now()} end selecting return_boxes ...")
+
+    for bx in boxes:
+        record = {}
+        [record.update(bx.data()["rbx"])]
+        record["return_idx"] = int(nvl(record["return_idx"], -1))
+        record["created_at"] = datetime.datetime.strptime(record["created_at"], "%Y-%m-%d")
+        records.append(record)
+
+    postgres_provider.do_import(
+        table_name="return_boxes",
+        index_keys=["project_id", "execution_id", "sortby", "project_data_id", "return_idx"],
+        records=records,
+    )
 
     # last. create views
     print(f"{now()} start creating views...")
