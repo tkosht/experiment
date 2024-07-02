@@ -54,6 +54,11 @@ scrapy = "*"
 selenium = "*"
 webdriver_manager = "*"
 retry = "*"
+firecrawl-py = "*"
+# unstructured = "*"
+unstructured = {extras = ["pdf"], version = "*"}
+pymupdf4llm = "*"
+
 
 # Database
 # psycopg2 = "*"

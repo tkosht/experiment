@@ -13,6 +13,8 @@ RUN apt-get update -y && apt-get upgrade -y \
         libopenmpi-dev \
         libmecab-dev mecab mecab-ipadic-utf8 mecab-utils file \
         postgresql postgresql-contrib \
+        libmagic-dev poppler-utils \
+        tesseract-ocr tesseract-ocr-jpn libtesseract-dev libleptonica-dev tesseract-ocr-script-jpan tesseract-ocr-script-jpan-vert \
     && localedef -f UTF-8 -i ja_JP ja_JP.UTF-8
 
 

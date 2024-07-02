@@ -18,6 +18,7 @@ bkup/
 .*.swp
 ?.sh
 .env
+.*
 .*/
 *logs/
 
