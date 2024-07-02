@@ -14,7 +14,7 @@ acr_login_server=$(az acr show --name $acr_name --query loginServer --output jso
 
 
 
-az container create --resource-group RGUSW2 \
+az container create --resource-group rgrg \
     --name $container_name \
     --image $acr_login_server/$container_name:$tag \
     --cpu 1 \
