@@ -108,7 +108,7 @@ def nvl(val, default):
 
 def _main(params: DictConfig):
     neo4j_provider = Neo4jProvider()
-    postgres_provider = PostgresProvider(port=5431)
+    postgres_provider = PostgresProvider(port=5445)
 
     # drop tables
     tables = ["projects", "project_details"]

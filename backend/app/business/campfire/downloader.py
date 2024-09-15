@@ -333,20 +333,20 @@ class CampfireFetcher(object):
         )
         return elms
 
-    def _fetch_details_community(self, project_url: str) -> ProjectDetails:
-        def _get_text(xpath: str) -> str | None:
-            try:
-                elms: list[WebElement] = self._fetch_simply(xpath)
-            except TimeoutException:
-                return None
-            text: str = elms[0].text if elms else None
-            return text
+    def _get_text(self, xpath: str) -> str | None:
+        try:
+            elms: list[WebElement] = self._fetch_simply(xpath)
+        except TimeoutException:
+            return None
+        text: str = elms[0].text if elms else None
+        return text
 
+    def _fetch_details_community(self, project_url: str) -> ProjectDetails:
         # プロジェクトが取れない場合、コミュニティのページかもしれないので、コミュニティの情報を取得する
-        title: str = _get_text('//*[@class="community-name"]')
-        img_url: str = _get_text('//*[@class="flicking-panel"]')
-        backer_amount: str = _get_text('//*[@class="category-and-amount"]')
-        abstract: str = _get_text('//*[@class="community-description"]')
+        title: str = self._get_text('//*[@class="community-name"]')
+        img_url: str = self._get_text('//*[@class="flicking-panel"]')
+        backer_amount: str = self._get_text('//*[@class="category-and-amount"]')
+        abstract: str = self._get_text('//*[@class="community-description"]')
         elms: list[WebElement] = self._fetch_simply('//section[@id="project-body"]')
         article_text: str = elms[0].text
         article_html: str = elms[0].get_attribute("innerHTML")
@@ -365,11 +365,13 @@ class CampfireFetcher(object):
                 desc=rwd.text,
             )
             return_boxes.append(rbx)
-        user_name: str = _get_text('//*[@class="owner-name"]')
+        user_name: str = self._get_text('//*[@class="owner-name"]')
         elms: list[WebElement] = self._fetch_simply('//div[@class="owner-profile"]/*/img')
         icon_url: str = elms[0].get_attribute("src")
-        prefecture: str = _get_text('//div[@class="owner-profile"]/div[@class="owner-name"]/p[@class="prefecture"]')
-        profile_text: str = _get_text('//div[@class="owner-profile"]/*/*[@class="profile-body"]')
+        prefecture: str = self._get_text(
+            '//div[@class="owner-profile"]/div[@class="owner-name"]/p[@class="prefecture"]'
+        )
+        profile_text: str = self._get_text('//div[@class="owner-profile"]/*/*[@class="profile-body"]')
         elms: list[WebElement] = self._fetch_simply('//div[@class="owner-profile"]')
         profile_url: str = elms[0].find_element(By.XPATH, ".//a").get_attribute("href")
 
@@ -392,16 +394,71 @@ class CampfireFetcher(object):
             return_boxes=return_boxes,
         )
 
-    def _fetch_details_others(self, project_url: str) -> ProjectDetails:
-        def _get_text(xpath: str) -> str | None:
-            try:
-                elms: list[WebElement] = self._fetch_simply(xpath)
-            except TimeoutException:
-                return None
-            text: str = elms[0].text if elms else None
-            return text
+    def _fetch_details_project_hero(self, project_url: str) -> ProjectDetails:
+        # NOTE: 以下が該当するプロジェクトURL (デバッグに利用)
+        # - https://camp-fire.jp/projects/786325/view
+        # - https://camp-fire.jp/projects/784411/view
+        # - https://camp-fire.jp/projects/787184/view
+        title: str = self._get_text('//h1[contains(@class, "title")]')
+        elms: list[WebElement] = self._fetch_simply('//li[contains(@class, "carousel-item")]/img')
+        img_url: str = elms[0].get_attribute("src")
 
-        title: str = _get_text('//h2[@class="header_top__title"]')
+        elms: list[WebElement] = self._fetch_simply('//*[contains(@class, "backer-amount")]')
+        backer_amount: str = elms[0].text
+        abstract: str = self._get_text('//*[contains(@class, "caption")]')  # ヒーロー情報
+
+        elms: list[WebElement] = self._fetch_simply('//div[contains(@class, "project-main")]')
+        article_text: str = elms[0].text
+        article_html: str = elms[0].get_attribute("innerHTML")
+
+        profile_text: str = self._get_text('//div[contains(@class, "dispcription-area")]')
+        try:
+            elms: list[WebElement] = self._fetch_simply('//div[contains(@class, "profile-contents")]/a')
+            profile_url: str = elms[0].get_attribute("href")
+            elms: list[WebElement] = self._fetch_simply('//div[contains(@class, "profile-contents")]/a/img')
+            icon_url: str = elms[0].get_attribute("src") if elms else None
+        except TimeoutException:
+            profile_url: str = None
+            icon_url: str = None
+        user_name: str = self._get_text('//*[contains(@class, "owner-name")]')
+        prefecture: str = self._get_text('//*[contains(@class, "prefecture")]/p')
+
+        # リターン情報を取得する
+        elms: list[WebElement] = self._fetch_simply('//li[contains(@class, "reward-item")]')
+        return_boxes = []
+        for return_idx, elm in enumerate(elms):
+            try:
+                return_img_url: str = elm.find_element(By.XPATH, ".//img").get_attribute("src")
+            except NoSuchElementException:
+                return_img_url = None
+
+            price: str = elm.find_element(By.XPATH, './/*[contains(@class, "price-limit")]').text
+            desc: str = elm.get_attribute("innerHTML")
+
+            rbx = ReturnBox(return_idx, return_img_url, price, desc)
+            return_boxes.append(rbx)
+
+        return ProjectDetails(
+            type="hero",
+            project_url=project_url,
+            title=title,
+            img_url=img_url,
+            backer_amount=backer_amount,
+            abstract=abstract,
+            article_text=article_text,
+            article_html=article_html,
+            profile_text=profile_text,
+            profile_url=profile_url,
+            icon_url=icon_url,
+            user_name=user_name,
+            prefecture=prefecture,
+            project_exprience=None,
+            readmore=None,
+            return_boxes=return_boxes,
+        )
+
+    def _fetch_details_others(self, project_url: str) -> ProjectDetails:
+        title: str = self._get_text('//h2[@class="header_top__title"]')
         try:
             elms: list[WebElement] = self._fetch_simply('//div[contains(@class, "slide-item")]/img')
             img_url: str = elms[0].get_attribute("src")
@@ -411,18 +468,18 @@ class CampfireFetcher(object):
 
         elms: list[WebElement] = self._fetch_simply('//div[@class="project_status"]//div[@class="status"]')
         backer_amount: str = elms[0].text
-        abstract: str = _get_text('//div[@class="header_bottom__cap"]')
+        abstract: str = self._get_text('//div[@class="header_bottom__cap"]')
 
         elms: list[WebElement] = self._fetch_simply('//div[@class="column_main"]')
         article_text: str = elms[0].text
         article_html: str = elms[0].get_attribute("innerHTML")
 
-        profile_text: str = _get_text('//div[@class="column_side"]')
+        profile_text: str = self._get_text('//div[@class="column_side"]')
         profile_url: str = None
         elms: list[WebElement] = self._fetch_simply('//div[@class="author__img"]')
         icon_url: str = elms[0].get_attribute("src") if elms else None
-        user_name: str = _get_text('//div[@class="author__name"]')
-        prefecture: str = _get_text('//span[@class="address"]')
+        user_name: str = self._get_text('//div[@class="author__name"]')
+        prefecture: str = self._get_text('//span[@class="address"]')
 
         # リターン情報を取得する
         try:
@@ -442,7 +499,7 @@ class CampfireFetcher(object):
                 rbx = ReturnBox(return_idx, return_img_url, price, desc)
                 return_boxes.append(rbx)
         except TimeoutException:
-            price: str = _get_text('//div[@class="return__price"]')
+            price: str = self._get_text('//div[@class="return__price"]')
             elms: list[WebElement] = self._fetch_simply('//div[contains(@class, "return__img")]')
             return_img_url: str = elms[0].find_element(By.XPATH, ".//img").get_attribute("src")
 
@@ -454,7 +511,7 @@ class CampfireFetcher(object):
             actions.move_to_element(readmore_link).perform()
             readmore_link.click()
             self.driver.implicitly_wait(3)
-            desc: str = _get_text('//p[contains(@class, "return__list") and contains(@class, "readmore")]')
+            desc: str = self._get_text('//p[contains(@class, "return__list") and contains(@class, "readmore")]')
             rbx = ReturnBox(0, return_img_url, price, desc)
             return_boxes = [rbx]
 
@@ -646,6 +703,15 @@ class CampfireFetcher(object):
         # コミュニティ名を取得できたら、コミュニティ詳細情報を取得する
         if elms:
             return self._fetch_details_community(project_url)
+
+        # プロジェクトヒーローの場合、プロジェクトヒーロー情報を取得する
+        elms: list[WebElement] = self._fetch(
+            url=project_url,
+            elm_path='//*[contains(@class, "project-hero")]',
+            wait_path="//*[@id='fb-root']",
+        )
+        if elms:
+            return self._fetch_details_project_hero(project_url)
 
         # ふるさと納税等の他の情報を取得する
         return self._fetch_details_others(project_url)
