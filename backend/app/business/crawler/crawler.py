@@ -1,0 +1,196 @@
+import hashlib
+import os
+import pathlib
+import sqlite3
+import time
+from typing import Optional
+from urllib.parse import urljoin, urlparse
+
+import requests
+import typer
+from bs4 import BeautifulSoup
+from rich import print as rprint
+from rich.console import Console
+from rich.table import Table
+
+
+def is_valid(url: str) -> bool:
+    """URLが有効かどうかを確認します。"""
+    parsed = urlparse(url)
+    return bool(parsed.netloc) and bool(parsed.scheme)
+
+
+def is_same_domain(url: str, base_domain: str) -> bool:
+    """URLが指定されたドメインと同じかどうかを確認します。"""
+    return urlparse(url).netloc == base_domain
+
+
+def get_content_type(response: requests.Response) -> str:
+    """レスポンスのコンテンツタイプを判別します。"""
+    content_type = response.headers.get("Content-Type", "").lower()
+    if "text/html" in content_type:
+        return "html"
+    elif "application/pdf" in content_type:
+        return "pdf"
+    else:
+        return "other"
+
+
+def get_all_website_links(url: str, base_domain: str) -> tuple[set[str], Optional[bytes], Optional[str]]:
+    """指定されたURLのページから同じドメインの全てのリンクを取得します。"""
+    urls = set()
+    try:
+        response = requests.get(url, timeout=10)
+        content_type = get_content_type(response)
+
+        if content_type == "html":
+            soup = BeautifulSoup(response.content, "html.parser")
+            for a_tag in soup.findAll("a"):
+                href = a_tag.attrs.get("href")
+                if href == "" or href is None:
+                    continue
+                href = urljoin(url, href)
+                parsed_href = urlparse(href)
+                href = f"{parsed_href.scheme}://{parsed_href.netloc}{parsed_href.path}"
+                if is_valid(href) and is_same_domain(href, base_domain):
+                    urls.add(href)
+        return urls, response.content, content_type
+    except requests.RequestException as e:
+        rprint(f"[bold red]Error fetching {url}[/bold red]")
+        return set(), None, None
+
+
+def init_db(db_path: str = "data/crawled_data.db") -> sqlite3.Connection:
+    """SQLiteデータベースを初期化します。"""
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    c.execute(
+        """CREATE TABLE IF NOT EXISTS pages (
+                     url TEXT PRIMARY KEY,
+                     content BLOB,
+                     content_type TEXT,
+                     hash TEXT,
+                     last_crawled TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                 )"""
+    )
+
+    # インデックスを作成
+    c.execute("CREATE INDEX IF NOT EXISTS idx_hash ON pages(hash)")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_content_type ON pages(content_type)")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_last_crawled ON pages(last_crawled)")
+
+    conn.commit()
+    return conn
+
+
+def insert_or_update_page(conn: sqlite3.Connection, url: str, content: bytes, content_type: str) -> None:
+    """ページデータをデータベースに挿入または更新します。"""
+    content_hash = hashlib.md5(content).hexdigest()
+    c = conn.cursor()
+    c.execute("SELECT hash FROM pages WHERE url = ?", (url,))
+    result = c.fetchone()
+    if result is None:
+        c.execute(
+            """INSERT INTO pages (url, content, content_type, hash, last_crawled) 
+                     VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)""",
+            (url, content, content_type, content_hash),
+        )
+    elif result[0] != content_hash:
+        c.execute(
+            """UPDATE pages 
+                     SET content = ?, content_type = ?, hash = ?, last_crawled = CURRENT_TIMESTAMP 
+                     WHERE url = ?""",
+            (content, content_type, content_hash, url),
+        )
+    conn.commit()
+
+
+def crawl_website(start_url: str, db_path: str, n_pages: int) -> set[str]:
+    """指定されたURLから始めて、同じドメイン内の全てのページをクロールします。"""
+    base_domain = urlparse(start_url).netloc
+    crawled_urls: set[str] = set()
+    to_crawl: set[str] = {start_url}
+
+    with init_db(db_path) as cnn:
+        while to_crawl:
+            url = to_crawl.pop()
+            if url in crawled_urls:
+                continue
+
+            try:
+                rprint(f"[bold]Crawling:[/bold] [link={url}]{url}[/link]")
+                new_urls, content, content_type = get_all_website_links(url, base_domain)
+                if content is None or content_type is None:
+                    continue
+
+                assert content is not None and content_type is not None
+                insert_or_update_page(cnn, url, content, content_type)
+                crawled_urls.add(url)
+                if len(crawled_urls) >= n_pages:
+                    break
+
+                for new_url in new_urls:
+                    if new_url in crawled_urls:
+                        continue
+                    to_crawl.add(new_url)
+
+                time.sleep(0.2)
+
+            except Exception as e:
+                rprint(f"[bold red]Error crawling {url}[/bold red]")
+                continue
+
+    return crawled_urls
+
+
+def get_page_info(url: str, db_path: str = "data/crawled_data.db") -> Optional[tuple[str, str, str]]:
+    """指定されたURLの情報を取得します。"""
+    with sqlite3.connect(db_path) as cnn:
+        c = cnn.cursor()
+        c.execute("SELECT content_type, hash, last_crawled FROM pages WHERE url = ?", (url,))
+        result = c.fetchone()
+    return result
+
+
+app = typer.Typer()
+
+
+@app.command()
+def crawl(
+    url: str = typer.Argument(..., help="The starting URL to crawl"),
+    db_path: str = typer.Option("data/crawled_data.db", "--db", "-d", help="Path to the SQLite database file"),
+    pages: int = typer.Option(10, "--pages", "-p", help="Number of pages to crawl"),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Show detailed information for each crawled URL"),
+):
+    """
+    Crawl a website starting from the given URL and store the data in an SQLite database.
+    """
+    console = Console()
+
+    pathlib.Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+
+    with console.status(f"Crawling website starting from {url}...", spinner="dots"):
+        all_urls = crawl_website(url, db_path, pages)
+
+    rprint(f"\n[bold green]Crawling completed![/bold green] Total URLs crawled: {len(all_urls)}")
+
+    if verbose:
+        table = Table(title="Crawled URLs Information")
+        table.add_column("URL", style="cyan")
+        table.add_column("Content Type", style="magenta")
+        table.add_column("Hash", style="green")
+        table.add_column("Last Crawled (JST)", style="yellow")
+        for url in all_urls:
+            info = get_page_info(url, db_path)
+            if info:
+                content_type, hash, last_crawled = info
+                table.add_row(url, content_type, hash, last_crawled)
+
+        console.print(table)
+
+    db_full_path = os.path.abspath(db_path)
+    rprint(f"\n[bold]Crawled data has been stored in the SQLite database:[/bold] {db_full_path}")
+
+
+if __name__ == "__main__":
+    app()
