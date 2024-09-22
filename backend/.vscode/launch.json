@@ -36,6 +36,7 @@
                 "PYTHONPATH": ".",
             },
             "args": [
+                "/home/devuser/workspace/backend/app/business/crawler/data/crawled_data.db"
                 // "--do-share"
                 // "--no-save-on-exit",
                 // "--config-dir=${workspaceFolder}/conf",
