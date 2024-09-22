@@ -1,8 +1,10 @@
 import hashlib
 import os
 import pathlib
+import posixpath
 import sqlite3
 import time
+import urllib.parse
 from typing import Optional
 from urllib.parse import urljoin, urlparse
 
@@ -25,6 +27,11 @@ def is_valid(url: str) -> bool:
 def is_same_domain(url: str, base_domain: str) -> bool:
     """URLが指定されたドメインと同じかどうかを確認します。"""
     return urlparse(url).netloc == base_domain
+
+
+def get_domain(url: str) -> str:
+    """URLからドメインを取得します。"""
+    return urlparse(url).netloc
 
 
 def get_content_type(response: requests.Response) -> str:
@@ -69,6 +76,7 @@ def init_db(db_path: str = "data/crawled_data.db") -> sqlite3.Connection:
     c.execute(
         """CREATE TABLE IF NOT EXISTS pages (
                      url TEXT PRIMARY KEY,
+                     domain TEXT,
                      content BLOB,
                      content_type TEXT,
                      hash TEXT,
@@ -77,7 +85,8 @@ def init_db(db_path: str = "data/crawled_data.db") -> sqlite3.Connection:
     )
 
     # インデックスを作成
-    c.execute("CREATE INDEX IF NOT EXISTS idx_hash ON pages(hash)")
+    c.execute("CREATE INDEX IF NOT EXISTS idx_domain ON pages(domain)")
+    # c.execute("CREATE INDEX IF NOT EXISTS idx_hash ON pages(hash)")
     c.execute("CREATE INDEX IF NOT EXISTS idx_content_type ON pages(content_type)")
     c.execute("CREATE INDEX IF NOT EXISTS idx_last_crawled ON pages(last_crawled)")
 
@@ -87,24 +96,83 @@ def init_db(db_path: str = "data/crawled_data.db") -> sqlite3.Connection:
 
 def insert_or_update_page(conn: sqlite3.Connection, url: str, content: bytes, content_type: str) -> None:
     """ページデータをデータベースに挿入または更新します。"""
+    domain = get_domain(url)
     content_hash = hashlib.md5(content).hexdigest()
     c = conn.cursor()
     c.execute("SELECT hash FROM pages WHERE url = ?", (url,))
     result = c.fetchone()
     if result is None:
         c.execute(
-            """INSERT INTO pages (url, content, content_type, hash, last_crawled) 
-                     VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)""",
-            (url, content, content_type, content_hash),
+            """INSERT INTO pages (url, domain, content, content_type, hash, last_crawled) 
+                     VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)""",
+            (url, domain, content, content_type, content_hash),
         )
     elif result[0] != content_hash:
         c.execute(
             """UPDATE pages 
-                     SET content = ?, content_type = ?, hash = ?, last_crawled = CURRENT_TIMESTAMP 
+                     SET domain = ?, content = ?, content_type = ?, hash = ?, last_crawled = CURRENT_TIMESTAMP 
                      WHERE url = ?""",
-            (content, content_type, content_hash, url),
+            (domain, content, content_type, content_hash, url),
         )
     conn.commit()
+
+
+def normalize_url(url: str) -> str:
+    """
+    URLを正規化する関数。
+
+    Args:
+        url (str): 正規化したいURL。
+
+    Returns:
+        str: 正規化されたURL。
+    """
+    DEFAULT_PORTS: dict[str, str] = {
+        "http": ":80",
+        "https": ":443",
+        # 必要に応じて他のスキームも追加
+    }
+
+    try:
+        # URLをパース
+        parsed: urllib.parse.ParseResult = urllib.parse.urlparse(url)
+
+        # スキームとホストを小文字に
+        scheme: str = parsed.scheme.lower()
+        netloc: str = parsed.netloc.lower()
+
+        # デフォルトポートを削除
+        for default_scheme, default_port in DEFAULT_PORTS.items():
+            if scheme == default_scheme and netloc.endswith(default_port):
+                netloc = netloc[: -len(default_port)]
+                break
+
+        # パスの正規化
+        path: str = urllib.parse.unquote(parsed.path)
+        path = posixpath.normpath(path)
+        if parsed.path.endswith("/") and not path.endswith("/"):
+            # 元のパスが末尾スラッシュを含んでいた場合、正規化後もスラッシュを保持
+            path += "/"
+        # ルートパスでない場合、末尾のスラッシュを削除
+        if path != "/" and path.endswith("/"):
+            path = path.rstrip("/")
+        path = urllib.parse.quote(path, safe="/")
+
+        # クエリのソート
+        query_list: list[tuple[str, str]] = urllib.parse.parse_qsl(parsed.query, keep_blank_values=True)
+        query_list.sort()
+        query: str = urllib.parse.urlencode(query_list)
+
+        # フラグメントを削除
+        fragment: str = ""
+
+        # 正規化されたURLを再構築
+        normalized: str = urllib.parse.urlunparse((scheme, netloc, path, "", query, fragment))
+
+        return normalized
+
+    except Exception as e:
+        raise ValueError(f"Invalid URL provided: {url}") from e
 
 
 def crawl_website(start_url: str, db_path: str, n_pages: int) -> set[str]:
@@ -115,13 +183,14 @@ def crawl_website(start_url: str, db_path: str, n_pages: int) -> set[str]:
 
     with init_db(db_path) as cnn:
         while to_crawl:
-            url = to_crawl.pop()
+            url = normalize_url(to_crawl.pop())
+            # すでにクロール済みのURLはスキップ
             if url in crawled_urls:
                 continue
 
             try:
-                rprint(f"[bold]Crawling:[/bold] [link={url}]{url}[/link]")
-                new_urls, content, content_type = get_all_website_links(url, base_domain)
+                rprint(f"[bold]Loading:[/bold] [link={url}]{url}[/link]")
+                linked_urls, content, content_type = get_all_website_links(url, base_domain)
                 if content is None or content_type is None:
                     continue
 
@@ -131,10 +200,12 @@ def crawl_website(start_url: str, db_path: str, n_pages: int) -> set[str]:
                 if len(crawled_urls) >= n_pages:
                     break
 
-                for new_url in new_urls:
-                    if new_url in crawled_urls:
+                for lu in linked_urls:
+                    link_url = normalize_url(lu)
+                    # すでにクロール済みのURLはスキップ
+                    if link_url in crawled_urls:
                         continue
-                    to_crawl.add(new_url)
+                    to_crawl.add(link_url)
 
                 time.sleep(0.2)
 
@@ -171,7 +242,7 @@ def crawl(
 
     pathlib.Path(db_path).parent.mkdir(parents=True, exist_ok=True)
 
-    with console.status(f"Crawling website starting from {url}...", spinner="dots"):
+    with console.status(f"Crawling website starting from {url} ... ", spinner="dots"):
         all_urls = crawl_website(url, db_path, pages)
 
     rprint(f"\n[bold green]Crawling completed![/bold green] Total URLs crawled: {len(all_urls)}")
