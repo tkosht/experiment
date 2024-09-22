@@ -125,9 +125,9 @@ def save_content(folder: Path, filename: str, content: bytes):
     file_path = folder / filename
     file_path.write_bytes(content)
 
-    # file_pathがPDFの場合、サイズが10MBを超える場合に分割
+    # file_pathがPDFの場合、サイズが12MBを超える場合に分割
     if file_path.suffix == ".pdf":
-        split_pdf_by_size(file_path, size_limit_mb=10)
+        split_pdf_by_size(file_path, size_limit_mb=12)
         # 元のファイルを削除
         file_path.unlink()
 
@@ -205,7 +205,7 @@ def export_data(db_path: Path, output_dir: Path):
 def main(
     db_path: Path = typer.Argument(..., help="Path to the SQLite database file"),
     output_dir: Path = typer.Option(
-        Path("knowledge"), "--output", "-o", help="Directory to save exported files (default: ./knowledge)"
+        Path("./data/knowledge"), "--output", "-o", help="Directory to save exported files (default: ./data/knowledge)"
     ),
 ):
     """
