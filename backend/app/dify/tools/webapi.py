@@ -1,3 +1,4 @@
+# cf. https://docs.dify.ai/ja-jp/guides/extension/api-based-extension
 from fastapi import Body, FastAPI, Header, HTTPException
 from pydantic import BaseModel
 
