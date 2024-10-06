@@ -1,0 +1,231 @@
+app:
+  description: FastAPIへ接続するワークフロー
+  icon: 🤖
+  icon_background: '#FFEAD5'
+  mode: workflow
+  name: FastAPI接続ワークフロー
+  use_icon_as_answer_icon: false
+kind: app
+version: 0.1.2
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      image:
+        enabled: true
+        number_limits: 3
+        transfer_methods:
+        - local_file
+        - remote_url
+    opening_statement: ''
+    retriever_resource:
+      enabled: true
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        sourceType: tool
+        targetType: code
+      id: 1728113691816-source-1728113825420-target
+      source: '1728113691816'
+      sourceHandle: source
+      target: '1728113825420'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: code
+        targetType: end
+      id: 1728113825420-source-1728114165252-target
+      source: '1728113825420'
+      sourceHandle: source
+      target: '1728114165252'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: start
+        targetType: code
+      id: 1728113681511-source-1728114754455-target
+      source: '1728113681511'
+      sourceHandle: source
+      target: '1728114754455'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: code
+        targetType: tool
+      id: 1728114754455-source-1728113691816-target
+      source: '1728114754455'
+      sourceHandle: source
+      target: '1728113691816'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+    - data:
+        desc: ''
+        selected: false
+        title: 開始
+        type: start
+        variables:
+        - label: location
+          max_length: 48
+          options:
+          - London
+          - NewYork
+          - Tokyo
+          required: true
+          type: select
+          variable: location
+      height: 68
+      id: '1728113681511'
+      position:
+        x: 80
+        y: 282
+      positionAbsolute:
+        x: 80
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        desc: ''
+        provider_id: e139d00c-cc53-46c2-b15c-334832c15f13
+        provider_name: api-tools
+        provider_type: api
+        selected: false
+        title: dify_receive_api_dify_receive_post
+        tool_configurations: {}
+        tool_label: dify_receive_api_dify_receive_post
+        tool_name: dify_receive_api_dify_receive_post
+        tool_parameters:
+          authorization:
+            type: mixed
+            value: '123456'
+          params:
+            type: mixed
+            value: '{{#1728114754455.params#}}'
+          point:
+            type: mixed
+            value: app.external_data_tool.query
+        type: tool
+      height: 41
+      id: '1728113691816'
+      position:
+        x: 684
+        y: 282
+      positionAbsolute:
+        x: 684
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        code: "import json\n\n\ndef main(posted: str) -> str:\n    jsn = json.loads(posted)\n\
+          \    return {\n        \"result\": jsn[\"result\"],\n    }\n"
+        code_language: python3
+        desc: ''
+        outputs:
+          result:
+            children: null
+            type: string
+        selected: false
+        title: コード Pickup the Result
+        type: code
+        variables:
+        - value_selector:
+          - '1728113691816'
+          - text
+          variable: posted
+      height: 41
+      id: '1728113825420'
+      position:
+        x: 988
+        y: 282
+      positionAbsolute:
+        x: 988
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        desc: ''
+        outputs:
+        - value_selector:
+          - '1728113825420'
+          - result
+          variable: result
+        selected: false
+        title: 終了
+        type: end
+      height: 68
+      id: '1728114165252'
+      position:
+        x: 1292
+        y: 282
+      positionAbsolute:
+        x: 1292
+        y: 282
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        code: "import json\n\n\ndef main(location: str) -> dict:\n    return {\n \
+          \       \"params\": json.dumps({\n            \"app_id\": \"dify-6d61f5c0-54af-471b-ba55-443c9219579a\"\
+          ,\n            \"inputs\": {\"location\": location}\n        }),\n    }\n"
+        code_language: python3
+        desc: ''
+        outputs:
+          params:
+            children: null
+            type: string
+        selected: false
+        title: コード Convert  Location to Params
+        type: code
+        variables:
+        - value_selector:
+          - '1728113681511'
+          - location
+          variable: location
+      height: 41
+      id: '1728114754455'
+      position:
+        x: 384
+        y: 282
+      positionAbsolute:
+        x: 384
+        y: 282
+      selected: true
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    viewport:
+      x: -22
+      y: 66.5
+      zoom: 1
