@@ -43,10 +43,6 @@ def to_markdown(html: str) -> str:
     return "".join([html_to_markdown(e) for e in soup.contents])
 
 
-
-
-
-
 if __name__ == "__main__":
     url = "https://www.google.com/"
     response = requests.get(url)
