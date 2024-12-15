@@ -136,6 +136,7 @@ langchain_openai = "*"
 # langflow = "*"
 tavily-python = "*"
 openai = "*"
+google-genai = "*"
 # open-interpreter = "*"
 google-search-results = "*"
 google-api-python-client = "*"
@@ -214,13 +215,11 @@ vllm = {url="https://github.com/vllm-project/vllm/releases/download/v0.4.0/vllm-
 # fastparquet = "*"
 
 # webapp
-# gradio = "^3.21.0"
 gradio = "*"
-# streamlit = "^1.24.0"
 streamlit = "*"
 streamlit-chat = "*"
 streamlit-extras = "*"
-streamsync = {extras = ["ds"], version = "*"}
+# streamsync = {extras = ["ds"], version = "*"}
 hugchat = "*"
 
 # # datascience

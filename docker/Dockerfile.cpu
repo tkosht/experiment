@@ -85,8 +85,8 @@ USER $user_name
 # Poetry
 RUN curl -sSL https://install.python-poetry.org | python3 -
 
-# deta space
-RUN curl -fsSL https://deta.space/assets/space-cli.sh | sh
+# # deta space
+# RUN curl -fsSL https://deta.space/assets/space-cli.sh | sh
 
 # Switch back to dialog for any ad-hoc use of apt-get
 ENV DEBIAN_FRONTEND=dialog
