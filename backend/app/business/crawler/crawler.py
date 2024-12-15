@@ -64,13 +64,13 @@ def get_all_website_links(url: str, base_domain: str) -> tuple[set[str], Optiona
                 if is_valid(href) and is_same_domain(href, base_domain):
                     urls.add(href)
         return urls, response.content, content_type
-    except requests.RequestException as e:
+    except requests.RequestException:
         rprint(f"[bold red]Error fetching {url}[/bold red]")
         return set(), None, None
 
 
 def init_db(db_path: str = "data/crawled_data.db") -> sqlite3.Connection:
-    """SQLiteデータベースを初期化します。"""
+    """SQLiteデータベースを初期化しま��。"""
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
     c.execute(
@@ -103,14 +103,14 @@ def insert_or_update_page(conn: sqlite3.Connection, url: str, content: bytes, co
     result = c.fetchone()
     if result is None:
         c.execute(
-            """INSERT INTO pages (url, domain, content, content_type, hash, last_crawled) 
+            """INSERT INTO pages (url, domain, content, content_type, hash, last_crawled)
                      VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)""",
             (url, domain, content, content_type, content_hash),
         )
     elif result[0] != content_hash:
         c.execute(
-            """UPDATE pages 
-                     SET domain = ?, content = ?, content_type = ?, hash = ?, last_crawled = CURRENT_TIMESTAMP 
+            """UPDATE pages
+                     SET domain = ?, content = ?, content_type = ?, hash = ?, last_crawled = CURRENT_TIMESTAMP
                      WHERE url = ?""",
             (domain, content, content_type, content_hash, url),
         )
@@ -151,7 +151,7 @@ def normalize_url(url: str) -> str:
         path: str = urllib.parse.unquote(parsed.path)
         path = posixpath.normpath(path)
         if parsed.path.endswith("/") and not path.endswith("/"):
-            # 元のパスが末尾スラッシュを含んでいた場合、正規化後もスラッシュを保持
+            # 元のパスが末尾スラッシュを含ん���いた場合、正規化後もスラッシュを保持
             path += "/"
         # ルートパスでない場合、末尾のスラッシュを削除
         if path != "/" and path.endswith("/"):
@@ -175,6 +175,22 @@ def normalize_url(url: str) -> str:
         raise ValueError(f"Invalid URL provided: {url}") from e
 
 
+def process_url(url: str, base_domain: str, cnn: sqlite3.Connection) -> tuple[set[str], bool]:
+    """単一のURLを処理し、リンクとクロールの成功状態を返します。"""
+    try:
+        rprint(f"[bold]Loading:[/bold] [link={url}]{url}[/link]")
+        linked_urls, content, content_type = get_all_website_links(url, base_domain)
+        if content is None or content_type is None:
+            return set(), False
+
+        insert_or_update_page(cnn, url, content, content_type)
+        return linked_urls, True
+
+    except Exception:
+        rprint(f"[bold red]Error crawling {url}[/bold red]")
+        return set(), False
+
+
 def crawl_website(start_url: str, db_path: str, n_pages: int) -> set[str]:
     """指定されたURLから始めて、同じドメイン内の全てのページをクロールします。"""
     base_domain = urlparse(start_url).netloc
@@ -182,36 +198,20 @@ def crawl_website(start_url: str, db_path: str, n_pages: int) -> set[str]:
     to_crawl: set[str] = {start_url}
 
     with init_db(db_path) as cnn:
-        while to_crawl:
+        while to_crawl and len(crawled_urls) < n_pages:
             url = normalize_url(to_crawl.pop())
-            # すでにクロール済みのURLはスキップ
             if url in crawled_urls:
                 continue
 
-            try:
-                rprint(f"[bold]Loading:[/bold] [link={url}]{url}[/link]")
-                linked_urls, content, content_type = get_all_website_links(url, base_domain)
-                if content is None or content_type is None:
-                    continue
-
-                assert content is not None and content_type is not None
-                insert_or_update_page(cnn, url, content, content_type)
+            linked_urls, success = process_url(url, base_domain, cnn)
+            if success:
                 crawled_urls.add(url)
-                if len(crawled_urls) >= n_pages:
-                    break
-
                 for lu in linked_urls:
                     link_url = normalize_url(lu)
-                    # すでにクロール済みのURLはスキップ
-                    if link_url in crawled_urls:
-                        continue
-                    to_crawl.add(link_url)
+                    if link_url not in crawled_urls:
+                        to_crawl.add(link_url)
 
-                time.sleep(0.2)
-
-            except Exception as e:
-                rprint(f"[bold red]Error crawling {url}[/bold red]")
-                continue
+            time.sleep(0.2)
 
     return crawled_urls
 
