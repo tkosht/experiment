@@ -1,18 +1,18 @@
 services:
-  postgresql:
-    image: postgres:latest
-    container_name: $pj_name.postgresql
-    restart: always
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=campfire_db
-      - PGPORT=5431
-    volumes:
-      - ./data/postgres:/var/lib/postgresql/data
-    ports:
-      - "5431:5431"     # postgresql
-    # command: -p 5431
+  # postgresql:
+  #   image: postgres:latest
+  #   container_name: $pj_name.postgresql
+  #   restart: always
+  #   environment:
+  #     - POSTGRES_USER=postgres
+  #     - POSTGRES_PASSWORD=postgres
+  #     - POSTGRES_DB=campfire_db
+  #     - PGPORT=5431
+  #   volumes:
+  #     - ./data/postgres:/var/lib/postgresql/data
+  #   ports:
+  #     - "5431:5431"     # postgresql
+  #   # command: -p 5431
 
   neo4j:
     image: neo4j:latest

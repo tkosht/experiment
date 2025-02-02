@@ -9,14 +9,18 @@ packages = [{include = "app"}]
 
 
 [tool.poetry.dependencies]
-python = ">=3.10, <3.12"        # <3.12 for sktime
+python = ">=3.10,<3.12"
+requests = "*"
+beautifulsoup4 = "*"
+# python-whois = "*"
+# rich = "*"
 
 
 # for data science
 numpy = "*"
 pandas = "*"
-fireducks = "*"
-dask = {extras = ["complete"], version = "*"}
+# fireducks = "*"
+# dask = {extras = ["complete"], version = "*"}
 scikit-learn = "*"
 scipy = "*"
 mlxtend = "*"
@@ -28,17 +32,17 @@ plotly = "*"
 pandasgui = "*"
 pandas-profiling = "*"
 pygwalker = "*"
-scikit-optimize = "*"
+# scikit-optimize = "*"
 optuna = "*"
 lime = "*"
 shap = "*"
 # pyyaml = "5.3.1"
 pyyaml = "*"
-memory_profiler = "*"
+# memory_profiler = "*"
 
-PyQt5 = "=5.15.2"
-lit = "^17.0.2"
-ipynb = "*"
+# PyQt5 = "=5.15.2"
+# lit = "^17.0.2"
+# ipynb = "*"
 
 # for experiment management
 mlflow = "*"
@@ -64,18 +68,18 @@ html2text = "*"
 
 # other tools
 omegaconf = "*"
-notebook = "*"
+# notebook = "*"
 python-dotenv = "*"
 ulid-py = "*"
 typer = "*"
-simplejson = "*"
+# simplejson = "*"
 
 
 # # for project
-fastapi = "*"
-uvicorn = "*"
-# aiofiles = "*"
-# python-multipart = "*"
+# fastapi = "*"
+# uvicorn = "*"
+# # aiofiles = "*"
+# # python-multipart = "*"
 
 # for being faster torch dependency resolving
 # # torch = {url = "https://download.pytorch.org/whl/cu118/torch-2.2.2%2Bcu118-cp310-cp310-linux_x86_64.whl"}
@@ -88,7 +92,7 @@ uvicorn = "*"
 # nltk = "*"
 # torchtext = "*"
 # pytorch-forecasting = "*"
-tensorflow-datasets = "*"
+# tensorflow-datasets = "*"
 
 # python-snappy = "*"
 # pyro-ppl = "*"
@@ -126,51 +130,56 @@ tensorflow-datasets = "*"
 # transformers = "*"
 # datasets = "^2.15.0"
 
-# LLM relatives
-# # for langchain
-numexpr = "*"
-langchain = "^0.0.354"
+# # LLM relatives
+# # # for langchain
+langchain = "*"
+langchain-community = "*"
+langchain-openai = "*"
 langchain-experimental = "*"
-langgraph="*"
-langchain_openai = "*"
-# langflow = "*"
-tavily-python = "*"
-openai = "*"
-google-genai = "*"
-# open-interpreter = "*"
-google-search-results = "*"
-google-api-python-client = "*"
-google-generativeai = "*"
+neo4j = "*"
+# numexpr = "*"
+# langchain = ">=0.0.354"
+# langchain-experimental = "*"
+# langgraph="*"
+# langchain_openai = "*"
+# # langflow = "*"
+# tavily-python = "*"
+# openai = "*"
+# google-genai = "*"
+# # open-interpreter = "*"
+# google-search-results = "*"
+# google-api-python-client = "*"
+# google-generativeai = "*"
 langchain-google-genai = "*"
-pillow = "*"
-chromadb = "*"
-tiktoken = "*"
-sentence_transformers = "*"
-faiss-gpu = "*"
-trafilatura = "*"
-llama-index = "*"
-llama-index-embeddings-huggingface = "*"
-llama-index-embeddings-langchain = "*"
-llama-index-llms-anthropic = "*"
-llama-index-readers-notion = "*"
-llama-index-packs-sentence-window-retriever = "*"
-llama-index-vector-stores-faiss = "*"
-llama-index-postprocessor-rankgpt-rerank = "*"
+# pillow = "*"
+# chromadb = "*"
+# tiktoken = "*"
+# sentence_transformers = "*"
+# faiss-gpu = "*"
+# trafilatura = "*"
+# llama-index = "*"
+# llama-index-embeddings-huggingface = "*"
+# llama-index-embeddings-langchain = "*"
+# llama-index-llms-anthropic = "*"
+# llama-index-readers-notion = "*"
+# llama-index-packs-sentence-window-retriever = "*"
+# llama-index-vector-stores-faiss = "*"
+# llama-index-postprocessor-rankgpt-rerank = "*"
 
 
 dify-client = "*"
-promptflow = "*"
-promptflow-tools = "*"
 ragas = "*"
-langsmith = "*"
 langfuse = "*"
+# langsmith = "*"
+# promptflow = "*"
+# promptflow-tools = "*"
 
 
 # PDF
 pymupdf = "*"
 pypdf = "*"
-pymupdf4llm = "*"
-cryptography = "*"
+# pymupdf4llm = "*"
+# cryptography = "*"
 unstructured = {extras = ["pdf"], version = "*"}
 # pdfminer.six = "*"
 # pycryptodome = "*"
@@ -178,7 +187,7 @@ unstructured = {extras = ["pdf"], version = "*"}
 azure-ai-documentintelligence = "*"
 
 
-wikipedia = "*"
+# wikipedia = "*"
 # Flask-Cors = "*"
 
 # # guidance
@@ -187,14 +196,15 @@ wikipedia = "*"
 # # Semantic Kernel
 # semantic-kernel = "*"
 
-# for LLM
+# for LLM development
+# codeboxapi = "*"
 huggingface_hub = "*"
-codeboxapi = "*"
 llama-cpp-python = "*"
-# vllm = "*"
-# Install vLLM with CUDA 11.8.
-vllm = {url="https://github.com/vllm-project/vllm/releases/download/v0.4.0/vllm-0.4.0+cu118-cp310-cp310-manylinux1_x86_64.whl"}
-# heron = {git = "https://github.com/turingmotors/heron.git"}
+# # vllm = "*"
+# # Install vLLM with CUDA 11.8.
+# vllm = {url="https://github.com/vllm-project/vllm/releases/download/v0.4.0/vllm-0.4.0+cu118-cp310-cp310-manylinux1_x86_64.whl"}
+# # heron = {git = "https://github.com/turingmotors/heron.git"}
+accelerate = "^0.26.0"
 
 
 # # for elyza/ELYZA-japanese-Llama-2-7b-instruct
@@ -217,10 +227,10 @@ vllm = {url="https://github.com/vllm-project/vllm/releases/download/v0.4.0/vllm-
 # webapp
 gradio = "*"
 streamlit = "*"
-streamlit-chat = "*"
-streamlit-extras = "*"
+# streamlit-chat = "*"
+# streamlit-extras = "*"
 # streamsync = {extras = ["ds"], version = "*"}
-hugchat = "*"
+# hugchat = "*"
 
 # # datascience
 # lightgbm = "*"
@@ -235,9 +245,12 @@ hugchat = "*"
 # statsmodels = "^0.14.0"
 # yfinance = "^0.2.28"
 # pingouin = "^0.5.3"
+markitdown = "^0.0.1a3"
+langchain-anthropic = "*"
+# anthropic = "*"
 
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 # for sqa
 pudb = "*"
 pylint = "*"
@@ -251,6 +264,7 @@ pytest-xdist = "*"
 pytest-html = "*"
 # docutils==0.15
 Sphinx = "*"
+ipykernel = "^6.29.5"
 
 
 [build-system]

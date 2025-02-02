@@ -70,7 +70,7 @@ def get_all_website_links(url: str, base_domain: str) -> tuple[set[str], Optiona
 
 
 def init_db(db_path: str = "data/crawled_data.db") -> sqlite3.Connection:
-    """SQLiteデータベースを初期化しま��。"""
+    """SQLiteデータベースを初期化します。"""
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
     c.execute(
@@ -119,7 +119,7 @@ def insert_or_update_page(conn: sqlite3.Connection, url: str, content: bytes, co
 
 def normalize_url(url: str) -> str:
     """
-    URLを正規化する関数。
+    URLを正規化します。
 
     Args:
         url (str): 正規化したいURL。

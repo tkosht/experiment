@@ -2,7 +2,7 @@ FROM nvidia/cuda:11.8.0-devel-ubuntu22.04
 
 LABEL maintainer="tkosht <takehito.oshita.business@gmail.com>"
 
-ENV TZ Asia/Tokyo
+ENV TZ=Asia/Tokyo
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update -y && apt-get upgrade -y \
@@ -11,11 +11,12 @@ RUN apt-get update -y && apt-get upgrade -y \
         jq sqlite3 curl nodejs npm default-jre unzip \
         libgeos-dev libsnappy-dev fontconfig fonts-ipaexfont fonts-ipafont \
         libopenmpi-dev \
-        libmecab-dev mecab mecab-ipadic-utf8 mecab-utils file \
         postgresql postgresql-contrib \
         libmagic-dev poppler-utils \
         tesseract-ocr tesseract-ocr-jpn libtesseract-dev libleptonica-dev tesseract-ocr-script-jpan tesseract-ocr-script-jpan-vert \
     && localedef -f UTF-8 -i ja_JP ja_JP.UTF-8
+
+#        libmecab-dev mecab mecab-ipadic-utf8 mecab-utils file \
 
 
 # for google-chrome
@@ -28,7 +29,7 @@ RUN apt-get install -y libgbm-dev x11vnc xvfb fonts-noto-color-emoji \
     && cd /tmp && unzip chrome-linux64.zip && mv chrome-linux64 /opt \
     && fc-cache -f -v
 
-ENV PATH $PATH:/opt/chrome-linux64
+ENV PATH=$PATH:/opt/chrome-linux64
 
 RUN apt-get --fix-missing install -y --no-install-recommends \
         python3.10 \
@@ -46,14 +47,16 @@ ENV LANG="ja_JP.UTF-8" \
     TZ="Asia/Tokyo" \
     TERM="xterm"
 
+# RUN curl -fsSL https://ollama.com/install.sh | sh
+
 # ======================== #
 # MeCab
 WORKDIR /tmp
 
-RUN git config --global http.postBuffer 1048576000 \
-    && git clone https://github.com/neologd/mecab-ipadic-neologd.git \
-    && cd mecab-ipadic-neologd && bin/install-mecab-ipadic-neologd -n -a -y
-RUN ln -s /etc/mecabrc /usr/local/etc/mecabrc
+# RUN git config --global http.postBuffer 1048576000 \
+#     && git clone https://github.com/neologd/mecab-ipadic-neologd.git \
+#     && cd mecab-ipadic-neologd && bin/install-mecab-ipadic-neologd -n -a -y
+# RUN ln -s /etc/mecabrc /usr/local/etc/mecabrc
 
 RUN python -m pip install --upgrade pip         # ==21.0.1
 

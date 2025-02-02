@@ -2,7 +2,7 @@ FROM ubuntu:22.04
 
 LABEL maintainer="tkosht <takehito.oshita.business@gmail.com>"
 
-ENV TZ Asia/Tokyo
+ENV TZ=Asia/Tokyo
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update -y && apt-get upgrade -y \
@@ -27,7 +27,7 @@ RUN apt-get install -y libgbm-dev x11vnc xvfb fonts-noto-color-emoji \
     && cd /tmp && unzip chrome-linux64.zip && mv chrome-linux64 /opt \
     && fc-cache -f -v
 
-ENV PATH $PATH:/opt/chrome-linux64
+ENV PATH=$PATH:/opt/chrome-linux64
 
 RUN apt-get --fix-missing install -y --no-install-recommends \
         python3.10 \
