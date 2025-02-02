@@ -245,9 +245,9 @@ streamlit = "*"
 # statsmodels = "^0.14.0"
 # yfinance = "^0.2.28"
 # pingouin = "^0.5.3"
-markitdown = "^0.0.1a3"
+markitdown = "*"
 langchain-anthropic = "*"
-# anthropic = "*"
+anthropic = "*"
 
 
 [tool.poetry.group.dev.dependencies]
